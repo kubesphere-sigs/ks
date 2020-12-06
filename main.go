@@ -27,16 +27,17 @@ func main() {
 		},
 	}
 
-	cmd.AddCommand(ext.NewCompletionCmd(cmd))
-
 	var ctx context.Context
 	if defMgr, err := alias.GetDefaultAliasMgrWithNameAndInitialData(cmd.Name(), getDefault()); err == nil {
 		ctx = context.WithValue(context.Background(), alias.AliasKey, defMgr)
 
 		cmd.AddCommand(aliasCmd.NewRootCommand(ctx))
+		aliasCmd.RegisterAliasCompletion(ctx, cmd)
 	} else {
 		cmd.Println(fmt.Errorf("cannot get default alias manager, error: %v", err))
 	}
+
+	cmd.AddCommand(ext.NewCompletionCmd(cmd))
 
 	cmd.SilenceErrors = true
 	err := cmd.Execute()

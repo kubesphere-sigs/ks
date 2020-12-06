@@ -7,3 +7,7 @@
 # ks
 
 `ks` is a kubectl wrapper for [Kubesphere](https://github.com/kubsphere/kubesphere).
+
+# Install
+
+`brew install linuxsuren/linuxsuren/ks`
