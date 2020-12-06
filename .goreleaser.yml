@@ -15,9 +15,9 @@ builds:
     post:
       - upx "{{ .Path }}"
   ldflags:
-    - -X github.com/linuxsuren/cgit/app.version={{.Version}}
-    - -X github.com/linuxsuren/cgit/app.commit={{.ShortCommit}}
-    - -X github.com/linuxsuren/cgit/app.date={{.Date}}
+    - -X github.com/linuxsuren/ks/app.version={{.Version}}
+    - -X github.com/linuxsuren/ks/app.commit={{.ShortCommit}}
+    - -X github.com/linuxsuren/ks/app.date={{.Date}}
     - -w
 dist: release
 archives:
@@ -49,10 +49,10 @@ brews:
     name: cgit
     tap:
       owner: linuxsuren
-      name: homebrew-cgit
+      name: homebrew-linuxsuren
     folder: Formula
-    homepage: "https://github.com/linuxsuren/cgit"
-    description: cgit is a tiny tool for Chinese developers.
+    homepage: "https://github.com/linuxsuren/ks"
+    description: ks is a kubectl wrapper for Kubesphere
     dependencies:
       - name: vim
         type: optional
@@ -67,7 +67,7 @@ brews:
       prefix.install_metafiles
 nfpms:
   - file_name_template: "{{ .Binary }}-{{.Os}}-{{.Arch}}"
-    homepage: https://github.com/linuxsuren/cgit
+    homepage: https://github.com/linuxsuren/ks
     description: cgit is a tiny tool for Chinese developers.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
