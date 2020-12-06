@@ -1,9 +1,9 @@
 # Official documentation at http://goreleaser.com
-project_name: cgit
+project_name: ks
 builds:
 - env:
   - CGO_ENABLED=0
-  binary: cgit
+  binary: ks
   goarch:
     - amd64
     - arm64
@@ -46,7 +46,7 @@ changelog:
     - '^test:'
 brews:
   -
-    name: cgit
+    name: ks
     tap:
       owner: linuxsuren
       name: homebrew-linuxsuren
@@ -59,7 +59,7 @@ brews:
       - name: bash-completion
         type: optional
     test: |
-      version_output = shell_output("#{bin}/cgit version")
+      version_output = shell_output("#{bin}/ks version")
       assert_match version.to_s, version_output
     install: |
       bin.install name
@@ -68,7 +68,7 @@ brews:
 nfpms:
   - file_name_template: "{{ .Binary }}-{{.Os}}-{{.Arch}}"
     homepage: https://github.com/linuxsuren/ks
-    description: cgit is a tiny tool for Chinese developers.
+    description: ks is a tiny tool for Chinese developers.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
     vendor: Jenkins
