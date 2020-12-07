@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	ext "github.com/linuxsuren/cobra-extension"
+	extver "github.com/linuxsuren/cobra-extension/version"
 	alias "github.com/linuxsuren/go-cli-alias/pkg"
 	aliasCmd "github.com/linuxsuren/go-cli-alias/pkg/cmd"
 	"github.com/spf13/cobra"
@@ -26,6 +27,8 @@ func main() {
 			return
 		},
 	}
+
+	cmd.AddCommand(extver.NewVersionCmd("linuxsuren", "ks", "ks", nil))
 
 	var ctx context.Context
 	if defMgr, err := alias.GetDefaultAliasMgrWithNameAndInitialData(cmd.Name(), getDefault()); err == nil {
