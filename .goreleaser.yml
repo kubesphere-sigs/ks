@@ -2,7 +2,28 @@
 project_name: ks
 builds:
 - env:
-  - CGO_ENABLED=0
+    - CGO_ENABLED=0
+  id: kubectl-ks
+  dir: kubectl-plugin
+  binary: kubectl-ks
+  goarch:
+    - amd64
+    - arm64
+  goos:
+    - windows
+    - linux
+    - darwin
+  hooks:
+    post:
+      - upx "{{ .Path }}"
+  ldflags:
+    - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
+    - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
+    - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+    - -w
+- env:
+    - CGO_ENABLED=0
+  id: "ks"
   binary: ks
   goarch:
     - amd64
@@ -19,7 +40,7 @@ builds:
     - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
     - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
     - -w
-dist: release
+dist: bin
 archives:
 - name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}"
   replacements:
@@ -45,8 +66,7 @@ changelog:
     - '^docs:'
     - '^test:'
 brews:
-  -
-    name: ks
+  - name: ks
     tap:
       owner: linuxsuren
       name: homebrew-linuxsuren
@@ -67,6 +87,7 @@ brews:
       prefix.install_metafiles
 nfpms:
   - file_name_template: "{{ .Binary }}-{{.Os}}-{{.Arch}}"
+    id: "ks"
     homepage: https://github.com/linuxsuren/ks
     description: ks is a tiny tool for Chinese developers.
     maintainer: rick <rick@jenkins-zh.cn>

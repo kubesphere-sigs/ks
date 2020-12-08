@@ -7,8 +7,17 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 build: fmt
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
 
+build-plugin: fmt
+	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*
+
 fmt:
 	go fmt ./...
 
 copy: build
 	sudo cp bin/ks /usr/local/bin/ks
+
+copy-plugin: build-plugin
+	sudo cp bin/kubectl-ks /usr/local/bin/kubectl-ks
+
+goreleaser-test:
+	goreleaser release --rm-dist --skip-publish --snapshot
