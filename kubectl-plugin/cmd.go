@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	pkg "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
@@ -24,18 +24,28 @@ Kubesphere is the enterprise-grade container platform tailored for multicloud an
 See also https://github.com/kubesphere/kubesphere`,
 	}
 
-	cmd.AddCommand(NewUserCmd(),
-		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil))
+	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	var config *rest.Config
+	var err error
+	var client dynamic.Interface
+
+	if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
+		panic(err)
+		return
+	}
+	if client, err = dynamic.NewForConfig(config); err != nil {
+		panic(err)
+		return
+	}
+
+	cmd.AddCommand(NewUserCmd(client),
+		NewPipelineCmd(client),
+		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
+		pkg.NewCompletionCmd(cmd))
 	return
 }
 
-var gvr = schema.GroupVersionResource{
-	Group:    "iam.kubesphere.io",
-	Version:  "v1alpha2",
-	Resource: "users",
-}
-
-func NewUserCmd() (cmd *cobra.Command) {
+func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "user",
 		Short: "Reset the password of Kubesphere to the default value which is same with its name",
@@ -43,17 +53,7 @@ func NewUserCmd() (cmd *cobra.Command) {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			name := args[0]
 
-			kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-			var config *rest.Config
-			if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
-				return
-			}
-			var cc dynamic.Interface
-			if cc, err = dynamic.NewForConfig(config); err != nil {
-				return
-			}
-
-			_, err = cc.Resource(gvr).Patch(context.TODO(),
+			_, err = client.Resource(GetUserSchema()).Patch(context.TODO(),
 				name,
 				types.MergePatchType,
 				[]byte(fmt.Sprintf(`{"spec":{"password":"%s"},"metadata":{"annotations":null}}`, name)),
