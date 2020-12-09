@@ -81,6 +81,8 @@ changelog:
     - '^test:'
 brews:
   - name: ks
+    ids:
+      - "ks"
     tap:
       owner: linuxsuren
       name: homebrew-linuxsuren
