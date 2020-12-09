@@ -4,14 +4,19 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 	-X github.com/linuxsuren/cobra-extension/version.commit=$(COMMIT) \
 	-X github.com/linuxsuren/cobra-extension/version.date=$(shell date +'%Y-%m-%d') -w -s"
 
-build: fmt
+build: pre-build
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
 
-build-plugin: fmt
+build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*
+
+pre-build: fmt lint
 
 fmt:
 	go fmt ./...
+
+lint:
+	golint ./...
 
 copy: build
 	sudo cp bin/ks /usr/local/bin/ks

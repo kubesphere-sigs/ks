@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 )
 
+// NewCmdKS returns the root command of kubeclt-ks
 func NewCmdKS(streams genericclioptions.IOStreams) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use: "ks",
@@ -45,6 +46,7 @@ See also https://github.com/kubesphere/kubesphere`,
 	return
 }
 
+// NewUserCmd returns the command of users
 func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "user",

@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+// NewPipelineCmd returns a command of pipeline
 func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "pipeline",
@@ -34,6 +35,7 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	return
 }
 
+// NewDelPipelineCmd returns a command to delete pipelines
 func NewDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "delete",

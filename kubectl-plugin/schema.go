@@ -2,6 +2,7 @@ package main
 
 import "k8s.io/apimachinery/pkg/runtime/schema"
 
+// GetUserSchema returns the schema of users
 func GetUserSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "iam.kubesphere.io",
@@ -10,6 +11,7 @@ func GetUserSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetPipelineSchema returns the schema of pipelines
 func GetPipelineSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "devops.kubesphere.io",
@@ -18,6 +20,7 @@ func GetPipelineSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetNamespaceSchema returns the schema of namespaces
 func GetNamespaceSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Version:  "v1",
