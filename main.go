@@ -7,8 +7,10 @@ import (
 )
 
 const (
+	// TargetCLI represents target CLI which is kubectl
 	TargetCLI = "kubectl"
-	AliasCLI  = "ks"
+	// AliasCLI represents the alias CLI which is ks
+	AliasCLI = "ks"
 )
 
 func main() {
