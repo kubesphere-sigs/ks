@@ -11,8 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.3.4
-    - name: backup
+    - name: backup gitee
       uses: jenkins-zh/git-backup-actions@v0.0.4
       env:
         GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
         TARGET_GIT: "git@gitee.com:linuxsuren/ks.git"
+    - name: backup codechina
+      uses: jenkins-zh/git-backup-actions@v0.0.4
+      env:
+        GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
+        TARGET_GIT: "git@codechina.csdn.net:linuxsuren/ks.git"
