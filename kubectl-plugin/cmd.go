@@ -41,6 +41,7 @@ See also https://github.com/kubesphere/kubesphere`,
 
 	cmd.AddCommand(NewUserCmd(client),
 		NewPipelineCmd(client),
+		NewUpdateCmd(client),
 		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
 		pkg.NewCompletionCmd(cmd))
 	return
