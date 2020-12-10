@@ -27,3 +27,12 @@ func GetNamespaceSchema() schema.GroupVersionResource {
 		Resource: "namespaces",
 	}
 }
+
+// GetDeploySchema returns the schema of deploy
+func GetDeploySchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "apps",
+		Version:  "v1",
+		Resource: "deployments",
+	}
+}
