@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"os"
+	"sigs.k8s.io/yaml"
 )
 
 // NewPipelineCmd returns a command of pipeline
@@ -31,7 +35,8 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		},
 	}
 
-	cmd.AddCommand(NewDelPipelineCmd(client))
+	cmd.AddCommand(NewDelPipelineCmd(client),
+		NewPipelineEditCmd(client))
 	return
 }
 
@@ -57,6 +62,61 @@ func NewDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	return
 }
 
+// NewPipelineEditCmd returns a command to edit the pipeline
+func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
+	ctx := context.TODO()
+	cmd = &cobra.Command{
+		Use:     "edit",
+		Aliases: []string{"e"},
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			var pips []string
+			var ns string
+			if ns, pips, err = getPipelinesWithConfirm(client, args); err == nil {
+				for _, pip := range pips {
+					var rawPip *unstructured.Unstructured
+					var data []byte
+					buf := bytes.NewBuffer(data)
+					cmd.Printf("get pipeline %s/%s\n", ns, pip)
+					if rawPip, err = client.Resource(GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
+						enc := json.NewEncoder(buf)
+						enc.SetIndent("", "    ")
+						if err = enc.Encode(rawPip); err != nil {
+							return
+						}
+					} else {
+						err = fmt.Errorf("cannot get pipeline, error: %#v", err)
+						return
+					}
+
+					var yamlData []byte
+					if yamlData, err = yaml.JSONToYAML(buf.Bytes()); err != nil {
+						return
+					}
+
+					var fileName = "*.yaml"
+					var content = string(yamlData)
+
+					prompt := &survey.Editor{
+						Message:       fmt.Sprintf("Edit pipeline %s/%s", ns, pip),
+						FileName:      fileName,
+						Default:       string(yamlData),
+						HideDefault:   true,
+						AppendDefault: true,
+					}
+
+					err = survey.AskOne(prompt, &content, survey.WithStdio(os.Stdin, os.Stdout, os.Stderr))
+
+					if err = yaml.Unmarshal([]byte(content), rawPip); err == nil {
+						_, err = client.Resource(GetPipelineSchema()).Namespace(ns).Update(context.TODO(), rawPip, metav1.UpdateOptions{})
+					}
+				}
+			}
+			return
+		},
+	}
+	return
+}
+
 func getPipelinesWithConfirm(client dynamic.Interface, args []string) (ns string, pips []string, err error) {
 	var allPips []string
 	if ns, allPips, err = getPipelines(client, args); err != nil {
@@ -64,7 +124,7 @@ func getPipelinesWithConfirm(client dynamic.Interface, args []string) (ns string
 	}
 
 	prompt := &survey.MultiSelect{
-		Message: "Please select the namespace whose you want to check:",
+		Message: "Please select the pipelines that you want to check:",
 		Options: allPips,
 	}
 	err = survey.AskOne(prompt, &pips)
@@ -101,7 +161,7 @@ func getNamespace(client dynamic.Interface, args []string) (ns string, err error
 		}
 
 		prompt := &survey.Select{
-			Message: "Please select the namespace whose you want to check:",
+			Message: "Please select the namespace which you want to check:",
 			Options: nsList,
 		}
 		if err = survey.AskOne(prompt, &ns); err != nil {
