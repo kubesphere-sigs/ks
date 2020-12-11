@@ -2,23 +2,34 @@ package main
 
 import (
 	"context"
-	"github.com/AlecAivazis/survey/v2"
-	"k8s.io/apimachinery/pkg/types"
-
 	"encoding/json"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
 )
 
 type updateCmdOption struct {
-	Release bool
-	Tag     string
+	Release    bool
+	Tag        string
+	Watch      bool
+	WatchImage string
+	WatchTag   string
 
-	Client dynamic.Interface
+	Registry         string
+	RegistryUsername string
+	RegistryPassword string
+	PrivateRegistry  string
+	PrivateAsLocal   bool
+	Client           dynamic.Interface
 }
 
 // NewUpdateCmd returns a command of update
@@ -40,6 +51,18 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"Indicate if you want to update Kubesphere deploy image to release. Released images come from kubesphere/xxx. Otherwise images come from kubespheredev/xxx")
 	flags.StringVarP(&opt.Tag, "tag", "t", KS_VERSION,
 		"The tag of Kubesphere deploys")
+	flags.BoolVarP(&opt.Watch, "watch", "w", false,
+		"Watch a container image then update it")
+	flags.StringVarP(&opt.WatchImage, "watch-image", "", "",
+		"which image you want to watch")
+	flags.StringVarP(&opt.WatchTag, "watch-tag", "", "",
+		"which image tag you want to watch")
+	flags.StringVarP(&opt.Registry, "registry", "", "docker",
+		"supprted list [docker, aliyun, qingcloud], we only support beijing area of aliyun")
+	flags.StringVarP(&opt.PrivateRegistry, "private-registry", "", "",
+		"a private registry, for example: docker run -d -p 5000:5000 --restart always --name registry registry:2 ")
+	flags.BoolVarP(&opt.PrivateAsLocal, "private-as-local", "", true,
+		"use 127.0.0.1 as the private registry host")
 	return
 }
 
@@ -51,7 +74,77 @@ func (o *updateCmdOption) PreRun(cmd *cobra.Command, args []string) {
 	}
 }
 
+func (o *updateCmdOption) getDigest(image, tag string) string {
+	dClient := DockerClient{
+		Image:           image,
+		Registry:        o.Registry,
+		PrivateRegistry: o.PrivateRegistry,
+	}
+	token := dClient.getToken()
+	dClient.Token = token
+	return dClient.getDigest(tag)
+}
+
+func (o *updateCmdOption) getFullImagePath(image string) string {
+	switch o.Registry {
+	default:
+		fallthrough
+	case "docker":
+		return image
+	case "aliyun":
+		return fmt.Sprintf("registry.cn-beijing.aliyuncs.com/%s", image)
+	case "qingcloud":
+		return fmt.Sprintf("dockerhub.qingcloud.com/%s", image)
+	case "private":
+		if o.PrivateAsLocal {
+			regAndPort := strings.Split(o.PrivateRegistry, ":")
+			return fmt.Sprintf("127.0.0.1:%s/%s", regAndPort[1], image)
+		} else {
+			return fmt.Sprintf("%s/%s", o.PrivateRegistry, image)
+		}
+	}
+}
+
 func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Watch {
+		currentDigest := o.getDigest(o.WatchImage, o.WatchTag)
+		fmt.Println("current digest", currentDigest)
+
+		digestChain := make(chan string)
+		go func(digestChain chan<- string) {
+			for {
+				time.Sleep(time.Second * 2)
+
+				digestChain <- o.getDigest(o.WatchImage, o.WatchTag)
+			}
+		}(digestChain)
+
+		sigChan := make(chan os.Signal)
+		signal.Notify(sigChan, os.Kill)
+		signal.Notify(sigChan, os.Interrupt)
+
+		for {
+			select {
+			case digest := <-digestChain:
+				if digest != currentDigest && digest != "" {
+					fmt.Println("prepare to patch image, new digest is", digest, "old digest is", currentDigest)
+					fmt.Println("image", o.getFullImagePath(fmt.Sprintf("%s:%s@%s", o.WatchImage, o.WatchTag, digest)))
+					currentDigest = digest
+
+					ctx := context.TODO()
+					_, err = o.Client.Resource(GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
+						"ks-apiserver", types.JSONPatchType,
+						[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "%s"}]`,
+							o.getFullImagePath(fmt.Sprintf("%s:%s@%s", o.WatchImage, o.WatchTag, digest)))),
+						metav1.PatchOptions{})
+				}
+			case sig := <-sigChan:
+				fmt.Println(sig)
+				return
+			}
+		}
+	}
+
 	if o.Tag == "" {
 		dc := DockerClient{
 			Image: "kubesphere/ks-apiserver",
@@ -106,8 +199,10 @@ func (o *updateCmdOption) updateDeploy(ns, name, image, tag string) (err error) 
 
 // DockerClient is a simple Docker client
 type DockerClient struct {
-	Image string
-	Token string
+	Image           string
+	Token           string
+	Registry        string
+	PrivateRegistry string
 }
 
 type DockerTags struct {
@@ -147,7 +242,22 @@ func (d *DockerClient) getDigest(tag string) string {
 	if tag == "" {
 		tag = "latest"
 	}
-	if req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", d.Image, tag), nil); err != nil {
+
+	var api string
+	switch d.Registry {
+	default:
+		fallthrough
+	case "docker":
+		api = fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", d.Image, tag)
+	case "aliyun":
+		api = fmt.Sprintf("https://registry.cn-beijing.aliyuncs.com/v2/%s/manifests/%s", d.Image, tag)
+	case "qingcloud":
+		api = fmt.Sprintf("https://dockerhub.qingcloud.com/v2/%s/manifests/%s", d.Image, tag)
+	case "private":
+		api = fmt.Sprintf("http://%s/v2/%s/manifests/%s", d.PrivateRegistry, d.Image, tag)
+	}
+
+	if req, err := http.NewRequest(http.MethodGet, api, nil); err != nil {
 		return ""
 	} else {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
@@ -171,14 +281,31 @@ type token struct {
 }
 
 func (d *DockerClient) getToken() string {
-	if rsp, err := http.Get(fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", d.Image)); err == nil && rsp.StatusCode == http.StatusOK {
-		if data, err := ioutil.ReadAll(rsp.Body); err == nil {
-			token := token{}
-			if err = json.Unmarshal(data, &token); err == nil {
-				return token.Token
+	var api string
+	switch d.Registry {
+	default:
+		fallthrough
+	case "docker":
+		api = fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", d.Image)
+	case "aliyun":
+		api = fmt.Sprintf("https://dockerauth.cn-beijing.aliyuncs.com/auth?&service=registry.aliyuncs.com:cn-beijing&scope=repository:%s:pull", d.Image)
+	case "qingcloud":
+		api = fmt.Sprintf("https://dockerauth.qingcloud.com:6000/auth?&service=dockerhub.qingcloud.com&scope=repository:%s:pull", d.Image)
+	case "private":
+		api = fmt.Sprintf("http://%s/auth?&service=%s&scope=repository:%s:pull", d.PrivateRegistry, d.PrivateRegistry, d.Image)
+	}
+
+	if req, err := http.NewRequest(http.MethodGet, api, nil); err == nil {
+		httpClient := http.Client{}
+
+		if rsp, err := httpClient.Do(req); err == nil && rsp.StatusCode == http.StatusOK {
+			if data, err := ioutil.ReadAll(rsp.Body); err == nil {
+				token := token{}
+				if err = json.Unmarshal(data, &token); err == nil {
+					return token.Token
+				}
 			}
 		}
 	}
-
 	return ""
 }
