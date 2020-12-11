@@ -18,11 +18,12 @@ import (
 )
 
 type updateCmdOption struct {
-	Release    bool
-	Tag        string
-	Watch      bool
-	WatchImage string
-	WatchTag   string
+	Release     bool
+	Tag         string
+	Watch       bool
+	WatchImage  string
+	WatchTag    string
+	WatchDeploy string
 
 	Registry         string
 	RegistryUsername string
@@ -42,7 +43,8 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Use:     "update",
 		Short:   "Update images of ks-apiserver, ks-controller-manager, ks-console",
 		Aliases: []string{"up"},
-		PreRun:  opt.PreRun,
+		PreRun:  opt.preRun,
+		Args:    opt.args,
 		RunE:    opt.RunE,
 	}
 
@@ -53,12 +55,14 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"The tag of Kubesphere deploys")
 	flags.BoolVarP(&opt.Watch, "watch", "w", false,
 		"Watch a container image then update it")
+	flags.StringVarP(&opt.WatchDeploy, "watch-deploy", "", "",
+		"Watch a deploy then update it")
 	flags.StringVarP(&opt.WatchImage, "watch-image", "", "",
 		"which image you want to watch")
 	flags.StringVarP(&opt.WatchTag, "watch-tag", "", "",
 		"which image tag you want to watch")
 	flags.StringVarP(&opt.Registry, "registry", "", "docker",
-		"supprted list [docker, aliyun, qingcloud], we only support beijing area of aliyun")
+		"supported list [docker, aliyun, qingcloud, private], we only support beijing area of aliyun")
 	flags.StringVarP(&opt.PrivateRegistry, "private-registry", "", "",
 		"a private registry, for example: docker run -d -p 5000:5000 --restart always --name registry registry:2 ")
 	flags.BoolVarP(&opt.PrivateAsLocal, "private-as-local", "", true,
@@ -66,7 +70,21 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	return
 }
 
-func (o *updateCmdOption) PreRun(cmd *cobra.Command, args []string) {
+func (o *updateCmdOption) args(cmd *cobra.Command, args []string) (err error) {
+	if o.Watch {
+		if o.WatchDeploy == "" || o.WatchImage == "" || o.WatchTag == "" {
+			err = fmt.Errorf("--watch-deploy, --watch-image, --image-tag cannot be empty")
+			return
+		}
+
+		if o.Registry == "private" && o.PrivateRegistry == "" {
+			err = fmt.Errorf("--private-regitry cannot be empty if you want watch a private registry")
+		}
+	}
+	return
+}
+
+func (o *updateCmdOption) preRun(cmd *cobra.Command, args []string) {
 	if o.Release {
 		o.Tag = KS_VERSION
 	} else {
@@ -107,15 +125,12 @@ func (o *updateCmdOption) getFullImagePath(image string) string {
 
 func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
 	if o.Watch {
-		currentDigest := o.getDigest(o.WatchImage, o.WatchTag)
-		fmt.Println("current digest", currentDigest)
-
+		var currentDigest string
 		digestChain := make(chan string)
 		go func(digestChain chan<- string) {
 			for {
-				time.Sleep(time.Second * 2)
-
 				digestChain <- o.getDigest(o.WatchImage, o.WatchTag)
+				time.Sleep(time.Second * 2)
 			}
 		}(digestChain)
 
@@ -133,7 +148,7 @@ func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
 
 					ctx := context.TODO()
 					_, err = o.Client.Resource(GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
-						"ks-apiserver", types.JSONPatchType,
+						o.WatchDeploy, types.JSONPatchType,
 						[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "%s"}]`,
 							o.getFullImagePath(fmt.Sprintf("%s:%s@%s", o.WatchImage, o.WatchTag, digest)))),
 						metav1.PatchOptions{})
