@@ -6,15 +6,19 @@
 
 # ks
 
-`ks` is a kubectl wrapper for [Kubesphere](https://github.com/kubsphere/kubesphere).
+`ks` is a tool which makes it be easy to work with [Kubesphere](https://github.com/kubsphere/kubesphere).
 
-# Install
+It's also [a plugin of kubectl](https://github.com/kubernetes-sigs/krew).
 
-`brew install linuxsuren/linuxsuren/ks`
+# Features
 
-# kubectl-ks
+All features below work with [Kubesphere](https://github.com/kubsphere/kubesphere) instead of other concept.
 
-You can also use it [as a plugin of kubectl](https://github.com/kubernetes-sigs/krew).
+* Pipeline management
+* User Management
+* Component Management
+  * Enable (disable) a component (TODO)
+  * Update a component manually or automatically (Working on)
 
 ## Pipeline
 
