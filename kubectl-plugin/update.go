@@ -51,7 +51,7 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.BoolVarP(&opt.Release, "release", "r", true,
 		"Indicate if you want to update Kubesphere deploy image to release. Released images come from kubesphere/xxx. Otherwise images come from kubespheredev/xxx")
-	flags.StringVarP(&opt.Tag, "tag", "t", KS_VERSION,
+	flags.StringVarP(&opt.Tag, "tag", "t", KsVersion,
 		"The tag of Kubesphere deploys")
 	flags.BoolVarP(&opt.Watch, "watch", "w", false,
 		"Watch a container image then update it")
@@ -86,7 +86,7 @@ func (o *updateCmdOption) args(cmd *cobra.Command, args []string) (err error) {
 
 func (o *updateCmdOption) preRun(cmd *cobra.Command, args []string) {
 	if o.Release {
-		o.Tag = KS_VERSION
+		o.Tag = KsVersion
 	} else {
 		o.Tag = "latest"
 	}
@@ -117,9 +117,8 @@ func (o *updateCmdOption) getFullImagePath(image string) string {
 		if o.PrivateAsLocal {
 			regAndPort := strings.Split(o.PrivateRegistry, ":")
 			return fmt.Sprintf("127.0.0.1:%s/%s", regAndPort[1], image)
-		} else {
-			return fmt.Sprintf("%s/%s", o.PrivateRegistry, image)
 		}
+		return fmt.Sprintf("%s/%s", o.PrivateRegistry, image)
 	}
 }
 
@@ -220,6 +219,7 @@ type DockerClient struct {
 	PrivateRegistry string
 }
 
+// DockerTags represents the docker tag list
 type DockerTags struct {
 	Name string
 	Tags []string
@@ -234,17 +234,17 @@ func (d *DockerClient) getTags() (tags *DockerTags, err error) {
 	var req *http.Request
 	if req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("https://index.docker.io/v2/%s/tags/list", d.Image), nil); err != nil {
 		return
-	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
-		req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+	}
 
-		var rsp *http.Response
-		if rsp, err = client.Do(req); err == nil && rsp != nil && rsp.StatusCode == http.StatusOK {
-			var data []byte
-			if data, err = ioutil.ReadAll(rsp.Body); err == nil {
-				if err = json.Unmarshal(data, tags); err != nil {
-					err = fmt.Errorf("unexpected docker image tag data, %#v", err)
-				}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
+	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+
+	var rsp *http.Response
+	if rsp, err = client.Do(req); err == nil && rsp != nil && rsp.StatusCode == http.StatusOK {
+		var data []byte
+		if data, err = ioutil.ReadAll(rsp.Body); err == nil {
+			if err = json.Unmarshal(data, tags); err != nil {
+				err = fmt.Errorf("unexpected docker image tag data, %#v", err)
 			}
 		}
 	}
@@ -272,21 +272,23 @@ func (d *DockerClient) getDigest(tag string) string {
 		api = fmt.Sprintf("http://%s/v2/%s/manifests/%s", d.PrivateRegistry, d.Image, tag)
 	}
 
-	if req, err := http.NewRequest(http.MethodGet, api, nil); err != nil {
+	var req *http.Request
+	var err error
+	if req, err = http.NewRequest(http.MethodGet, api, nil); err != nil {
 		return ""
-	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
-		req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+	}
 
-		if rsp, err := client.Do(req); err == nil && rsp != nil {
-			if rsp.StatusCode != http.StatusOK {
-				fmt.Println(req)
-				if data, err := ioutil.ReadAll(rsp.Body); err == nil {
-					fmt.Println(string(data))
-				}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
+	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+
+	if rsp, err := client.Do(req); err == nil && rsp != nil {
+		if rsp.StatusCode != http.StatusOK {
+			fmt.Println(req)
+			if data, err := ioutil.ReadAll(rsp.Body); err == nil {
+				fmt.Println(string(data))
 			}
-			return rsp.Header.Get("Docker-Content-Digest")
 		}
+		return rsp.Header.Get("Docker-Content-Digest")
 	}
 	return ""
 }
