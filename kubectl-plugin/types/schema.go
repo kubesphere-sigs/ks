@@ -42,6 +42,13 @@ func GetClusterConfiguration() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "installer.kubesphere.io",
 		Version:  "v1alpha1",
-		Resource: "clusterconfigurations",
+		Resource: "clusterconfigurations",}
+}
+
+// GetServiceSchema returns the schema of service
+func GetServiceSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "services",
 	}
 }
