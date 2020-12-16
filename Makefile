@@ -8,7 +8,7 @@ build: pre-build
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
 
 build-plugin: pre-build
-	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*
+	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
 
 pre-build: fmt lint
 

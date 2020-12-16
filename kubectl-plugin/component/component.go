@@ -10,7 +10,7 @@ func NewComponentCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "component",
 		Aliases: []string{"com"},
-		Short: "Manage the components of Kubesphere",
+		Short:   "Manage the components of Kubesphere",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			cmd.Println("show all components status here. it's best to offer some options to filter these components")
 			return
