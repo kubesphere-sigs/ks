@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	types2 "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,18 +41,19 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 
 	cmd = &cobra.Command{
-		Use:     "update",
-		Short:   "Update images of ks-apiserver, ks-controller-manager, ks-console",
-		Aliases: []string{"up"},
-		PreRun:  opt.preRun,
-		Args:    opt.args,
-		RunE:    opt.RunE,
+		Use:        "update",
+		Short:      "Update images of ks-apiserver, ks-controller-manager, ks-console",
+		Aliases:    []string{"up"},
+		Deprecated: "This command will be removed after v0.1.0. Please use kubectl ks component xxx instead.",
+		PreRun:     opt.preRun,
+		Args:       opt.args,
+		RunE:       opt.RunE,
 	}
 
 	flags := cmd.Flags()
 	flags.BoolVarP(&opt.Release, "release", "r", true,
 		"Indicate if you want to update Kubesphere deploy image to release. Released images come from kubesphere/xxx. Otherwise images come from kubespheredev/xxx")
-	flags.StringVarP(&opt.Tag, "tag", "t", KsVersion,
+	flags.StringVarP(&opt.Tag, "tag", "t", types2.KsVersion,
 		"The tag of Kubesphere deploys")
 	flags.BoolVarP(&opt.Watch, "watch", "w", false,
 		"Watch a container image then update it")
@@ -86,7 +88,7 @@ func (o *updateCmdOption) args(cmd *cobra.Command, args []string) (err error) {
 
 func (o *updateCmdOption) preRun(cmd *cobra.Command, args []string) {
 	if o.Release {
-		o.Tag = KsVersion
+		o.Tag = types2.KsVersion
 	} else {
 		o.Tag = "latest"
 	}
@@ -146,7 +148,7 @@ func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
 					currentDigest = digest
 
 					ctx := context.TODO()
-					_, err = o.Client.Resource(GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
+					_, err = o.Client.Resource(types2.GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
 						o.WatchDeploy, types.JSONPatchType,
 						[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "%s"}]`,
 							o.getFullImagePath(fmt.Sprintf("%s:%s@%s", o.WatchImage, o.WatchTag, digest)))),
@@ -204,7 +206,7 @@ func (o *updateCmdOption) updateDeploy(ns, name, image, tag string) (err error) 
 	fmt.Println("prepare to patch image", image)
 
 	ctx := context.TODO()
-	_, err = client.Resource(GetDeploySchema()).Namespace(ns).Patch(ctx,
+	_, err = client.Resource(types2.GetDeploySchema()).Namespace(ns).Patch(ctx,
 		name, types.JSONPatchType,
 		[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "%s"}]`, image)),
 		metav1.PatchOptions{})

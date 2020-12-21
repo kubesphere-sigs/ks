@@ -1,4 +1,4 @@
-package main
+package types
 
 const (
 	// KsVersion is the latest release version

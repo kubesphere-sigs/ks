@@ -5,11 +5,14 @@ import (
 	"fmt"
 	pkg "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
+	"github.com/linuxsuren/ks/kubectl-plugin/component"
+	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
@@ -29,6 +32,7 @@ See also https://github.com/kubesphere/kubesphere`,
 	var config *rest.Config
 	var err error
 	var client dynamic.Interface
+	var clientSet *kubernetes.Clientset
 
 	if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
 		panic(err)
@@ -39,11 +43,17 @@ See also https://github.com/kubesphere/kubesphere`,
 		return
 	}
 
+	if clientSet, err = kubernetes.NewForConfig(config); err != nil {
+		panic(err)
+		return
+	}
+
 	cmd.AddCommand(NewUserCmd(client),
 		NewPipelineCmd(client),
 		NewUpdateCmd(client),
 		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
-		pkg.NewCompletionCmd(cmd))
+		pkg.NewCompletionCmd(cmd),
+		component.NewComponentCmd(client, clientSet))
 	return
 }
 
@@ -56,7 +66,7 @@ func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			name := args[0]
 
-			_, err = client.Resource(GetUserSchema()).Patch(context.TODO(),
+			_, err = client.Resource(kstype.GetUserSchema()).Patch(context.TODO(),
 				name,
 				types.MergePatchType,
 				[]byte(fmt.Sprintf(`{"spec":{"password":"%s"},"metadata":{"annotations":null}}`, name)),

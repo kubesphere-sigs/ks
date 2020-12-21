@@ -1,4 +1,4 @@
-package main
+package types
 
 import "k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -34,5 +34,14 @@ func GetDeploySchema() schema.GroupVersionResource {
 		Group:    "apps",
 		Version:  "v1",
 		Resource: "deployments",
+	}
+}
+
+// GetClusterConfiguration returns the schema of ClusterConfiguration
+func GetClusterConfiguration() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "installer.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "clusterconfigurations",
 	}
 }
