@@ -6,22 +6,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
+	"io"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"os/signal"
-	"sigs.k8s.io/yaml"
+	"strconv"
 	"strings"
 	"time"
 )
 
 // NewComponentCmd returns a command to manage components of KubeSphere
-func NewComponentCmd(client dynamic.Interface) (cmd *cobra.Command) {
+func NewComponentCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "component",
 		Aliases: []string{"com"},
@@ -32,16 +37,17 @@ func NewComponentCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		NewComponentEditCmd(client),
 		NewComponentResetCmd(client),
 		NewComponentWatchCmd(client),
-		NewComponentLogCmd(client))
+		NewComponentLogCmd(client, clientset))
 	return
 }
 
 // Option is the common option for component command
 type Option struct {
-	Name    string
-	Release bool
-	Tag     string
-	Client  dynamic.Interface
+	Name      string
+	Release   bool
+	Tag       string
+	Client    dynamic.Interface
+	Clientset *kubernetes.Clientset
 }
 
 // ResetOption is the option for component reset command
@@ -67,14 +73,67 @@ type WatchOption struct {
 	PrivateAsLocal   bool
 }
 
+// EnableOption is the option for component enable command
+type EnableOption struct {
+	Option
+
+	Edit   bool
+	Toggle bool
+}
+
 // NewComponentEnableCmd returns a command to enable (or disable) a component by name
 func NewComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	cmd = &cobra.Command{
-		Use: "enable",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("not supported yet")
-			return nil
+	opt := &EnableOption{
+		Option: Option{
+			Client: client,
 		},
+	}
+	cmd = &cobra.Command{
+		Use:     "enable",
+		Short:   "Enable or disable the specific KubeSphere component",
+		PreRunE: opt.enablePreRunE,
+		RunE:    opt.enableRunE,
+	}
+
+	flags := cmd.Flags()
+	flags.BoolVarP(&opt.Edit, "edit", "e", false,
+		"Indicate if you want to edit it instead of enable/disable a specified one. This flag will make others not work.")
+	flags.BoolVarP(&opt.Toggle, "toggle", "t", false,
+		"Indicate if you want to disable a component")
+	flags.StringVarP(&opt.Name, "name", "n", "",
+		"The name of target component which you want to enable/disable.")
+	return
+}
+
+func (o *EnableOption) enablePreRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Edit {
+		return
+	}
+
+	return o.componentNameCheck(cmd, args)
+}
+
+func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Edit {
+		err = common.UpdateWithEditor(kstypes.GetClusterConfiguration(), "kubesphere-system", "ks-installer", o.Client)
+	} else {
+		enabled := strconv.FormatBool(!o.Toggle)
+		ns, name := "kubesphere-system", "ks-installer"
+		var patchTarget string
+		switch o.Name {
+		case "devops", "alerting", "auditing", "events", "logging", "metrics_server", "networkpolicy", "notification", "openpitrix", "servicemesh":
+			patchTarget = o.Name
+		default:
+			err = fmt.Errorf("not support [%s] yet", o.Name)
+			return
+		}
+
+		patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s/enabled", "value": %s}]`, patchTarget, enabled)
+		ctx := context.TODO()
+		_, err = o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace(ns).Patch(ctx,
+			name, types.JSONPatchType,
+			[]byte(patch),
+			metav1.PatchOptions{})
 	}
 	return
 }
@@ -265,6 +324,9 @@ func (o *Option) getNsAndName(component string) (ns, name string) {
 		name = "ks-controller-manager"
 	case "console":
 		name = "ks-console"
+	case "jenkins":
+		name = "ks-jenkins"
+		ns = "kubesphere-devops-system"
 	}
 	return
 }
@@ -305,16 +367,105 @@ func (o *Option) updateDeploy(ns, name, image, tag string) (err error) {
 	return
 }
 
+// LogOption is the option for component log command
+type LogOption struct {
+	Option
+
+	Follow bool
+	Tail   int64
+}
+
 // NewComponentLogCmd returns a command to enable (or disable) a component by name
-func NewComponentLogCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	cmd = &cobra.Command{
-		Use: "log",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("not supported yet")
-			return nil
+func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
+	opt := &LogOption{
+		Option: Option{
+			Clientset: clientset,
+			Client:    client,
 		},
 	}
+	cmd = &cobra.Command{
+		Use:     "log",
+		Short:   "output the log of KubeSphere component",
+		PreRunE: opt.componentNameCheck,
+		RunE:    opt.logRunE,
+	}
+
+	flags := cmd.Flags()
+	flags.StringVarP(&opt.Name, "name", "n", "",
+		"The name of target component which you want to reset.")
+	flags.BoolVarP(&opt.Follow, "follow", "f", true,
+		"Specify if the logs should be streamed.")
+	flags.Int64VarP(&opt.Tail, "tail", "", 50,
+		`Lines of recent log file to display.`)
 	return
+}
+
+func (o *LogOption) logRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Clientset == nil {
+		err = fmt.Errorf("kubernetes clientset is nil")
+		return
+	}
+
+	ctx := context.TODO()
+	ns, name := o.getNsAndName(o.Name)
+
+	var data []byte
+	buf := bytes.NewBuffer(data)
+	var rawPip *unstructured.Unstructured
+	deploy := &simpleDeploy{}
+	if rawPip, err = o.Client.Resource(kstypes.GetDeploySchema()).Namespace(ns).Get(ctx, name, metav1.GetOptions{}); err == nil {
+		enc := json.NewEncoder(buf)
+		enc.SetIndent("", "    ")
+		if err = enc.Encode(rawPip); err != nil {
+			return
+		}
+
+		cmd.Println(buf)
+		if err = json.Unmarshal(buf.Bytes(), deploy); err != nil {
+			return
+		}
+	}
+
+	var podList *v1.PodList
+	var podName string
+	if podList, err = o.Clientset.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(deploy.Spec.Selector.MatchLabels).String(),
+	}); err == nil {
+		if len(podList.Items) > 0 {
+			podName = podList.Items[0].Name
+		}
+	} else {
+		return
+	}
+
+	if podName == "" {
+		err = fmt.Errorf("cannot found the pod with deployment '%s'", name)
+		return
+	}
+
+	if len(deploy.Spec.Selector.MatchLabels) > 0 {
+		req := o.Clientset.CoreV1().Pods(ns).GetLogs(podName, &v1.PodLogOptions{
+			Follow:    o.Follow,
+			TailLines: &o.Tail,
+		})
+		var podLogs io.ReadCloser
+		if podLogs, err = req.Stream(context.TODO()); err == nil {
+			defer func() {
+				_ = podLogs.Close()
+			}()
+
+			_, err = io.Copy(cmd.OutOrStdout(), podLogs)
+		}
+	}
+	return
+}
+
+type simpleDeploy struct {
+	Spec struct {
+		Selector struct {
+			MatchLabels map[string]string `json:"matchLabels"`
+		} `json:"selector"`
+	} `json:"spec"`
 }
 
 // NewComponentEditCmd returns a command to enable (or disable) a component by name
@@ -325,7 +476,7 @@ func NewComponentEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "edit",
 		Short:   "edit the target component",
-		PreRunE: opt.editPreRunE,
+		PreRunE: opt.componentNameCheck,
 		RunE:    opt.editRunE,
 	}
 
@@ -335,7 +486,7 @@ func NewComponentEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	return
 }
 
-func (o *Option) editPreRunE(cmd *cobra.Command, args []string) (err error) {
+func (o *Option) componentNameCheck(cmd *cobra.Command, args []string) (err error) {
 	if len(args) > 0 {
 		o.Name = args[0]
 	}
@@ -347,45 +498,9 @@ func (o *Option) editPreRunE(cmd *cobra.Command, args []string) (err error) {
 }
 
 func (o *Option) editRunE(cmd *cobra.Command, args []string) (err error) {
-	var rawPip *unstructured.Unstructured
-	var data []byte
-
-	ctx := context.TODO()
 	ns, name := o.getNsAndName(o.Name)
 	resource := o.getResourceType(o.Name)
 
-	buf := bytes.NewBuffer(data)
-	if rawPip, err = o.Client.Resource(resource).Namespace(ns).Get(ctx, name, metav1.GetOptions{}); err == nil {
-		enc := json.NewEncoder(buf)
-		enc.SetIndent("", "    ")
-		if err = enc.Encode(rawPip); err != nil {
-			return
-		}
-	} else {
-		err = fmt.Errorf("cannot get component, error: %#v", err)
-		return
-	}
-
-	var yamlData []byte
-	if yamlData, err = yaml.JSONToYAML(buf.Bytes()); err != nil {
-		return
-	}
-
-	var fileName = "*.yaml"
-	var content = string(yamlData)
-
-	prompt := &survey.Editor{
-		Message:       fmt.Sprintf("Edit component %s/%s", ns, name),
-		FileName:      fileName,
-		Default:       string(yamlData),
-		HideDefault:   true,
-		AppendDefault: true,
-	}
-
-	err = survey.AskOne(prompt, &content, survey.WithStdio(os.Stdin, os.Stdout, os.Stderr))
-
-	if err = yaml.Unmarshal([]byte(content), rawPip); err == nil {
-		_, err = o.Client.Resource(resource).Namespace(ns).Update(context.TODO(), rawPip, metav1.UpdateOptions{})
-	}
+	err = common.UpdateWithEditor(resource, ns, name, o.Client)
 	return
 }

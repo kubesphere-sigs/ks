@@ -41,12 +41,13 @@ func NewUpdateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 
 	cmd = &cobra.Command{
-		Use:     "update",
-		Short:   "Update images of ks-apiserver, ks-controller-manager, ks-console",
-		Aliases: []string{"up"},
-		PreRun:  opt.preRun,
-		Args:    opt.args,
-		RunE:    opt.RunE,
+		Use:        "update",
+		Short:      "Update images of ks-apiserver, ks-controller-manager, ks-console",
+		Aliases:    []string{"up"},
+		Deprecated: "This command will be removed after v0.1.0. Please use kubectl ks component xxx instead.",
+		PreRun:     opt.preRun,
+		Args:       opt.args,
+		RunE:       opt.RunE,
 	}
 
 	flags := cmd.Flags()

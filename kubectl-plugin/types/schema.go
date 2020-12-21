@@ -36,3 +36,12 @@ func GetDeploySchema() schema.GroupVersionResource {
 		Resource: "deployments",
 	}
 }
+
+// GetClusterConfiguration returns the schema of ClusterConfiguration
+func GetClusterConfiguration() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "installer.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "clusterconfigurations",
+	}
+}

@@ -20,6 +20,7 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "pipeline",
 		Aliases: []string{"pip"},
+		Short:   "Manage the Pipeline of KubeSphere DevOps",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var pips []string
 			if _, pips, err = getPipelines(client, args); err == nil {
@@ -46,7 +47,8 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	ctx := context.TODO()
 	cmd = &cobra.Command{
-		Use: "view",
+		Use:   "view",
+		Short: "Output the YAML format of a Pipeline",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var pips []string
 			var ns string
@@ -85,6 +87,7 @@ func NewDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "delete",
 		Aliases: []string{"del", "remove", "rm"},
+		Short:   "Delete a specific Pipeline of KubeSphere DevOps",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var pips []string
 			var ns string
@@ -108,7 +111,7 @@ func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "edit",
 		Aliases: []string{"e"},
-		Short:   "edit the target pipeline",
+		Short:   "Edit the target pipeline",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var pips []string
 			var ns string
