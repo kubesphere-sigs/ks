@@ -5,6 +5,8 @@ import (
 	"fmt"
 	pkg "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
+	"github.com/linuxsuren/ks/kubectl-plugin/component"
+	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,7 +45,8 @@ See also https://github.com/kubesphere/kubesphere`,
 		NewPipelineCmd(client),
 		NewUpdateCmd(client),
 		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
-		pkg.NewCompletionCmd(cmd))
+		pkg.NewCompletionCmd(cmd),
+		component.NewComponentCmd(client))
 	return
 }
 
@@ -56,7 +59,7 @@ func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			name := args[0]
 
-			_, err = client.Resource(GetUserSchema()).Patch(context.TODO(),
+			_, err = client.Resource(kstype.GetUserSchema()).Patch(context.TODO(),
 				name,
 				types.MergePatchType,
 				[]byte(fmt.Sprintf(`{"spec":{"password":"%s"},"metadata":{"annotations":null}}`, name)),

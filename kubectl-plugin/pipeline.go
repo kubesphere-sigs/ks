@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -54,7 +55,7 @@ func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
 					var rawPip *unstructured.Unstructured
 					var data []byte
 					buf := bytes.NewBuffer(data)
-					if rawPip, err = client.Resource(GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
+					if rawPip, err = client.Resource(types.GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
 						enc := json.NewEncoder(buf)
 						enc.SetIndent("", "    ")
 						if err = enc.Encode(rawPip); err != nil {
@@ -90,7 +91,7 @@ func NewDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 			if ns, pips, err = getPipelinesWithConfirm(client, args); err == nil {
 				for _, pip := range pips {
 					fmt.Println(pip)
-					if err = client.Resource(GetPipelineSchema()).Namespace(ns).Delete(context.TODO(), pip, metav1.DeleteOptions{}); err != nil {
+					if err = client.Resource(types.GetPipelineSchema()).Namespace(ns).Delete(context.TODO(), pip, metav1.DeleteOptions{}); err != nil {
 						break
 					}
 				}
@@ -107,6 +108,7 @@ func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "edit",
 		Aliases: []string{"e"},
+		Short:   "edit the target pipeline",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var pips []string
 			var ns string
@@ -116,7 +118,7 @@ func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 					var data []byte
 					buf := bytes.NewBuffer(data)
 					cmd.Printf("get pipeline %s/%s\n", ns, pip)
-					if rawPip, err = client.Resource(GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
+					if rawPip, err = client.Resource(types.GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
 						enc := json.NewEncoder(buf)
 						enc.SetIndent("", "    ")
 						if err = enc.Encode(rawPip); err != nil {
@@ -146,7 +148,7 @@ func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 					err = survey.AskOne(prompt, &content, survey.WithStdio(os.Stdin, os.Stdout, os.Stderr))
 
 					if err = yaml.Unmarshal([]byte(content), rawPip); err == nil {
-						_, err = client.Resource(GetPipelineSchema()).Namespace(ns).Update(context.TODO(), rawPip, metav1.UpdateOptions{})
+						_, err = client.Resource(types.GetPipelineSchema()).Namespace(ns).Update(context.TODO(), rawPip, metav1.UpdateOptions{})
 					}
 				}
 			}
@@ -183,7 +185,7 @@ func getPipelines(client dynamic.Interface, args []string) (ns string, pips []st
 	}
 
 	var list *unstructured.UnstructuredList
-	if list, err = client.Resource(GetPipelineSchema()).Namespace(ns).List(context.TODO(), metav1.ListOptions{}); err == nil {
+	if list, err = client.Resource(types.GetPipelineSchema()).Namespace(ns).List(context.TODO(), metav1.ListOptions{}); err == nil {
 		for _, item := range list.Items {
 			pips = append(pips, item.GetName())
 		}
@@ -213,7 +215,7 @@ func getNamespace(client dynamic.Interface, args []string) (ns string, err error
 }
 
 func getAllNamespace(client dynamic.Interface) (nsList []string) {
-	if list, err := client.Resource(GetNamespaceSchema()).List(context.TODO(), metav1.ListOptions{
+	if list, err := client.Resource(types.GetNamespaceSchema()).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kubesphere.io/devopsproject",
 	}); err == nil {
 		nsList = make([]string, len(list.Items))
