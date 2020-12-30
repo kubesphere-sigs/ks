@@ -10,7 +10,11 @@ build: pre-build
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
 
+pre-build: export GOPROXY=https://gocenter.io
 pre-build: fmt lint mod-tidy
+
+tools:
+	go get -u golang.org/x/lint/golint
 
 mod-tidy:
 	go mod tidy
@@ -19,7 +23,7 @@ fmt:
 	go fmt ./...
 
 lint:
-	golint ./...
+	~/go/bin/golint -set_exit_status ./...
 
 copy: build
 	sudo cp bin/ks /usr/local/bin/ks
