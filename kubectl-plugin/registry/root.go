@@ -29,9 +29,8 @@ func NewRegistryCmd(client dynamic.Interface) (cmd *cobra.Command) {
 				if _, err = client.Resource(types.GetDeploySchema()).Namespace("default").Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 					err = fmt.Errorf("failed when create deploy, %#v", err)
 					return
-				} else {
-					cmd.Println("registry deploy installed")
 				}
+				cmd.Println("registry deploy installed")
 			}
 
 			obj = &unstructured.Unstructured{}
