@@ -20,24 +20,27 @@ func NewRegistryCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Aliases: []string{"reg"},
 		Short:   "start a registry locally",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			client.Resource(types.GetDeploySchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
+			client.Resource(types.GetServiceSchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
+
 			obj := &unstructured.Unstructured{}
 			content := getRegistryDeploy()
-
-			client.Resource(types.GetDeploySchema()).Namespace("kubesphere-system").Delete(ctx, "registry", metav1.DeleteOptions{})
-			client.Resource(types.GetServiceSchema()).Namespace("kubesphere-system").Delete(ctx, "registry", metav1.DeleteOptions{})
-
 			if err = yaml.Unmarshal([]byte(content), obj); err == nil {
-				if _, err = client.Resource(types.GetDeploySchema()).Namespace("kubesphere-system").Create(ctx, obj, metav1.CreateOptions{}); err != nil {
+				if _, err = client.Resource(types.GetDeploySchema()).Namespace("default").Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 					err = fmt.Errorf("failed when create deploy, %#v", err)
 					return
+				} else {
+					cmd.Println("registry deploy installed")
 				}
 			}
 
+			obj = &unstructured.Unstructured{}
 			svcContent := getService()
 			if err = yaml.Unmarshal([]byte(svcContent), obj); err == nil {
-				fmt.Println(obj)
-				if _, err = client.Resource(types.GetServiceSchema()).Namespace("kubesphere-system").Create(ctx, obj, metav1.CreateOptions{}); err != nil {
+				if _, err = client.Resource(types.GetServiceSchema()).Namespace("default").Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 					err = fmt.Errorf("failed when create service, %#v", err)
+				} else {
+					cmd.Println("registry service installed")
 				}
 			}
 			return
@@ -52,11 +55,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: registry
-  namespace: kubesphere-system
 spec:
   ports:
   - name: registry
-    nodePort: 32000
+    nodePort: 32678
     port: 5000
     protocol: TCP
     targetPort: 5000
@@ -72,7 +74,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: kubesphere-system
 spec:
   replicas: 1
   selector:
