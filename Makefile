@@ -10,9 +10,10 @@ build: pre-build
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
 
-pre-build: export GOPROXY=https://gocenter.io
+pre-build: export GOPROXY=https://goproxy.io
 pre-build: fmt lint mod-tidy
 
+tools:  export GOPROXY=https://goproxy.io
 tools:
 	go get -u golang.org/x/lint/golint
 
