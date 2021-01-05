@@ -70,7 +70,7 @@ type WatchOption struct {
 	RegistryUsername string
 	RegistryPassword string
 	PrivateRegistry  string
-	PrivateAsLocal   bool
+	PrivateLocal     string
 }
 
 // EnableOption is the option for component enable command
@@ -168,8 +168,8 @@ func NewComponentWatchCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"supported list [docker, aliyun, qingcloud, private], we only support beijing area of aliyun")
 	flags.StringVarP(&opt.PrivateRegistry, "private-registry", "", "",
 		"a private registry, for example: docker run -d -p 5000:5000 --restart always --name registry registry:2 ")
-	flags.BoolVarP(&opt.PrivateAsLocal, "private-as-local", "", true,
-		"use 127.0.0.1 as the private registry host")
+	flags.StringVarP(&opt.PrivateLocal, "private-local", "", "127.0.0.1",
+		"The local address of registry")
 	return
 }
 
@@ -207,11 +207,13 @@ func (o *WatchOption) watchRunE(cmd *cobra.Command, args []string) (err error) {
 				currentDigest = digest
 
 				ctx := context.TODO()
-				_, err = o.Client.Resource(kstypes.GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
+				if _, err = o.Client.Resource(kstypes.GetDeploySchema()).Namespace("kubesphere-system").Patch(ctx,
 					o.WatchDeploy, types.JSONPatchType,
 					[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "%s"}]`,
 						o.getFullImagePath(fmt.Sprintf("%s:%s@%s", o.WatchImage, o.WatchTag, digest)))),
-					metav1.PatchOptions{})
+					metav1.PatchOptions{}); err != nil {
+					cmd.PrintErrln(err)
+				}
 			}
 		case sig := <-sigChan:
 			fmt.Println(sig)
@@ -232,11 +234,8 @@ func (o *WatchOption) getFullImagePath(image string) string {
 	case "qingcloud":
 		return fmt.Sprintf("dockerhub.qingcloud.com/%s", image)
 	case "private":
-		if o.PrivateAsLocal {
-			regAndPort := strings.Split(o.PrivateRegistry, ":")
-			return fmt.Sprintf("127.0.0.1:%s/%s", regAndPort[1], image)
-		}
-		return fmt.Sprintf("%s/%s", o.PrivateRegistry, image)
+		regAndPort := strings.Split(o.PrivateRegistry, ":")
+		return fmt.Sprintf("%s:%s/%s", o.PrivateLocal, regAndPort[1], image)
 	}
 }
 

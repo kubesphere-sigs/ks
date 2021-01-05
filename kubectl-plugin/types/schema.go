@@ -45,3 +45,11 @@ func GetClusterConfiguration() schema.GroupVersionResource {
 		Resource: "clusterconfigurations",
 	}
 }
+
+// GetServiceSchema returns the schema of service
+func GetServiceSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "services",
+	}
+}

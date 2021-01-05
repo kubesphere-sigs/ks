@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: kubesphere-system
+spec:
+  ports:
+  - name: registry
+    nodePort: 32000
+    port: 5000
+    protocol: TCP
+    targetPort: 32000
+  selector:
+    app: registry
+  type: NodePort

@@ -6,9 +6,11 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 
 build: pre-build
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
+	upx bin/ks
 
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
+	upx bin/kubectl-ks
 
 pre-build: export GOPROXY=https://goproxy.io
 pre-build: fmt lint mod-tidy
