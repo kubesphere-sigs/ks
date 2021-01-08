@@ -379,6 +379,8 @@ func (o *Option) getNsAndName(component string) (ns, name string) {
 		name = "ks-controller-manager"
 	case "console":
 		name = "ks-console"
+	case "installer":
+		name = "ks-installer"
 	case "jenkins":
 		name = "ks-jenkins"
 		ns = "kubesphere-devops-system"
@@ -440,7 +442,7 @@ func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientse
 	}
 	cmd = &cobra.Command{
 		Use:     "log",
-		Short:   "output the log of KubeSphere component",
+		Short:   "Output the log of KubeSphere component",
 		PreRunE: opt.componentNameCheck,
 		RunE:    opt.logRunE,
 	}
@@ -462,7 +464,11 @@ func (o *LogOption) logRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	ctx := context.TODO()
-	ns, name := o.getNsAndName(o.Name)
+	var ns, name string
+	if ns, name = o.getNsAndName(o.Name); name == "" {
+		err = fmt.Errorf("not supported yet: %s", o.Name)
+		return
+	}
 
 	var data []byte
 	buf := bytes.NewBuffer(data)

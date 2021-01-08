@@ -2,13 +2,13 @@ package auth
 
 import "gopkg.in/yaml.v3"
 
-func updateWithStr(yamlf, name, target string) string {
+func updateAuthentication(yamlf, name, target string) string {
 	targetobj := make(map[string]interface{}, 0)
 	yaml.Unmarshal([]byte(target), targetobj)
-	return update(yamlf, name, targetobj)
+	return updateAuthWithObj(yamlf, name, targetobj)
 }
 
-func update(yamlf, name string, target map[string]interface{}) string {
+func updateAuthWithObj(yamlf, name string, target map[string]interface{}) string {
 	mapData := make(map[string]interface{})
 	if err := yaml.Unmarshal([]byte(yamlf), mapData); err == nil {
 		var obj interface{}
@@ -18,6 +18,16 @@ func update(yamlf, name string, target map[string]interface{}) string {
 			mapObj = obj.(map[string]interface{})
 		} else {
 			return ""
+		}
+
+		if obj, ok = mapObj["oauthOptions"]; ok {
+			mapObj = obj.(map[string]interface{})
+		} else {
+			oauthOptions := make(map[string]interface{}, 3)
+			oauthOptions["accessTokenMaxAge"] = "1h"
+			oauthOptions["accessTokenInactivityTimeout"] = "30m"
+			mapObj["oauthOptions"] = oauthOptions
+			mapObj = oauthOptions
 		}
 
 		targetArray := make([]interface{}, 0)

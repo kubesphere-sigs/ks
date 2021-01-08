@@ -2,9 +2,9 @@ package auth
 
 import "fmt"
 
-func getGitHubAuth(opt authOption) string {
+func getGiteeAuth(opt authOption) string {
 	return fmt.Sprintf(`
-name: GitHub
+name: Gitee
 type: GitHubIdentityProvider
 mappingMethod: auto
 provider:
@@ -12,9 +12,9 @@ provider:
   clientSecret: %s
   redirectURL: "%s"
   endpoint:
-    authURL: 'https://github.com/login/oauth/authorize'
-    tokenURL: 'https://github.com/login/oauth/access_token'
+    authURL: 'https://gitee.com/oauth/authorize'
+    tokenURL: 'https://gitee.com/oauth/token'
   scopes:
-  - user
+  - user_info
 `, opt.ClientID, opt.ClientSecret, opt.RedirectURL)
 }

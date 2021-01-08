@@ -7,7 +7,7 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	result := updateWithStr(yamlFile, "GitHub", e)
+	result := updateAuthentication(yamlFile, "GitHub", e)
 
 	expectedMap := make(map[string]interface{}, 0)
 	var expectedData []byte
@@ -19,7 +19,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateWtihHasAuth(t *testing.T) {
-	result := updateWithStr(hasAuthYaml, "GitHub", e)
+	result := updateAuthentication(hasAuthYaml, "GitHub", e)
 
 	expectedMap := make(map[string]interface{}, 0)
 	var expectedData []byte

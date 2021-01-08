@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"strings"
 )
 
 // NewAuthCmd returns a command of auth
@@ -19,7 +20,13 @@ func NewAuthCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "auth",
 		PreRunE: opt.preRunE,
-		RunE:    opt.runE,
+		Example: `
+subjects:
+- apiGroup: users.iam.kubesphere.io
+  kind: Group
+  name: pre-registration
+`,
+		RunE: opt.runE,
 	}
 
 	flags := cmd.Flags()
@@ -46,7 +53,7 @@ func (o *authOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	switch o.Type {
-	case "GitHub", "Aliyun":
+	case "GitHub", "Aliyun", "Gitee":
 	default:
 		err = fmt.Errorf("not support auth type: %s", o.Type)
 	}
@@ -60,6 +67,8 @@ func (o *authOption) runE(cmd *cobra.Command, args []string) (err error) {
 		authConfig = getGitHubAuth(*o)
 	case "Aliyun":
 		authConfig = getAliyunAuth(*o)
+	case "Gitee":
+		authConfig = getGiteeAuth(*o)
 	}
 
 	var rawConfigMap *unstructured.Unstructured
@@ -67,7 +76,11 @@ func (o *authOption) runE(cmd *cobra.Command, args []string) (err error) {
 		Get(context.TODO(), "kubesphere-config", metav1.GetOptions{}); err == nil {
 		data := rawConfigMap.Object["data"]
 		dataMap := data.(map[string]interface{})
-		result := updateWithStr(dataMap["kubesphere.yaml"].(string), o.Type, authConfig)
+		result := updateAuthentication(dataMap["kubesphere.yaml"].(string), o.Type, authConfig)
+		if strings.TrimSpace(result) == "" {
+			err = fmt.Errorf("error happend when parse kubesphere-config")
+			return
+		}
 
 		rawConfigMap.Object["data"] = map[string]interface{}{
 			"kubesphere.yaml": result,
