@@ -19,6 +19,12 @@ func NewRegistryCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Use:     "registry",
 		Aliases: []string{"reg"},
 		Short:   "start a registry locally",
+		Example: `Before you get started, please sudo vim /etc/docker/daemon.json, then add the following config:
+	"insecure-registries": [
+		"139.198.3.176:32678"
+	],
+After that, please restart docker daemon via: systemctl restart docker
+`,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			client.Resource(types.GetDeploySchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
 			client.Resource(types.GetServiceSchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})

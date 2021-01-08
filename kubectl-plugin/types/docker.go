@@ -80,11 +80,13 @@ func (d *DockerClient) GetDigest(tag string) string {
 	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 
 	if rsp, err := client.Do(req); err == nil && rsp != nil {
-		if rsp.StatusCode != http.StatusOK {
-			fmt.Println(req)
-			if data, err := ioutil.ReadAll(rsp.Body); err == nil {
-				fmt.Println(string(data))
-			}
+		switch rsp.StatusCode {
+		case http.StatusNotFound:
+			fmt.Printf("cannot found image:'%s:%s' from '%s', api: '%s'\n", d.Image, tag, d.Registry, api)
+			//default:
+			//	if data, err := ioutil.ReadAll(rsp.Body); err == nil {
+			//		fmt.Println(string(data))
+			//	}
 		}
 		return rsp.Header.Get("Docker-Content-Digest")
 	}

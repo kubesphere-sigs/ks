@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strconv"
 	"strings"
@@ -146,9 +147,10 @@ func NewComponentWatchCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		},
 	}
 	cmd = &cobra.Command{
-		Use:   "watch",
-		Short: "Update images of ks-apiserver, ks-controller-manager, ks-console",
-		RunE:  opt.watchRunE,
+		Use:     "watch",
+		Short:   "Update images of ks-apiserver, ks-controller-manager, ks-console",
+		PreRunE: opt.watchPreRunE,
+		RunE:    opt.watchRunE,
 	}
 
 	flags := cmd.Flags()
@@ -184,7 +186,62 @@ func (o *WatchOption) getDigest(image, tag string) string {
 	return dClient.GetDigest(tag)
 }
 
+func (o *WatchOption) watchPreRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.PrivateRegistry == "" {
+		o.PrivateRegistry = os.Getenv("kS_PRIVATE_REG")
+	}
+
+	switch o.WatchDeploy {
+	case "api", "apiserver":
+		o.WatchDeploy = "ks-apiserver"
+		if o.WatchImage == "" {
+			o.WatchImage = "kubespheredev/ks-apiserver"
+		}
+	case "ctl", "ctrl", "controller":
+		o.WatchDeploy = "ks-controller"
+		if o.WatchImage == "" {
+			o.WatchImage = "ks-controller-manager"
+		}
+	case "console":
+		o.WatchDeploy = "ks-console"
+		if o.WatchImage == "" {
+			o.WatchImage = "kubespheredev/ks-console"
+		}
+	}
+
+	if o.WatchTag == "" {
+		if data, err := exec.Command("git", "branch", "--show-current").Output(); err == nil {
+			tag := strings.TrimSpace(string(data))
+			if tag == "master" {
+				tag = "latest"
+			}
+			o.WatchTag = strings.ReplaceAll(tag, "/", "-")
+		}
+	}
+
+	if o.PrivateRegistry == "" {
+		o.PrivateRegistry = os.Getenv("KS_REPO")
+	}
+
+	if local, ok := os.LookupEnv("KS_PRIVATE_LOCAL"); ok && o.PrivateLocal == "127.0.0.1" {
+		o.PrivateLocal = local
+	}
+
+	// check the necessary options
+	if o.Registry == "private" && o.PrivateRegistry == "" {
+		err = fmt.Errorf("--private-registry cannot be empty if you have --registry=private")
+		return
+	}
+	if o.WatchImage == "" {
+		err = fmt.Errorf("--watch-image cannot be empty")
+		return
+	}
+	return
+}
+
 func (o *WatchOption) watchRunE(cmd *cobra.Command, args []string) (err error) {
+	cmd.Println("start to watch", o.getFullImagePath(fmt.Sprintf("%s:%s", o.WatchImage, o.WatchTag)))
+
 	var currentDigest string
 	digestChain := make(chan string)
 	go func(digestChain chan<- string) {
@@ -215,12 +272,11 @@ func (o *WatchOption) watchRunE(cmd *cobra.Command, args []string) (err error) {
 					cmd.PrintErrln(err)
 				}
 			}
-		case sig := <-sigChan:
-			fmt.Println(sig)
+		case <-sigChan:
 			return
 		}
 	}
-	return nil
+	return
 }
 
 func (o *WatchOption) getFullImagePath(image string) string {
