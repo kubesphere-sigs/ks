@@ -53,3 +53,11 @@ func GetServiceSchema() schema.GroupVersionResource {
 		Resource: "services",
 	}
 }
+
+// GetConfigMapSchema returns the schema of ConfigMap
+func GetConfigMapSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "configmaps",
+	}
+}

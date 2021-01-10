@@ -60,7 +60,7 @@ Aliases:
 Available Commands:
   edit        edit the target component
   enable      Enable or disable the specific KubeSphere component
-  log         output the log of KubeSphere component
+  log         Output the log of KubeSphere component
   reset       reset the component by name
   watch       Update images of ks-apiserver, ks-controller-manager, ks-console
 ```

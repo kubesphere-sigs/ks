@@ -5,7 +5,9 @@ import (
 	"fmt"
 	pkg "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
+	"github.com/linuxsuren/ks/kubectl-plugin/auth"
 	"github.com/linuxsuren/ks/kubectl-plugin/component"
+	"github.com/linuxsuren/ks/kubectl-plugin/registry"
 	token2 "github.com/linuxsuren/ks/kubectl-plugin/token"
 	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
@@ -55,7 +57,9 @@ See also https://github.com/kubesphere/kubesphere`,
 		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
 		pkg.NewCompletionCmd(cmd),
 		component.NewComponentCmd(client, clientSet),
-		token2.NewTokenCmd(client, clientSet))
+		token2.NewTokenCmd(client, clientSet),
+		registry.NewRegistryCmd(client),
+		auth.NewAuthCmd(client))
 	return
 }
 
