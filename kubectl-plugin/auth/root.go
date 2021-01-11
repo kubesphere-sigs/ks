@@ -19,6 +19,7 @@ func NewAuthCmd(client dynamic.Interface) (cmd *cobra.Command) {
 
 	cmd = &cobra.Command{
 		Use:     "auth",
+		Short:   "Add addition auth configuration into kubesphere-config",
 		PreRunE: opt.preRunE,
 		Example: `
 subjects:
@@ -30,10 +31,14 @@ subjects:
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&opt.Type, "type", "t", "", "")
-	flags.StringVarP(&opt.ClientID, "client-id", "", "", "")
-	flags.StringVarP(&opt.ClientSecret, "client-secret", "", "", "")
-	flags.StringVarP(&opt.RedirectURL, "redirectURL", "", "", "")
+	flags.StringVarP(&opt.Type, "type", "t", "",
+		"The oAuth provider, supported: GitHub, Aliyun, Gitee")
+	flags.StringVarP(&opt.ClientID, "client-id", "", "",
+		"The client id which you can find it from the oAuth provider")
+	flags.StringVarP(&opt.ClientSecret, "client-secret", "", "",
+		"The client secret which you can find it from the oAuth provider")
+	flags.StringVarP(&opt.Host, "host", "", "",
+		"The host of KubeSphere")
 	return
 }
 
@@ -44,12 +49,17 @@ type authOption struct {
 
 	ClientID     string
 	ClientSecret string
-	RedirectURL  string
+	Host         string
 }
 
 func (o *authOption) preRunE(cmd *cobra.Command, args []string) (err error) {
-	if o.ClientID == "" || o.ClientSecret == "" || o.RedirectURL == "" {
-		return fmt.Errorf("ClientID, ClientSecret, RedirectURL cannot be empty")
+	if o.ClientID == "" || o.ClientSecret == "" || o.Host == "" {
+		return fmt.Errorf("ClientID, ClientSecret, Host cannot be empty")
+	}
+
+	// make sure the host has prefix http or https
+	if !strings.HasPrefix(o.Host, "http://") && !strings.HasPrefix(o.Host, "https://") {
+		o.Host = fmt.Sprintf("http://%s", o.Host)
 	}
 
 	switch o.Type {

@@ -10,11 +10,11 @@ mappingMethod: auto
 provider:
   clientID: %s
   clientSecret: %s
-  redirectURL: "%s"
   endpoint:
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
+  redirectURL: %s/auth/redirect
   scopes:
   - user
-`, opt.ClientID, opt.ClientSecret, opt.RedirectURL)
+`, opt.ClientID, opt.ClientSecret, opt.Host)
 }

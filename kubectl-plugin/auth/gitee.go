@@ -14,7 +14,8 @@ provider:
   endpoint:
     authURL: 'https://gitee.com/oauth/authorize'
     tokenURL: 'https://gitee.com/oauth/token'
+  redirectURL: %s/auth/redirect
   scopes:
   - user_info
-`, opt.ClientID, opt.ClientSecret, opt.RedirectURL)
+`, opt.ClientID, opt.ClientSecret, opt.Host)
 }

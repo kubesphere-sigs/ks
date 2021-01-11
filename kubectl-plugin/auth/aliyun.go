@@ -15,8 +15,8 @@ provider:
     userInfoUrl: "https://huedxurbjj.login.aliyunidaas.com/api/bff/v1.2/oauth2/userinfo"
     authURL: "https://huedxurbjj.login.aliyunidaas.com/oauth/authorize"
     tokenURL: "https://huedxurbjj.login.aliyunidaas.com/oauth/token"
-  redirectURL: "%s"
+  redirectURL: "%s/auth/redirect"
   scopes:
   - read
-`, opt.ClientID, opt.ClientSecret, opt.RedirectURL)
+`, opt.ClientID, opt.ClientSecret, opt.Host)
 }
