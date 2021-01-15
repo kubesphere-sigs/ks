@@ -1,4 +1,4 @@
-VERSION := dev-$(shell git describe --tags $(shell git rev-list --tags --max-count=1))
+VERSION := $(shell git describe --tags $(shell git rev-list --tags --max-count=1))-next
 COMMIT := $(shell git rev-parse --short HEAD)
 BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=$(VERSION) \
 	-X github.com/linuxsuren/cobra-extension/version.commit=$(COMMIT) \
@@ -11,6 +11,10 @@ build: pre-build
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
 	upx bin/kubectl-ks
+
+build-plugin-linux: pre-build
+	CGO_ENABLE=0 GOOS=linux GOARCH=amd64 go build ${BUILDFLAGS} -o bin/linux/kubectl-ks kubectl-plugin/*.go
+	upx bin/linux/kubectl-ks
 
 pre-build: export GOPROXY=https://goproxy.io
 pre-build: fmt lint mod-tidy
