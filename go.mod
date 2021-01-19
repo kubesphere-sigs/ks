@@ -3,7 +3,7 @@ module github.com/linuxsuren/ks
 go 1.15
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.2
+	github.com/AlecAivazis/survey/v2 v2.2.7
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.5
 	github.com/linuxsuren/go-cli-alias v0.0.4
