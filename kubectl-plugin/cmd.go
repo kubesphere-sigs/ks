@@ -9,6 +9,7 @@ import (
 	"github.com/linuxsuren/ks/kubectl-plugin/component"
 	"github.com/linuxsuren/ks/kubectl-plugin/registry"
 	token2 "github.com/linuxsuren/ks/kubectl-plugin/token"
+	"github.com/linuxsuren/ks/kubectl-plugin/tool"
 	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +60,8 @@ See also https://github.com/kubesphere/kubesphere`,
 		component.NewComponentCmd(client, clientSet),
 		token2.NewTokenCmd(client, clientSet),
 		registry.NewRegistryCmd(client),
-		auth.NewAuthCmd(client))
+		auth.NewAuthCmd(client),
+		tool.NewToolCmd())
 	return
 }
 
