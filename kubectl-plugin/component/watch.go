@@ -80,9 +80,9 @@ func (o *WatchOption) watchPreRunE(cmd *cobra.Command, args []string) (err error
 			o.WatchImage = "kubespheredev/ks-apiserver"
 		}
 	case "ctl", "ctrl", "controller":
-		o.WatchDeploy = "ks-controller"
+		o.WatchDeploy = "ks-controller-manager"
 		if o.WatchImage == "" {
-			o.WatchImage = "ks-controller-manager"
+			o.WatchImage = "kubespheredev/ks-controller-manager"
 		}
 	case "console":
 		o.WatchDeploy = "ks-console"
