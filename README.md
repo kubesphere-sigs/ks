@@ -10,6 +10,18 @@
 
 It's also [a plugin of kubectl](https://github.com/kubernetes-sigs/krew).
 
+# Get started
+
+Install it via: `brew install linuxsuren/linuxsuren/ks`
+
+Install it via [hd](https://github.com/linuxsuren/http-downloader):
+
+```
+hd get linuxsuren/ks/kubectl-ks -o ks.tar.gz --thread 10
+tar xzvf ks.tar.gz
+mv kubectl-ks /usr/local/bin/
+```
+
 # Features
 
 All features below work with [Kubesphere](https://github.com/kubsphere/kubesphere) instead of other concept.
