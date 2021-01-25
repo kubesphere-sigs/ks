@@ -17,9 +17,7 @@ Install it via: `brew install linuxsuren/linuxsuren/ks`
 Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
 ```
-hd get linuxsuren/ks/kubectl-ks -o ks.tar.gz --thread 10
-tar xzvf ks.tar.gz
-mv kubectl-ks /usr/local/bin/
+hd install -t 8 linuxsuren/ks/kubectl-ks
 ```
 
 # Features
