@@ -26,8 +26,8 @@ func NewRegistryCmd(client dynamic.Interface) (cmd *cobra.Command) {
 After that, please restart docker daemon via: systemctl restart docker
 `,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			client.Resource(types.GetDeploySchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
-			client.Resource(types.GetServiceSchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
+			_ = client.Resource(types.GetDeploySchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
+			_ = client.Resource(types.GetServiceSchema()).Namespace("default").Delete(ctx, "registry", metav1.DeleteOptions{})
 
 			obj := &unstructured.Unstructured{}
 			content := getRegistryDeploy()

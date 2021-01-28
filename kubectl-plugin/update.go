@@ -186,9 +186,9 @@ func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
 		imageOrg = "kubesphere"
 	}
 
-	o.updateDeploy("kubesphere-system", "ks-apiserver", fmt.Sprintf("%s/ks-apiserver", imageOrg), o.Tag)
-	o.updateDeploy("kubesphere-system", "ks-controller-manager", fmt.Sprintf("%s/ks-controller-manager", imageOrg), o.Tag)
-	o.updateDeploy("kubesphere-system", "ks-console", fmt.Sprintf("%s/ks-console", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-apiserver", fmt.Sprintf("%s/ks-apiserver", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-controller-manager", fmt.Sprintf("%s/ks-controller-manager", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-console", fmt.Sprintf("%s/ks-console", imageOrg), o.Tag)
 	return
 }
 
