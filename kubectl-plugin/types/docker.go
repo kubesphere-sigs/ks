@@ -15,6 +15,12 @@ type DockerClient struct {
 	PrivateRegistry string
 }
 
+// ImageDigest is the digest info of docker image
+type ImageDigest struct {
+	Digest string
+	Date   string
+}
+
 // DockerTags represents the docker tag list
 type DockerTags struct {
 	Name string
@@ -48,8 +54,8 @@ func (d *DockerClient) GetTags() (tags *DockerTags, err error) {
 	return
 }
 
-// GetDigest returns the digest of the specific image tag
-func (d *DockerClient) GetDigest(tag string) string {
+// GetDigestObj returns the digest object
+func (d *DockerClient) GetDigestObj(tag string) (digest ImageDigest, err error) {
 	client := http.Client{}
 
 	if tag == "" {
@@ -71,9 +77,8 @@ func (d *DockerClient) GetDigest(tag string) string {
 	}
 
 	var req *http.Request
-	var err error
 	if req, err = http.NewRequest(http.MethodGet, api, nil); err != nil {
-		return ""
+		return
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.Token))
@@ -83,12 +88,17 @@ func (d *DockerClient) GetDigest(tag string) string {
 		switch rsp.StatusCode {
 		case http.StatusNotFound:
 			fmt.Printf("cannot found image:'%s:%s' from '%s', api: '%s'\n", d.Image, tag, d.Registry, api)
-			//default:
-			//	if data, err := ioutil.ReadAll(rsp.Body); err == nil {
-			//		fmt.Println(string(data))
-			//	}
 		}
-		return rsp.Header.Get("Docker-Content-Digest")
+		digest.Digest = rsp.Header.Get("Docker-Content-Digest")
+		digest.Date = rsp.Header.Get("Date")
+	}
+	return
+}
+
+// GetDigest returns the digest of the specific image tag
+func (d *DockerClient) GetDigest(tag string) string {
+	if digest, err := d.GetDigestObj(tag); err == nil {
+		return digest.Digest
 	}
 	return ""
 }
