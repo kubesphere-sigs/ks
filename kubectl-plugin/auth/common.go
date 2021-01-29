@@ -4,7 +4,7 @@ import "gopkg.in/yaml.v3"
 
 func updateAuthentication(yamlf, name, target string) string {
 	targetobj := make(map[string]interface{}, 0)
-	yaml.Unmarshal([]byte(target), targetobj)
+	_ = yaml.Unmarshal([]byte(target), targetobj)
 	return updateAuthWithObj(yamlf, name, targetobj)
 }
 

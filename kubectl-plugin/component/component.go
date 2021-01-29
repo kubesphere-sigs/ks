@@ -48,6 +48,7 @@ type ResetOption struct {
 	Option
 
 	ResetAll bool
+	Nightly  string
 }
 
 // WatchOption is the option for component watch command
