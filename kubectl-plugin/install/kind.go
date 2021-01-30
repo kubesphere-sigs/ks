@@ -164,8 +164,7 @@ func pullAndLoadImage(image string) (err error) {
 }
 
 func writeConfigFile(filename string, portMapping map[string]string) {
-	tpl := template.New("config")
-	temp, err := tpl.Parse(`
+	kindTemplate, err := template.New("config").Parse(`
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -183,11 +182,12 @@ nodes:
     protocol: TCP
 {{- end }}
 `)
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println("failed to write kind config file", err)
+	}
 	f, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0600)
-	fmt.Println(portMapping)
-	if err := temp.Execute(f, portMapping); err != nil {
-		fmt.Println(err)
+	if err := kindTemplate.Execute(f, portMapping); err != nil {
+		fmt.Println("failed to render kind template", err)
 	}
 }
 
