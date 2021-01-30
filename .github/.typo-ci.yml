@@ -5,3 +5,5 @@ exclude_fiels:
   - ".github/**/*"
 excluded_words:
   - KubeSphere
+  - kubespheredev
+  - minio
