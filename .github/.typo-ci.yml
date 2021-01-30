@@ -1,0 +1,9 @@
+dictionaries:
+  - en
+  - en_GB
+exclude_fiels:
+  - ".github/**/*"
+excluded_words:
+  - KubeSphere
+  - kubespheredev
+  - minio

@@ -7,6 +7,7 @@ import (
 	extver "github.com/linuxsuren/cobra-extension/version"
 	"github.com/linuxsuren/ks/kubectl-plugin/auth"
 	"github.com/linuxsuren/ks/kubectl-plugin/component"
+	"github.com/linuxsuren/ks/kubectl-plugin/install"
 	"github.com/linuxsuren/ks/kubectl-plugin/registry"
 	token2 "github.com/linuxsuren/ks/kubectl-plugin/token"
 	"github.com/linuxsuren/ks/kubectl-plugin/tool"
@@ -39,17 +40,15 @@ See also https://github.com/kubesphere/kubesphere`,
 	var clientSet *kubernetes.Clientset
 
 	if config, err = clientcmd.BuildConfigFromFlags("", kubeconfig); err != nil {
-		panic(err)
-		return
-	}
-	if client, err = dynamic.NewForConfig(config); err != nil {
-		panic(err)
-		return
-	}
+		fmt.Println(err)
+	} else {
+		if client, err = dynamic.NewForConfig(config); err != nil {
+			fmt.Println(err)
+		}
 
-	if clientSet, err = kubernetes.NewForConfig(config); err != nil {
-		panic(err)
-		return
+		if clientSet, err = kubernetes.NewForConfig(config); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	cmd.AddCommand(NewUserCmd(client),
@@ -61,7 +60,8 @@ See also https://github.com/kubesphere/kubesphere`,
 		token2.NewTokenCmd(client, clientSet),
 		registry.NewRegistryCmd(client),
 		auth.NewAuthCmd(client),
-		tool.NewToolCmd())
+		tool.NewToolCmd(),
+		install.NewInstallCmd())
 	return
 }
 
