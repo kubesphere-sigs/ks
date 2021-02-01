@@ -60,7 +60,7 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	if err = pullAndLoadImage(fmt.Sprintf("kubespheredev/ks-console:%s", tag)); err != nil {
 		return
 	}
-	if err = execCommand("kubectl", "ks", "reset", "com", "--nightly", "latest", "-a"); err != nil {
+	if err = execCommand("kubectl", "ks", "com", "reset", "--nightly", "latest", "-a"); err != nil {
 		return
 	}
 	return
