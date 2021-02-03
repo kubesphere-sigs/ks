@@ -92,7 +92,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	fmt.Println(`kubectl -n kubesphere-system patch deploy ks-installer -type=json -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"IfNotPresent"}]'`)
+	fmt.Println(`kubectl -n kubesphere-system patch deploy ks-installer --type=json -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"IfNotPresent"}]'`)
 
 	for _, com := range o.components {
 		switch com {
