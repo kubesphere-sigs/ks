@@ -76,11 +76,13 @@ brews:
       name: homebrew-linuxsuren
     folder: Formula
     homepage: "https://github.com/linuxsuren/ks"
-    description: ks is a kubectl wrapper for Kubesphere
+    description: ks is a tool which makes it be easy to work with KubeSphere.
     dependencies:
       - name: vim
         type: optional
       - name: bash-completion
+        type: optional
+      - name: kubectl
         type: optional
     test: |
       version_output = shell_output("#{bin}/ks version")
@@ -90,10 +92,10 @@ brews:
 
       prefix.install_metafiles
 nfpms:
-  - file_name_template: "{{ .Binary }}-{{.Os}}-{{.Arch}}"
+  - file_name_template: "ks-{{.Os}}-{{.Arch}}"
     id: "ks"
     homepage: https://github.com/linuxsuren/ks
-    description: ks is a tiny tool for Chinese developers.
+    description: ks is a tool which makes it be easy to work with KubeSphere.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
     vendor: Jenkins
@@ -103,7 +105,8 @@ nfpms:
     recommends:
       - bash-completion
       - vim
-    bindir: /usr/bin
+      - kubectl
+    bindir: /usr/local/bin
     replacements:
       amd64: 64bit
       arm64: arm64
