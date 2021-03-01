@@ -6,7 +6,7 @@
 
 # ks
 
-`ks` is a tool which makes it be easy to work with [Kubesphere](https://github.com/kubsphere/kubesphere).
+`ks` is a tool which makes it be easy to work with [KubeSphere](https://github.com/kubsphere/kubesphere).
 
 It's also [a plugin of kubectl](https://github.com/kubernetes-sigs/krew).
 
@@ -22,13 +22,13 @@ hd install -t 8 linuxsuren/ks/kubectl-ks
 
 # Features
 
-All features below work with [Kubesphere](https://github.com/kubsphere/kubesphere) instead of other concept.
+All features below work with [KubeSphere](https://github.com/kubsphere/kubesphere) instead of other concept.
 
 * Pipeline management
   * Edit a Pipeline without give the fullname (namespace/name)
 * User Management
 * Component Management
-  * Enable (disable) a component
+  * Enable (disable) components
   * Update a component manually or automatically
   * Output the logs of a KubeSphere component
   * Edit a KubeSphere component

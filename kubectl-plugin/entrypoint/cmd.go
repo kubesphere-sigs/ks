@@ -1,4 +1,4 @@
-package main
+package entrypoint
 
 import (
 	"context"
@@ -8,10 +8,12 @@ import (
 	"github.com/linuxsuren/ks/kubectl-plugin/auth"
 	"github.com/linuxsuren/ks/kubectl-plugin/component"
 	"github.com/linuxsuren/ks/kubectl-plugin/install"
+	"github.com/linuxsuren/ks/kubectl-plugin/pipeline"
 	"github.com/linuxsuren/ks/kubectl-plugin/registry"
 	token2 "github.com/linuxsuren/ks/kubectl-plugin/token"
 	"github.com/linuxsuren/ks/kubectl-plugin/tool"
 	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/linuxsuren/ks/kubectl-plugin/update"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,8 +54,8 @@ See also https://github.com/kubesphere/kubesphere`,
 	}
 
 	cmd.AddCommand(NewUserCmd(client),
-		NewPipelineCmd(client),
-		NewUpdateCmd(client),
+		pipeline.NewPipelineCmd(client),
+		update.NewUpdateCmd(client),
 		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
 		pkg.NewCompletionCmd(cmd),
 		component.NewComponentCmd(client, clientSet),
