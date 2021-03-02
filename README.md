@@ -25,6 +25,7 @@ hd install -t 8 linuxsuren/ks/kubectl-ks
 All features below work with [KubeSphere](https://github.com/kubsphere/kubesphere) instead of other concept.
 
 * Pipeline management
+  * Create a Pipeline with java, go template
   * Edit a Pipeline without give the fullname (namespace/name)
 * User Management
 * Component Management
@@ -45,6 +46,7 @@ Aliases:
   pipeline, pip
 
 Available Commands:
+  create      Create a Pipeline in the KubeSphere cluster
   delete      Delete a specific Pipeline of KubeSphere DevOps
   edit        Edit the target pipeline
   view        Output the YAML format of a Pipeline
