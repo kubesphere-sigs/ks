@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
+	"html"
 	"html/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -148,9 +149,7 @@ func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured)
 func (o *pipelineCreateOption) createPipelineObj() (rawPip *unstructured.Unstructured, err error) {
 	var tpl *template.Template
 	funcMap := sprig.FuncMap()
-	funcMap["raw"] = func(text string) template.HTML {
-		return template.HTML(text)
-	}
+	funcMap["raw"] = html.EscapeString
 	if tpl, err = template.New("pipeline").Funcs(funcMap).Parse(pipelineTemplate); err != nil {
 		err = fmt.Errorf("failed to parse Pipeline template, %v", err)
 		return
