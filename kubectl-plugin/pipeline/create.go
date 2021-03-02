@@ -114,10 +114,10 @@ func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured)
 	}
 
 	found := false
-	for _, item := range list.Items {
-		if item.GetGenerateName() == o.Project {
+	for i := range list.Items {
+		if list.Items[i].GetGenerateName() == o.Project {
 			found = true
-			project = &item
+			project = &list.Items[i]
 			break
 		}
 	}
