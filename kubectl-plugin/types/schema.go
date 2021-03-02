@@ -20,6 +20,24 @@ func GetPipelineSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetDevOpsProjectSchema returns the schema of DevOpsProject
+func GetDevOpsProjectSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha3",
+		Resource: "devopsprojects",
+	}
+}
+
+// GetWorkspaceSchema returns the schema of workspace
+func GetWorkspaceSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "tenant.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "workspaces",
+	}
+}
+
 // GetNamespaceSchema returns the schema of namespaces
 func GetNamespaceSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
