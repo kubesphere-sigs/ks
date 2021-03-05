@@ -3,6 +3,7 @@ package component
 import (
 	"context"
 	"fmt"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,6 +55,9 @@ take value from environment 'KS_REPO' if you don't set it`)
 	flags.StringVarP(&opt.PrivateLocal, "private-local", "", "127.0.0.1",
 		`The local address of registry
 take value from environment 'KS_PRIVATE_LOCAL' if you don't set it`)
+
+	_ = cmd.RegisterFlagCompletionFunc("watch-deploy", common.ArrayCompletion("apiserver", "controller", "console"))
+	_ = cmd.RegisterFlagCompletionFunc("registry", common.ArrayCompletion("docker", " aliyun", "qingcloud", "private"))
 	return
 }
 

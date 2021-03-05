@@ -46,6 +46,15 @@ func GetNamespaceSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetPodSchema returns the schema of deploy
+func GetPodSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
+	}
+}
+
 // GetDeploySchema returns the schema of deploy
 func GetDeploySchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{

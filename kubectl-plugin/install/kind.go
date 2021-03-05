@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 	"html/template"
 	"io"
@@ -14,9 +15,10 @@ import (
 func newInstallWithKindCmd() (cmd *cobra.Command) {
 	opt := &kindOption{}
 	cmd = &cobra.Command{
-		Use:   "kind",
-		Short: "install KubeSphere with kind",
-		RunE:  opt.runE,
+		Use:     "kind",
+		Short:   "install KubeSphere with kind",
+		Example: "ks install kind --components devops",
+		RunE:    opt.runE,
 	}
 
 	flags := cmd.Flags()
@@ -33,20 +35,35 @@ func newInstallWithKindCmd() (cmd *cobra.Command) {
 	flags.BoolVarP(&opt.Reset, "reset", "", false, "")
 	flags.StringVarP(&opt.Nightly, "nightly", "", "",
 		"Supported date format is '20200101', or you can use 'latest' which means yesterday")
+
+	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("devops"))
+	return
+}
+
+func getNightlyTag(date string) (dateStr, tag string) {
+	if date == "latest" {
+		dateStr = time.Now().AddDate(0, 0, -1).Format("20060102")
+		tag = fmt.Sprintf("nightly-%s", dateStr)
+	} else if date != "" {
+		var targetDate time.Time
+		var err error
+		// try to parse the date from different layouts
+		if targetDate, err = time.Parse("2006-01-02", date); err != nil {
+			targetDate, err = time.Parse("20060102", date)
+		}
+
+		if err == nil {
+			dateStr = targetDate.Format("20060102")
+			tag = fmt.Sprintf("nightly-%s", dateStr)
+		}
+	}
 	return
 }
 
 func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	var tag string
-	// try to parse the nightly date
-	if o.Nightly == "latest" {
-		tag = fmt.Sprintf("nightly-%s", time.Now().AddDate(0, 0, -1).Format("20060102"))
-	} else if o.Nightly != "" {
-		layout := "2006-01-02"
-		var targetDate time.Time
-		if targetDate, err = time.Parse(layout, o.Nightly); err == nil {
-			tag = fmt.Sprintf("nightly-%s", targetDate.Format("20060102"))
-		}
+	if o.Nightly, tag = getNightlyTag(o.Nightly); tag == "" {
+		return
 	}
 
 	var wg sync.WaitGroup
@@ -63,7 +80,7 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 	wg.Wait()
-	if err = execCommand("kubectl", "ks", "com", "reset", "--nightly", "latest", "-a"); err != nil {
+	if err = execCommand("kubectl", "ks", "com", "reset", "--nightly", o.Nightly, "-a"); err != nil {
 		return
 	}
 	return
