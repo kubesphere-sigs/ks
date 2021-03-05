@@ -11,6 +11,7 @@ require (
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.10
 	github.com/linuxsuren/go-cli-alias v0.0.4
+	github.com/magiconair/properties v1.8.1
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
