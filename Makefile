@@ -8,6 +8,10 @@ build: pre-build
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
 	upx bin/ks
 
+build-linux: pre-build
+	CGO_ENABLE=0 GOOS=linux GOARCH=amd64 go build $(BUILDFLAGS) -o bin/linux/ks
+	upx bin/linux/ks
+
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
 	upx bin/kubectl-ks

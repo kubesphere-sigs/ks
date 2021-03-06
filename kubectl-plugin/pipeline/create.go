@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
-	"html"
 	"html/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,6 +22,8 @@ type pipelineCreateOption struct {
 	Name        string
 	Jenkinsfile string
 	Template    string
+	Type        string
+	SCMType     string
 
 	// Inner fields
 	Client       dynamic.Interface
@@ -57,6 +59,21 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 		"The Jenkinsfile of the Pipeline")
 	flags.StringVarP(&opt.Template, "template", "", "",
 		"Template of Jenkinsfile include: java, go. This option will override the option --jenkinsfile")
+	flags.StringVarP(&opt.Type, "type", "", "pipeline",
+		"The type of pipeline, could be pipeline, multi_branch_pipeline")
+	flags.StringVarP(&opt.SCMType, "scm-type", "", "",
+		"The SCM type of pipeline, could be gitlab, github")
+
+	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "multi-branch-gitlab"))
+	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
+	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github"))
+
+	if wsList, err := opt.getWorkspaceNameList(); err == nil {
+		_ = cmd.RegisterFlagCompletionFunc("ws", common.ArrayCompletion(wsList...))
+	}
+	if projectList, err := opt.getDevOpsProjectGenerateNameList(); err == nil {
+		_ = cmd.RegisterFlagCompletionFunc("project", common.ArrayCompletion(projectList...))
+	}
 	return
 }
 
@@ -67,6 +84,9 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		o.Jenkinsfile = jenkinsfileTemplateForJava
 	case "go":
 		o.Jenkinsfile = jenkinsfileTemplateForGo
+	case "multi-branch-gitlab":
+		o.Type = "multi-branch-pipeline"
+		o.SCMType = "gitlab"
 	default:
 		err = fmt.Errorf("%s is not support", o.Template)
 	}
@@ -93,6 +113,26 @@ func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err erro
 			err = fmt.Errorf("failed to create Pipeline, %v", err)
 		}
 	}
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}
+
+func (o *pipelineCreateOption) getWorkspaceNameList() (names []string, err error) {
+	var wsList *unstructured.UnstructuredList
+	if wsList, err = o.getWorkspaceList(); err == nil {
+		names = make([]string, len(wsList.Items))
+		for i := range wsList.Items {
+			names[i] = wsList.Items[i].GetName()
+		}
+	}
+	return
+}
+
+func (o *pipelineCreateOption) getWorkspaceList() (wsList *unstructured.UnstructuredList, err error) {
+	ctx := context.TODO()
+	wsList, err = o.Client.Resource(types.GetWorkspaceSchema()).List(ctx, metav1.ListOptions{})
 	return
 }
 
@@ -103,14 +143,32 @@ func (o *pipelineCreateOption) checkWorkspace() (ws *unstructured.Unstructured, 
 	return
 }
 
+func (o *pipelineCreateOption) getDevOpsProjectGenerateNameList() (names []string, err error) {
+	var list *unstructured.UnstructuredList
+	if list, err = o.getDevOpsProjectList(); err != nil {
+		return
+	}
+
+	names = make([]string, len(list.Items))
+	for i := range list.Items {
+		names[i] = list.Items[i].GetGenerateName()
+	}
+	return
+}
+
+func (o *pipelineCreateOption) getDevOpsProjectList() (wsList *unstructured.UnstructuredList, err error) {
+	ctx := context.TODO()
+	selector := labels.Set{"kubesphere.io/workspace": o.Workspace}
+	wsList, err = o.Client.Resource(types.GetDevOpsProjectSchema()).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selector).String(),
+	})
+	return
+}
+
 func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured) (project *unstructured.Unstructured, err error) {
 	ctx := context.TODO()
-
-	selector := labels.Set{"kubesphere.io/workspace": o.Workspace}
 	var list *unstructured.UnstructuredList
-	if list, err = o.Client.Resource(types.GetDevOpsProjectSchema()).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(selector).String(),
-	}); err != nil {
+	if list, err = o.getDevOpsProjectList(); err != nil {
 		return
 	}
 
@@ -149,18 +207,24 @@ func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured)
 func (o *pipelineCreateOption) createPipelineObj() (rawPip *unstructured.Unstructured, err error) {
 	var tpl *template.Template
 	funcMap := sprig.FuncMap()
-	funcMap["raw"] = html.EscapeString
+	//funcMap["raw"] = html.UnescapeString
+	funcMap["raw"] = func(text string) template.HTML {
+		return template.HTML(text)
+	}
 	if tpl, err = template.New("pipeline").Funcs(funcMap).Parse(pipelineTemplate); err != nil {
 		err = fmt.Errorf("failed to parse Pipeline template, %v", err)
+		fmt.Println(err)
 		return
 	}
 
 	var buf bytes.Buffer
 	if err = tpl.Execute(&buf, o); err != nil {
 		err = fmt.Errorf("failed to render Pipeline template, %v", err)
+		fmt.Println(err)
 		return
 	}
 
+	fmt.Println(buf.String())
 	if rawPip, err = types.GetObjectFromYaml(buf.String()); err != nil {
 		err = fmt.Errorf("failed to unmarshal yaml to Pipeline object, %v", err)
 	}
@@ -198,6 +262,7 @@ metadata:
   name: "{{.Name}}"
   namespace: {{.Project}}
 spec:
+  {{if eq .Type "pipeline"}}
   pipeline:
     disable_concurrent: true
     discarder:
@@ -206,7 +271,26 @@ spec:
     jenkinsfile: |
 {{.Jenkinsfile | indent 6 | raw}}
     name: "{{.Name}}"
-  type: pipeline
+  {{else if eq .Type "multi-branch-pipeline" -}}
+  multi_branch_pipeline:
+    discarder:
+      days_to_keep: "-1"
+      num_to_keep: "-1"
+    gitlab_source:
+      discover_branches: 1
+      discover_pr_from_forks:
+        strategy: 2
+        trust: 2
+      discover_pr_from_origin: 2
+      discover_tags: true
+      owner: LinuxSuRen1
+      repo: LinuxSuRen1/learn-pipeline-java
+      server_name: https://gitlab.com
+    name: gitlab
+    script_path: Jenkinsfile
+    source_type: gitlab
+  {{end -}}
+  type: {{.Type}}
 status: {}
 `
 
@@ -267,6 +351,7 @@ docker push surenpi/java-demo'''
   }
 }
 `
+
 var jenkinsfileTemplateForGo = `
 pipeline {
   agent {
