@@ -33,6 +33,7 @@ All features below work with [KubeSphere](https://github.com/kubsphere/kubespher
   * Update a component manually or automatically
   * Output the logs of a KubeSphere component
   * Edit a KubeSphere component
+* Working with [k3s](https://github.com/k3s-io/k3s) via setting environment `kubernetes_type=k3s`
 
 ## Pipeline
 
