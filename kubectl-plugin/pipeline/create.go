@@ -113,9 +113,6 @@ func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err erro
 			err = fmt.Errorf("failed to create Pipeline, %v", err)
 		}
 	}
-	if err != nil {
-		fmt.Println(err)
-	}
 	return
 }
 
@@ -209,22 +206,20 @@ func (o *pipelineCreateOption) createPipelineObj() (rawPip *unstructured.Unstruc
 	funcMap := sprig.FuncMap()
 	//funcMap["raw"] = html.UnescapeString
 	funcMap["raw"] = func(text string) template.HTML {
+		/* #nosec */
 		return template.HTML(text)
 	}
 	if tpl, err = template.New("pipeline").Funcs(funcMap).Parse(pipelineTemplate); err != nil {
 		err = fmt.Errorf("failed to parse Pipeline template, %v", err)
-		fmt.Println(err)
 		return
 	}
 
 	var buf bytes.Buffer
 	if err = tpl.Execute(&buf, o); err != nil {
 		err = fmt.Errorf("failed to render Pipeline template, %v", err)
-		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(buf.String())
 	if rawPip, err = types.GetObjectFromYaml(buf.String()); err != nil {
 		err = fmt.Errorf("failed to unmarshal yaml to Pipeline object, %v", err)
 	}
