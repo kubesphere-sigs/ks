@@ -206,6 +206,7 @@ func (o *pipelineCreateOption) createPipelineObj() (rawPip *unstructured.Unstruc
 	funcMap := sprig.FuncMap()
 	//funcMap["raw"] = html.UnescapeString
 	funcMap["raw"] = func(text string) template.HTML {
+		/* #nosec */
 		return template.HTML(text)
 	}
 	if tpl, err = template.New("pipeline").Funcs(funcMap).Parse(pipelineTemplate); err != nil {
