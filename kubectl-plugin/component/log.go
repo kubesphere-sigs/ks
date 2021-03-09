@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"io"
@@ -33,10 +34,11 @@ func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientse
 		},
 	}
 	cmd = &cobra.Command{
-		Use:     "log",
-		Short:   "Output the log of KubeSphere component",
-		PreRunE: opt.componentNameCheck,
-		RunE:    opt.logRunE,
+		Use:               "log",
+		Short:             "Output the log of KubeSphere component",
+		ValidArgsFunction: common.ArrayCompletion("apiserver", "controller", "console", "jenkins", "installer"),
+		PreRunE:           opt.componentNameCheck,
+		RunE:              opt.logRunE,
 	}
 
 	flags := cmd.Flags()

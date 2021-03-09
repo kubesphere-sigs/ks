@@ -71,9 +71,11 @@ Aliases:
   component, com
 
 Available Commands:
-  edit        edit the target component
+  edit        Edit the target component
   enable      Enable or disable the specific KubeSphere component
+  exec        Execute a command in a container.
+  kill        Kill the pods of the components
   log         Output the log of KubeSphere component
-  reset       reset the component by name
+  reset       Reset the component by name
   watch       Update images of ks-apiserver, ks-controller-manager, ks-console
 ```

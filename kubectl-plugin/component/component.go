@@ -26,7 +26,8 @@ func NewComponentCmd(client dynamic.Interface, clientset *kubernetes.Clientset) 
 		NewComponentResetCmd(client),
 		NewComponentWatchCmd(client),
 		NewComponentLogCmd(client, clientset),
-		newComponentsExecCmd(client))
+		newComponentsExecCmd(client),
+		newComponentsKillCmd(client))
 	return
 }
 
@@ -139,7 +140,7 @@ func NewComponentEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 	cmd = &cobra.Command{
 		Use:     "edit",
-		Short:   "edit the target component",
+		Short:   "Edit the target component",
 		PreRunE: opt.componentNameCheck,
 		RunE:    opt.editRunE,
 	}
