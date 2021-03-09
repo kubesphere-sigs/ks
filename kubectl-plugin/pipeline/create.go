@@ -68,11 +68,14 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
 	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github"))
 
-	if wsList, err := opt.getWorkspaceNameList(); err == nil {
-		_ = cmd.RegisterFlagCompletionFunc("ws", common.ArrayCompletion(wsList...))
-	}
-	if projectList, err := opt.getDevOpsProjectGenerateNameList(); err == nil {
-		_ = cmd.RegisterFlagCompletionFunc("project", common.ArrayCompletion(projectList...))
+	if client != nil {
+		// these features rely on the k8s client, ignore it if the client is nil
+		if wsList, err := opt.getWorkspaceNameList(); err == nil {
+			_ = cmd.RegisterFlagCompletionFunc("ws", common.ArrayCompletion(wsList...))
+		}
+		if projectList, err := opt.getDevOpsProjectGenerateNameList(); err == nil {
+			_ = cmd.RegisterFlagCompletionFunc("project", common.ArrayCompletion(projectList...))
+		}
 	}
 	return
 }

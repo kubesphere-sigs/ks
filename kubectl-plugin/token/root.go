@@ -1,6 +1,7 @@
 package token
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
@@ -13,9 +14,11 @@ import (
 func NewTokenCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
 	opt := &option{}
 	cmd = &cobra.Command{
-		Use:   "token",
-		Short: "Print the kubectl token of KubeSphere",
-		RunE:  opt.runE,
+		Use:     "token",
+		Short:   "Print the kubectl token of KubeSphere",
+		Example: "ks token --host yourServer",
+		PreRunE: opt.preRunE,
+		RunE:    opt.runE,
 	}
 
 	flags := cmd.Flags()
@@ -33,6 +36,13 @@ type option struct {
 	Host string
 	User string
 	Port int
+}
+
+func (o *option) preRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Host == "" {
+		err = errors.New("cannot print the token due to --host is empty")
+	}
+	return
 }
 
 func (o *option) runE(cmd *cobra.Command, args []string) (err error) {
