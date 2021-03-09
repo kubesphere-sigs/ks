@@ -38,6 +38,7 @@ jobs:
       run: |
         ver=$(git describe --tags)
         docker login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{secrets.DOCKER_HUB_TOKEN}}
+        cp bin/ks_linux_amd64/ks build/ks
         docker build ./build -t surenpi/ks:${ver}
         docker push surenpi/ks:${ver}
 
