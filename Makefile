@@ -44,3 +44,7 @@ copy-plugin: build-plugin
 
 goreleaser-test:
 	goreleaser release --rm-dist --skip-publish --snapshot
+
+image: build-linux
+	cp bin/ks build/ks
+	docker build ./build -t surenpi/ks
