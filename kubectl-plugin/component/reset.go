@@ -18,7 +18,7 @@ func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 	cmd = &cobra.Command{
 		Use:   "reset",
-		Short: "reset the component by name",
+		Short: "Reset the component by name",
 		Example: `'kubectl ks com reset -r=false -a' will reset ks-apiserver, ks-controller-manager, ks-console to the latest
 kubectl ks com reset -a --nightly latest`,
 		RunE: opt.resetRunE,
