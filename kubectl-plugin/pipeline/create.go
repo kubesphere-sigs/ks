@@ -64,7 +64,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	flags.StringVarP(&opt.SCMType, "scm-type", "", "",
 		"The SCM type of pipeline, could be gitlab, github")
 
-	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "multi-branch-gitlab"))
+	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "multi-branch-gitlab"))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
 	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github"))
 
@@ -87,6 +87,8 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		o.Jenkinsfile = jenkinsfileTemplateForJava
 	case "go":
 		o.Jenkinsfile = jenkinsfileTemplateForGo
+	case "simple":
+		o.Jenkinsfile = jenkinsfileTemplateForSimple
 	case "multi-branch-gitlab":
 		o.Type = "multi-branch-pipeline"
 		o.SCMType = "gitlab"
@@ -290,112 +292,4 @@ spec:
   {{end -}}
   type: {{.Type}}
 status: {}
-`
-
-var jenkinsfileTemplateForJava = `
-pipeline {
-  agent {
-    node {
-      label 'maven'
-    }
-  }
-  stages {
-    stage('Clone') {
-      steps {
-        git(url: 'https://github.com/kubesphere-sigs/demo-java', changelog: true, poll: false)
-      }
-    }
-    stage('Build & Test') {
-      steps {
-        container('maven') {
-          sh 'mvn package test'
-        }
-      }
-    }
-    stage('Code Scan') {
-      steps {
-        withSonarQubeEnv('sonar') {
-          container('maven') {
-            sh '''mvn --version
-mvn sonar:sonar \\
-  -Dsonar.projectKey=test \\
-  -Dsonar.host.url=http://139.198.9.130:30687/ \\
-  -Dsonar.login=b3e146cdb76ecef5ffb12743779cd78e69a4b5c5'''
-          }
-
-        }
-
-        waitForQualityGate 'false'
-      }
-    }
-    stage('Build Image') {
-      steps {
-        container('maven') {
-          withCredentials([usernamePassword(credentialsId : 'docker' ,passwordVariable : 'PASS' ,usernameVariable : 'USER' ,)]) {
-            sh '''docker login -u $USER -p $PASS
-cat <<EOM >Dockerfile
-FROM kubesphere/java-8-centos7:v2.1.0
-COPY target/demo-java-1.0.0.jar demo.jar
-COPY target/lib demo-lib
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "demo.jar"]
-EOM
-docker build . -t surenpi/java-demo
-docker push surenpi/java-demo'''
-          }
-        }
-      }
-    }
-  }
-}
-`
-
-var jenkinsfileTemplateForGo = `
-pipeline {
-  agent {
-    node {
-      label 'go'
-    }
-  }
-  stages {
-    stage('Code Clone') {
-      steps {
-        git(url: 'https://github.com/kubesphere-sigs/demo-go-http', changelog: true, poll: false)
-      }
-    }
-    stage('Test & Code Scan') {
-      steps {
-        container('go') {
-          sh 'go test ./... -coverprofile=covprofile'
-          withCredentials([string(credentialsId : 'sonar-token' ,variable : 'TOKEN' ,)]) {
-            withSonarQubeEnv('sonar') {
-              sh 'sonar-scanner -Dsonar.login=$TOKEN'
-            }
-          }
-        }
-
-        waitForQualityGate 'false'
-      }
-    }
-    stage('Build Image & Push') {
-      steps {
-        container('go') {
-          sh '''    CGO_ENABLED=0 GOARCH=amd64 go build -o bin/go-server -ldflags "-w"
-    chmod u+x bin/go-server'''
-          withCredentials([usernamePassword(credentialsId : 'rick-docker-hub' ,passwordVariable : 'PASS' ,usernameVariable : 'USER' ,)]) {
-            sh 'echo "$PASS" | docker login -u "$USER" --password-stdin'
-            sh '''cat <<EOM >Dockerfile
-FROM alpine
-COPY bin/go-server go-server
-EXPOSE 80
-ENTRYPOINT ["go-server"]
-EOM
-docker build . -t surenpi/go-demo
-docker push surenpi/go-demo'''
-          }
-        }
-      }
-    }
-  }
-}
 `
