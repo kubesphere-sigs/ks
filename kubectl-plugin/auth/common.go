@@ -2,6 +2,10 @@ package auth
 
 import "gopkg.in/yaml.v3"
 
+/***
+ * TODO rewrite these functions with json patch way
+ */
+
 func updateAuthentication(yamlf, name, target string) string {
 	targetobj := make(map[string]interface{}, 0)
 	_ = yaml.Unmarshal([]byte(target), targetobj)
@@ -49,6 +53,38 @@ func updateAuthWithObj(yamlf, name string, target map[string]interface{}) string
 		if !found {
 			targetArray = append(targetArray, target)
 			mapObj["identityProviders"] = targetArray
+		}
+	}
+	resultData, _ := yaml.Marshal(mapData)
+	return string(resultData)
+}
+
+func setMultipleLogin(yamlText string, enable bool) string {
+	mapData := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(yamlText), mapData); err == nil {
+		var obj interface{}
+		var ok bool
+		var mapObj map[string]interface{}
+		if obj, ok = mapData["authentication"]; ok {
+			mapObj = obj.(map[string]interface{})
+			mapObj["multipleLogin"] = enable
+			mapData["authentication"] = mapObj
+		}
+	}
+	resultData, _ := yaml.Marshal(mapData)
+	return string(resultData)
+}
+
+func setKubectlImage(yamlText, kubectlImage string) string {
+	mapData := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(yamlText), mapData); err == nil {
+		var obj interface{}
+		var ok bool
+		var mapObj map[string]interface{}
+		if obj, ok = mapData["authentication"]; ok {
+			mapObj = obj.(map[string]interface{})
+			mapObj["kubectlImage"] = kubectlImage
+			mapData["authentication"] = mapObj
 		}
 	}
 	resultData, _ := yaml.Marshal(mapData)

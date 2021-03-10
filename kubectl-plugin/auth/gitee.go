@@ -2,7 +2,7 @@ package auth
 
 import "fmt"
 
-func getGiteeAuth(opt authOption) string {
+func getGiteeAuth(opt authAddOption) string {
 	return fmt.Sprintf(`
 name: Gitee
 type: GitHubIdentityProvider
