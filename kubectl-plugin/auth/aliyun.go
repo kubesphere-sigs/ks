@@ -2,7 +2,7 @@ package auth
 
 import "fmt"
 
-func getAliyunAuth(opt authOption) string {
+func getAliyunAuth(opt authAddOption) string {
 	return fmt.Sprintf(`
 name: Aliyun
 type: AliyunIDaaSProvider

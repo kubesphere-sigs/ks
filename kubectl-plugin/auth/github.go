@@ -2,7 +2,7 @@ package auth
 
 import "fmt"
 
-func getGitHubAuth(opt authOption) string {
+func getGitHubAuth(opt authAddOption) string {
 	return fmt.Sprintf(`
 name: GitHub
 type: GitHubIdentityProvider

@@ -7,7 +7,7 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	result := updateAuthentication(yamlFile, "GitHub", getGitHubAuth(authOption{
+	result := updateAuthentication(yamlFile, "GitHub", getGitHubAuth(authAddOption{
 		ClientID:     "76b2f45277bb5314457f",
 		ClientSecret: "ed04cf65d99cb7818a6eb11a72b77efcedef9c24",
 		Host:         "http://139.198.3.176:30880",
