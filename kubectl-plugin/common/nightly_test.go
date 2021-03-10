@@ -1,4 +1,4 @@
-package install
+package common
 
 import (
 	"fmt"
@@ -40,10 +40,30 @@ func TestGetNightlyTag(t *testing.T) {
 		expectDate: yesterday,
 		expectTag:  fmt.Sprintf("nightly-%s", yesterday),
 		message:    fmt.Sprintf("should return %s", yesterday),
+	}, {
+		date:       "latest-0",
+		expectDate: yesterday,
+		expectTag:  fmt.Sprintf("nightly-%s", yesterday),
+		message:    fmt.Sprintf("should return %s", yesterday),
+	}, {
+		date:       "latest-1",
+		expectDate: time.Now().AddDate(0, 0, -2).Format("20060102"),
+		expectTag:  fmt.Sprintf("nightly-%s", time.Now().AddDate(0, 0, -2).Format("20060102")),
+		message:    fmt.Sprintf("should return %s", time.Now().AddDate(0, 0, -2).Format("20060102")),
+	}, {
+		date:       "latest-2",
+		expectDate: time.Now().AddDate(0, 0, -3).Format("20060102"),
+		expectTag:  fmt.Sprintf("nightly-%s", time.Now().AddDate(0, 0, -3).Format("20060102")),
+		message:    fmt.Sprintf("should return %s", time.Now().AddDate(0, 0, -3).Format("20060102")),
+	}, {
+		date:       "latest-",
+		expectDate: time.Now().AddDate(0, 0, -2).Format("20060102"),
+		expectTag:  fmt.Sprintf("nightly-%s", time.Now().AddDate(0, 0, -2).Format("20060102")),
+		message:    fmt.Sprintf("should return %s", time.Now().AddDate(0, 0, -2).Format("20060102")),
 	}}
 
 	for _, item := range table {
-		date, tag := getNightlyTag(item.date)
+		date, tag := GetNightlyTag(item.date)
 		assert.Equal(t, date, item.expectDate, item.message)
 		assert.Equal(t, tag, item.expectTag, item.message)
 	}

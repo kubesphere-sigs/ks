@@ -114,6 +114,11 @@ func (o *Option) updateDeploy(ns, name, image, tag string) (err error) {
 		return
 	}
 
+	if digest.Digest == "" {
+		err = fmt.Errorf("cannot get the digest of image '%s:%s'", image, tag)
+		return
+	}
+
 	image = fmt.Sprintf("%s:%s@%s", image, tag, digest.Digest)
 	fmt.Printf("prepare to patch image: '%s'\nbuild data: %s\n", image, digest.Date)
 

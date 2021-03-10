@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-	"time"
 )
 
 func newInstallWithKindCmd() (cmd *cobra.Command) {
@@ -40,29 +39,9 @@ func newInstallWithKindCmd() (cmd *cobra.Command) {
 	return
 }
 
-func getNightlyTag(date string) (dateStr, tag string) {
-	if date == "latest" {
-		dateStr = time.Now().AddDate(0, 0, -1).Format("20060102")
-		tag = fmt.Sprintf("nightly-%s", dateStr)
-	} else if date != "" {
-		var targetDate time.Time
-		var err error
-		// try to parse the date from different layouts
-		if targetDate, err = time.Parse("2006-01-02", date); err != nil {
-			targetDate, err = time.Parse("20060102", date)
-		}
-
-		if err == nil {
-			dateStr = targetDate.Format("20060102")
-			tag = fmt.Sprintf("nightly-%s", dateStr)
-		}
-	}
-	return
-}
-
 func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	var tag string
-	if o.Nightly, tag = getNightlyTag(o.Nightly); tag == "" {
+	if o.Nightly, tag = common.GetNightlyTag(o.Nightly); tag == "" {
 		return
 	}
 

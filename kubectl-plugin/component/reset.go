@@ -3,10 +3,10 @@ package component
 import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
-	"time"
 )
 
 // NewComponentResetCmd returns a command to enable (or disable) a component by name
@@ -19,8 +19,9 @@ func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "reset",
 		Short: "Reset the component by name",
-		Example: `'kubectl ks com reset -r=false -a' will reset ks-apiserver, ks-controller-manager, ks-console to the latest
-kubectl ks com reset -a --nightly latest`,
+		Example: `'ks com reset -r=false -a' will reset ks-apiserver, ks-controller-manager, ks-console to the latest
+'ks com reset -a --nightly latest' will reset the images to the latest nightly which comes from yesterday
+'ks com reset -a --nightly latest-1' will reset the images to the nightly which comes from the day before yesterday`,
 		RunE: opt.resetRunE,
 	}
 
@@ -61,24 +62,14 @@ func (o *ResetOption) resetRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	imageOrg := "kubespheredev"
-	if o.Release {
+	if o.Release && o.Nightly == "" {
 		imageOrg = "kubesphere"
 	} else {
 		o.Tag = "latest"
 	}
 
 	// try to parse the nightly date
-	if o.Nightly == "latest" {
-		imageOrg = "kubespheredev"
-		o.Tag = fmt.Sprintf("nightly-%s", time.Now().AddDate(0, 0, -1).Format("20060102"))
-	} else if o.Nightly != "" {
-		layout := "2006-01-02"
-		var targetDate time.Time
-		if targetDate, err = time.Parse(layout, o.Nightly); err == nil {
-			o.Tag = targetDate.Format("20060102")
-		}
-	}
-
+	_, o.Tag = common.GetNightlyTag(o.Nightly)
 	if o.ResetAll {
 		o.Name = "apiserver"
 		if err = o.updateBy(imageOrg, o.Tag); err != nil {
