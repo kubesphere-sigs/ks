@@ -62,7 +62,7 @@ func (o *ResetOption) resetRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	imageOrg := "kubespheredev"
-	if o.Release {
+	if o.Release && o.Nightly == "" {
 		imageOrg = "kubesphere"
 	} else {
 		o.Tag = "latest"

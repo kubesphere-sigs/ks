@@ -17,5 +17,5 @@ provider:
   redirectURL: %s/auth/redirect
   scopes:
   - user_info
-`, opt.ClientID, opt.ClientSecret, opt.Host)
+`, opt.ClientID, opt.ClientSecret, opt.Host, opt.Host)
 }

@@ -7,7 +7,11 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	result := updateAuthentication(yamlFile, "GitHub", e)
+	result := updateAuthentication(yamlFile, "GitHub", getGitHubAuth(authOption{
+		ClientID:     "76b2f45277bb5314457f",
+		ClientSecret: "ed04cf65d99cb7818a6eb11a72b77efcedef9c24",
+		Host:         "http://139.198.3.176:30880",
+	}))
 
 	expectedMap := make(map[string]interface{}, 0)
 	var expectedData []byte
@@ -18,8 +22,8 @@ func TestUpdate(t *testing.T) {
 	assert.Equal(t, result, string(expectedData))
 }
 
-func TestUpdateWtihHasAuth(t *testing.T) {
-	result := updateAuthentication(hasAuthYaml, "GitHub", e)
+func TestUpdateWhichHasAuth(t *testing.T) {
+	result := updateAuthentication(hasAuthYaml, "GitHub", "e")
 
 	expectedMap := make(map[string]interface{}, 0)
 	var expectedData []byte
@@ -45,6 +49,9 @@ var expected = `authentication:
     provider:
       clientID: 76b2f45277bb5314457f
       clientSecret: ed04cf65d99cb7818a6eb11a72b77efcedef9c24
+      endpoint:
+        authURL: https://github.com/login/oauth/authorize
+        tokenURL: https://github.com/login/oauth/access_token
       redirectURL: "http://139.198.3.176:30880/oauth/redirect"
       scopes:
       - user
