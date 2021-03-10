@@ -24,16 +24,38 @@ hd install -t 8 linuxsuren/ks/kubectl-ks
 
 All features below work with [KubeSphere](https://github.com/kubsphere/kubesphere) instead of other concept.
 
-* Pipeline management
-  * Create a Pipeline with java, go template
-  * Edit a Pipeline without give the fullname (namespace/name)
-* User Management
 * Component Management
   * Enable (disable) components
   * Update a component manually or automatically
   * Output the logs of a KubeSphere component
   * Edit a KubeSphere component
+* Pipeline management
+  * Create a Pipeline with java, go template
+  * Edit a Pipeline without give the fullname (namespace/name)
+* User Management
 * Working with [k3s](https://github.com/k3s-io/k3s) via setting environment `kubernetes_type=k3s`
+
+## Component
+
+```
+➜  ~ kubectl ks com
+Manage the components of KubeSphere
+
+Usage:
+  ks component [command]
+
+Aliases:
+  component, com
+
+Available Commands:
+  edit        Edit the target component
+  enable      Enable or disable the specific KubeSphere component
+  exec        Execute a command in a container.
+  kill        Kill the pods of the components
+  log         Output the log of KubeSphere component
+  reset       Reset the component by name
+  watch       Update images of ks-apiserver, ks-controller-manager, ks-console
+```
 
 ## Pipeline
 
@@ -58,24 +80,15 @@ Flags:
 Use "ks pipeline [command] --help" for more information about a command.
 ```
 
-## Component
+## Installation
 
 ```
-➜  ~ kubectl ks com
-Manage the components of KubeSphere
+Install KubeSphere with kind or kk
 
 Usage:
-  ks component [command]
-
-Aliases:
-  component, com
+  ks install [command]
 
 Available Commands:
-  edit        Edit the target component
-  enable      Enable or disable the specific KubeSphere component
-  exec        Execute a command in a container.
-  kill        Kill the pods of the components
-  log         Output the log of KubeSphere component
-  reset       Reset the component by name
-  watch       Update images of ks-apiserver, ks-controller-manager, ks-console
+  kind        Install KubeSphere with kind
+  kk          Install KubeSphere with kubekey (aka kk)
 ```

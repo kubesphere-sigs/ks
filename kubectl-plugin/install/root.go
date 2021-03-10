@@ -6,9 +6,10 @@ import "github.com/spf13/cobra"
 func NewInstallCmd() (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "install",
-		Short: "install KubeSphere",
+		Short: "Install KubeSphere with kind or kk",
 	}
 
-	cmd.AddCommand(newInstallWithKindCmd())
+	cmd.AddCommand(newInstallWithKindCmd(),
+		newInstallWithKKCmd())
 	return
 }
