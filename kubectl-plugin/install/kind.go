@@ -14,10 +14,11 @@ import (
 func newInstallWithKindCmd() (cmd *cobra.Command) {
 	opt := &kindOption{}
 	cmd = &cobra.Command{
-		Use:     "kind",
-		Short:   "install KubeSphere with kind",
-		Example: "ks install kind --components devops",
-		RunE:    opt.runE,
+		Use:   "kind",
+		Short: "Install KubeSphere with kind",
+		Example: `ks install kind --components devops
+ks install kind --nightly latest --components devops`,
+		RunE: opt.runE,
 	}
 
 	flags := cmd.Flags()
