@@ -21,7 +21,7 @@ func NewComponentCmd(client dynamic.Interface, clientset *kubernetes.Clientset) 
 		Short:   "Manage the components of KubeSphere",
 	}
 
-	cmd.AddCommand(NewComponentEnableCmd(client),
+	cmd.AddCommand(newComponentEnableCmd(client),
 		NewComponentEditCmd(client),
 		NewComponentResetCmd(client),
 		NewComponentWatchCmd(client),

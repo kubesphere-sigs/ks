@@ -20,12 +20,17 @@ type EnableOption struct {
 	Toggle bool
 }
 
-func getAvailableComponents() func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return common.ArrayCompletion("devops", "alerting", "auditing", "events", "logging", "metrics_server", "networkpolicy", "notification", "openpitrix", "servicemesh")
+var allComponents = []string{
+	"devops", "alerting", "auditing", "events", "logging", "metrics_server", "networkpolicy",
+	"notification", "openpitrix", "servicemesh",
 }
 
-// NewComponentEnableCmd returns a command to enable (or disable) a component by name
-func NewComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
+func getAvailableComponents() func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return common.ArrayCompletion(allComponents...)
+}
+
+// newComponentEnableCmd returns a command to enable (or disable) a component by name
+func newComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	opt := &EnableOption{
 		Option: Option{
 			Client: client,
@@ -35,8 +40,10 @@ func NewComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	availableComs := getAvailableComponents()
 
 	cmd = &cobra.Command{
-		Use:               "enable",
-		Short:             "Enable or disable the specific KubeSphere component",
+		Use:   "enable",
+		Short: "Enable or disable the specific KubeSphere component",
+		Example: `You can enable a single component with name via: ks com enable devops
+Or it's possible to enable all components via: ks com enable all'`,
 		PreRunE:           opt.enablePreRunE,
 		ValidArgsFunction: availableComs,
 		RunE:              opt.enableRunE,
@@ -87,6 +94,14 @@ func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error)
 			} else {
 				name = "ks-console-config"
 				err = integrateSonarQube(o.Client, ns, name, o.SonarQube, o.SonarQubeToken)
+			}
+			return
+		case "all":
+			for _, item := range allComponents {
+				o.Name = item
+				if err = o.enableRunE(cmd, args); err != nil {
+					return
+				}
 			}
 			return
 		default:
