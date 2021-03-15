@@ -88,3 +88,12 @@ func GetConfigMapSchema() schema.GroupVersionResource {
 		Resource: "configmaps",
 	}
 }
+
+// GetStorageClassSchema returns the schema of StorageClass
+func GetStorageClassSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "storage.k8s.io",
+		Version:  "v1",
+		Resource: "storageclasses",
+	}
+}

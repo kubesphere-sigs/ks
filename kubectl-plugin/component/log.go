@@ -75,7 +75,6 @@ func (o *LogOption) logRunE(cmd *cobra.Command, args []string) (err error) {
 			return
 		}
 
-		cmd.Println(buf)
 		if err = json.Unmarshal(buf.Bytes(), deploy); err != nil {
 			return
 		}

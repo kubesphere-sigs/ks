@@ -16,8 +16,8 @@ func newInstallWithKindCmd() (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "kind",
 		Short: "Install KubeSphere with kind",
-		Example: `ks install kind --components devops
-ks install kind --nightly latest --components devops`,
+		Example: `ks install kind --components DevOps
+ks install kind --nightly latest --components DevOps`,
 		RunE: opt.runE,
 	}
 
@@ -36,7 +36,7 @@ ks install kind --nightly latest --components devops`,
 	flags.StringVarP(&opt.Nightly, "nightly", "", "",
 		"Supported date format is '20200101', or you can use 'latest' which means yesterday")
 
-	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("devops"))
+	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("DevOps"))
 	return
 }
 
@@ -92,7 +92,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 
 	for _, com := range o.components {
 		switch com {
-		case "devops":
+		case "DevOps":
 			err = loadImagesOfDevOps()
 		}
 	}
