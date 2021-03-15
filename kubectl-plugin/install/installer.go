@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
+	"github.com/linuxsuren/ks/kubectl-plugin/install/storage"
 	"github.com/spf13/cobra"
 	"html/template"
 	"k8s.io/client-go/dynamic"
@@ -84,6 +85,10 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 			o.ksInstaller.Alerting.Enabled = true
 		}
 	}
+
+	if !storage.HasDefaultStorageClass(o.client) {
+		err = storage.CreateEBSAsDefault()
+	}
 	return
 }
 
@@ -154,3 +159,17 @@ type ksInstaller struct {
 type componentStatus struct {
 	Enabled bool
 }
+
+var localStorageClass = `
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast
+provisioner: kubernetes.io/storageos
+parameters:
+  pool: default
+  description: Kubernetes volume
+  fsType: ext4
+  adminSecretNamespace: default
+  adminSecretName: storageos-secret
+`
