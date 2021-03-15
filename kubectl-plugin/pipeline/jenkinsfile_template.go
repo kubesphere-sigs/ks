@@ -10,11 +10,16 @@ pipeline {
     choice choices: ['v1.18.8', 'v1.18.9'], description: 'Please choose the target Kubernetes version', name: 'kubernetesVersion'
   }
 
+  environment {
+    APP_NAME = "this is a sample app"
+  }
+
   stages{
     stage('simple'){
       steps{
         echo "My name is ${params.name}."
         echo "Target Kubernetes version is " + params.kubernetesVersion
+        echo "env " + env.APP_NAME
 
         script {
           if ("${params.debug}" == "true") {
