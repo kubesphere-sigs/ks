@@ -54,7 +54,7 @@ func (o *killOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		o.name = "ks-console"
 		o.namespace = "kubesphere-system"
 	case "jenkins":
-		o.name = "ks-apiserver"
+		o.name = "ks-jenkins"
 		o.namespace = "kubesphere-devops-system"
 	case "installer":
 		o.name = "ks-installer"
