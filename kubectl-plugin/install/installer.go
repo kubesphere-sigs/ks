@@ -31,13 +31,16 @@ You can get more details about the ks-installer from https://github.com/kubesphe
 		"The nightly version you want to install")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components that you want to Enabled with KubeSphere")
+	flags.BoolVarP(&opt.printConfig, "print-config", "", false,
+		"Print the configuration for the test purpose")
 	return
 }
 
 type installerOption struct {
-	version    string
-	nightly    string
-	components []string
+	version     string
+	nightly     string
+	components  []string
+	printConfig bool
 
 	// inner fields
 	client      dynamic.Interface
@@ -122,7 +125,13 @@ func (o *installerOption) getCrdAndCC() (crd, cc string, err error) {
 	return
 }
 
-func (o *installerOption) runE(_ *cobra.Command, args []string) (err error) {
+func (o *installerOption) runE(cmd *cobra.Command, args []string) (err error) {
+	if o.printConfig {
+		cmd.Printf("kubesphere-installer: %s\n", ks3_0CRD)
+		cmd.Printf("cluster-configuration: %s\n", clusterConfiguration)
+		return
+	}
+
 	var crdPath, ccPath string
 	if crdPath, ccPath, err = o.getCrdAndCC(); err != nil {
 		return
