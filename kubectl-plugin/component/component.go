@@ -27,7 +27,8 @@ func NewComponentCmd(client dynamic.Interface, clientset *kubernetes.Clientset) 
 		NewComponentWatchCmd(client),
 		NewComponentLogCmd(client, clientset),
 		newComponentsExecCmd(client),
-		newComponentsKillCmd(client))
+		newComponentsKillCmd(client),
+		newScaleCmd())
 	return
 }
 
