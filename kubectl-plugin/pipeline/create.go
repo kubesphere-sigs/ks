@@ -80,7 +80,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	return
 }
 
-func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+func (o *pipelineCreateOption) preRunE(_ *cobra.Command, args []string) (err error) {
 	switch o.Template {
 	case "":
 	case "java":
@@ -96,6 +96,14 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		err = fmt.Errorf("%s is not support", o.Template)
 	}
 	o.Jenkinsfile = strings.TrimSpace(o.Jenkinsfile)
+
+	if o.Name == "" && len(args) > 0 {
+		o.Name = args[0]
+	}
+
+	if o.Name == "" {
+		err = fmt.Errorf("please provide the name of Pipeline")
+	}
 	return
 }
 
