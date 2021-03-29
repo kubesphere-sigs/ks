@@ -26,8 +26,8 @@ ks install kind --nightly latest --components DevOps`,
 		"The name of kind")
 	flags.StringVarP(&opt.version, "version", "v", "v1.18.2",
 		"The version for Kubernetes")
-	flags.StringToStringVarP(&opt.portMappings, "portMappings", "", nil,
-		"The extraPortMappings")
+	flags.StringToStringVarP(&opt.portMappings, "portMappings", "", map[string]string{"30880": "30881",
+		"30180": "30181"}, "The extraPortMappings")
 	flags.StringVarP(&opt.ksVersion, "ksVersion", "", "v3.0.0",
 		"The version of KubeSphere")
 	flags.StringSliceVarP(&opt.components, "components", "", []string{},
