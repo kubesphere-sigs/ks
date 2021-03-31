@@ -20,15 +20,6 @@ type EnableOption struct {
 	Toggle bool
 }
 
-var allComponents = []string{
-	"devops", "alerting", "auditing", "events", "logging", "metrics_server", "networkpolicy",
-	"notification", "openpitrix", "servicemesh",
-}
-
-func getAvailableComponents() func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return common.ArrayCompletion(allComponents...)
-}
-
 // newComponentEnableCmd returns a command to enable (or disable) a component by name
 func newComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	opt := &EnableOption{
@@ -37,15 +28,13 @@ func newComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		},
 	}
 
-	availableComs := getAvailableComponents()
-
 	cmd = &cobra.Command{
 		Use:   "enable",
 		Short: "Enable or disable the specific KubeSphere component",
 		Example: `You can enable a single component with name via: ks com enable devops
 Or it's possible to enable all components via: ks com enable all'`,
 		PreRunE:           opt.enablePreRunE,
-		ValidArgsFunction: availableComs,
+		ValidArgsFunction: common.PluginAbleComponentsCompletion(),
 		RunE:              opt.enableRunE,
 	}
 
@@ -63,7 +52,7 @@ Or it's possible to enable all components via: ks com enable all'`,
 	flags.StringVarP(&opt.SonarQubeToken, "sonarqube-token", "", "",
 		"The token of SonarQube")
 
-	_ = cmd.RegisterFlagCompletionFunc("name", availableComs)
+	_ = cmd.RegisterFlagCompletionFunc("name", common.PluginAbleComponentsCompletion())
 
 	// these are aliased options
 	_ = flags.MarkHidden("sonar")
@@ -97,7 +86,7 @@ func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error)
 			}
 			return
 		case "all":
-			for _, item := range allComponents {
+			for _, item := range common.GetPluginAbleComponents() {
 				o.Name = item
 				if err = o.enableRunE(cmd, args); err != nil {
 					return

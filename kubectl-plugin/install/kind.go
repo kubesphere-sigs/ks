@@ -5,9 +5,7 @@ import (
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 	"html/template"
-	"io"
 	"os"
-	"os/exec"
 	"sync"
 )
 
@@ -60,7 +58,8 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 	wg.Wait()
-	if err = execCommand("kubectl", "ks", "com", "reset", "--nightly", o.Nightly, "-a"); err != nil {
+	commander := Commander{}
+	if err = commander.execCommand("kubectl", "ks", "com", "reset", "--nightly", o.Nightly, "-a"); err != nil {
 		return
 	}
 	return
@@ -68,11 +67,12 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 
 func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	writeConfigFile("config.yaml", o.portMappings)
-	if err = execCommand("kind", "create", "cluster", "--image", "kindest/node:v1.18.2", "--config", "config.yaml", "--name", o.name); err != nil {
+	commander := Commander{}
+	if err = commander.execCommand("kind", "create", "cluster", "--image", "kindest/node:v1.18.2", "--config", "config.yaml", "--name", o.name); err != nil {
 		return
 	}
 
-	if err = execCommand("kubectl", "cluster-info", " --context", fmt.Sprintf("kind-%s", o.name)); err != nil {
+	if err = commander.execCommand("kubectl", "cluster-info", " --context", fmt.Sprintf("kind-%s", o.name)); err != nil {
 		return
 	}
 
@@ -80,11 +80,11 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if err = execCommand("kubectl", "apply", "-f", fmt.Sprintf("https://github.com/kubesphere/ks-installer/releases/download/%s/kubesphere-installer.yaml", o.ksVersion)); err != nil {
+	if err = commander.execCommand("kubectl", "apply", "-f", fmt.Sprintf("https://github.com/kubesphere/ks-installer/releases/download/%s/kubesphere-installer.yaml", o.ksVersion)); err != nil {
 		return
 	}
 
-	if err = execCommand("kubectl", "apply", "-f", fmt.Sprintf("https://github.com/kubesphere/ks-installer/releases/download/%s/cluster-configuration.yaml", o.ksVersion)); err != nil {
+	if err = commander.execCommand("kubectl", "apply", "-f", fmt.Sprintf("https://github.com/kubesphere/ks-installer/releases/download/%s/cluster-configuration.yaml", o.ksVersion)); err != nil {
 		return
 	}
 
@@ -170,8 +170,9 @@ func pullAndLoadImageSync(image string, wg *sync.WaitGroup) (err error) {
 }
 
 func pullAndLoadImage(image string) (err error) {
-	if err = execCommand("docker", "pull", image); err == nil {
-		err = execCommand("kind", "load", "docker-image", image)
+	commander := Commander{}
+	if err = commander.execCommand("docker", "pull", image); err == nil {
+		err = commander.execCommand("kind", "load", "docker-image", image)
 	}
 	return
 }
@@ -213,57 +214,4 @@ type kindOption struct {
 
 	Reset   bool
 	Nightly string
-}
-
-func execCommand(name string, arg ...string) (err error) {
-	command := exec.Command(name, arg...)
-
-	//var stdout []byte
-	//var errStdout error
-	stdoutIn, _ := command.StdoutPipe()
-	stderrIn, _ := command.StderrPipe()
-	err = command.Start()
-	if err != nil {
-		return err
-	}
-
-	// cmd.Wait() should be called only after we finish reading
-	// from stdoutIn and stderrIn.
-	// wg ensures that we finish
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		_, _ = copyAndCapture(os.Stdout, stdoutIn)
-		wg.Done()
-	}()
-
-	_, _ = copyAndCapture(os.Stderr, stderrIn)
-
-	wg.Wait()
-
-	err = command.Wait()
-	return
-}
-
-func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
-	var out []byte
-	buf := make([]byte, 1024, 1024)
-	for {
-		n, err := r.Read(buf[:])
-		if n > 0 {
-			d := buf[:n]
-			out = append(out, d...)
-			_, err := w.Write(d)
-			if err != nil {
-				return out, err
-			}
-		}
-		if err != nil {
-			// Read returns io.EOF at the end of file, which is not an error for us
-			if err == io.EOF {
-				err = nil
-			}
-			return out, err
-		}
-	}
 }

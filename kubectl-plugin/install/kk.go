@@ -15,10 +15,15 @@ const (
 func newInstallWithKKCmd() (cmd *cobra.Command) {
 	opt := &kkOption{}
 	cmd = &cobra.Command{
-		Use:     "kk",
-		Short:   "Install KubeSphere with kubekey (aka kk)",
-		PreRunE: opt.preRunE,
-		RunE:    opt.runE,
+		Use:   "kk",
+		Short: "Install KubeSphere with kubekey (aka kk)",
+		Long: `Install KubeSphere with kubekey (aka kk)
+Get more details about kubekye from https://github.com/kubesphere/kubekey`,
+		Example: `ks install kk --components devops
+ks install kk --version nightly --components devops`,
+		ValidArgsFunction: common.PluginAbleComponentsCompletion(),
+		PreRunE:           opt.preRunE,
+		RunE:              opt.runE,
 	}
 
 	flags := cmd.Flags()
@@ -26,6 +31,8 @@ func newInstallWithKKCmd() (cmd *cobra.Command) {
 		"The version of KubeSphere. Support value could be v3.0.0, nightly, nightly-20210309. nightly equals to nightly-latest")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components which you want to enable after the installation")
+	flags.StringVarP(&opt.zone, "zone", "", "cn",
+		"Set environment variables, for example export KKZONE=cn")
 	return
 }
 
@@ -33,6 +40,7 @@ type kkOption struct {
 	version           string
 	kubernetesVersion string
 	components        []string
+	zone              string
 }
 
 func (o *kkOption) versionCheck() (err error) {
@@ -65,12 +73,15 @@ func (o *kkOption) runE(cmd *cobra.Command, args []string) (err error) {
 	report := installReport{}
 	report.init()
 
-	if err = execCommand("kk", "create", "cluster", "--with-kubesphere", o.version, "--yes"); err != nil {
+	commander := Commander{
+		Env: []string{fmt.Sprintf("KKZONE=%s", o.zone)},
+	}
+	if err = commander.execCommand("kk", "create", "cluster", "--with-kubesphere", o.version, "--yes"); err != nil {
 		return
 	}
 
 	for _, component := range o.components {
-		if err = execCommand("ks", "com", "enable", component); err != nil {
+		if err = commander.execCommand("ks", "com", "enable", component); err != nil {
 			return
 		}
 	}
