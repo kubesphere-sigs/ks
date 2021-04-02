@@ -134,8 +134,9 @@ func (o *installerOption) runE(_ *cobra.Command, args []string) (err error) {
 		_ = os.RemoveAll(ccPath)
 	}()
 
-	if err = execCommand("kubectl", "apply", "-f", crdPath); err == nil {
-		err = execCommand("kubectl", "apply", "-f", ccPath)
+	commander := Commander{}
+	if err = commander.execCommand("kubectl", "apply", "-f", crdPath); err == nil {
+		err = commander.execCommand("kubectl", "apply", "-f", ccPath)
 	}
 	return
 }

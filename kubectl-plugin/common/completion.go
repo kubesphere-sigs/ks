@@ -13,3 +13,8 @@ func ArrayCompletion(array ...string) func(cmd *cobra.Command, args []string, to
 		return array, cobra.ShellCompDirectiveNoFileComp
 	}
 }
+
+// PluginAbleComponentsCompletion returns a completion function for pluginAble components
+func PluginAbleComponentsCompletion() func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return ArrayCompletion(GetPluginAbleComponents()...)
+}
