@@ -16,6 +16,7 @@ func (c Commander) execCommand(name string, args ...string) (err error) {
 	command := exec.Command(name, args...)
 	if len(c.Env) > 0 {
 		command.Env = append(command.Env, c.Env...)
+		command.Env = append(command.Env, os.Environ()...)
 	}
 
 	//var stdout []byte

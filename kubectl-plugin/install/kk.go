@@ -18,7 +18,7 @@ func newInstallWithKKCmd() (cmd *cobra.Command) {
 		Use:   "kk",
 		Short: "Install KubeSphere with kubekey (aka kk)",
 		Long: `Install KubeSphere with kubekey (aka kk)
-Get more details about kubekye from https://github.com/kubesphere/kubekey`,
+Get more details about kubekey from https://github.com/kubesphere/kubekey`,
 		Example: `ks install kk --components devops
 ks install kk --version nightly --components devops`,
 		ValidArgsFunction: common.PluginAbleComponentsCompletion(),
