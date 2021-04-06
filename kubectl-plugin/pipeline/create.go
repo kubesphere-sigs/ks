@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/Masterminds/sprig"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
@@ -24,6 +25,7 @@ type pipelineCreateOption struct {
 	Template    string
 	Type        string
 	SCMType     string
+	Batch       bool
 
 	// Inner fields
 	Client       dynamic.Interface
@@ -63,6 +65,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 		"The type of pipeline, could be pipeline, multi_branch_pipeline")
 	flags.StringVarP(&opt.SCMType, "scm-type", "", "",
 		"The SCM type of pipeline, could be gitlab, github")
+	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
 
 	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "multi-branch-gitlab"))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
@@ -80,7 +83,64 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	return
 }
 
-func (o *pipelineCreateOption) preRunE(_ *cobra.Command, args []string) (err error) {
+func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) {
+	if o.Batch {
+		// without wizard in batch mode
+		return
+	}
+
+	if o.Workspace == "" {
+		if o.Workspace, err = getInput("Please input the workspace name"); err != nil {
+			return
+		}
+	}
+
+	if o.Project == "" {
+		if o.Project, err = getInput("Please input the project name"); err != nil {
+			return
+		}
+	}
+
+	if o.Template == "" {
+		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "multi-branch-gitlab"}); err != nil {
+			return
+		}
+	}
+
+	if o.Name == "" {
+		if o.Name, err = getInput("Please input the Pipeline name"); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func chooseOneFromArray(options []string) (result string, err error) {
+	prompt := &survey.Select{
+		Message: "Please select:",
+		Options: options,
+	}
+	err = survey.AskOne(prompt, &result)
+	return
+}
+
+func getInput(title string) (result string, err error) {
+	prompt := &survey.Input{
+		Message: title,
+	}
+	err = survey.AskOne(prompt, &result)
+	return
+}
+
+func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Name == "" && len(args) > 0 {
+		o.Name = args[0]
+	}
+
+	if err = o.wizard(cmd, args); err != nil {
+		return
+	}
+
 	switch o.Template {
 	case "":
 	case "java":
