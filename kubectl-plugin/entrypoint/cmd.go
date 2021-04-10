@@ -7,6 +7,7 @@ import (
 	"github.com/linuxsuren/ks/kubectl-plugin/auth"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/linuxsuren/ks/kubectl-plugin/component"
+	"github.com/linuxsuren/ks/kubectl-plugin/config"
 	"github.com/linuxsuren/ks/kubectl-plugin/install"
 	"github.com/linuxsuren/ks/kubectl-plugin/pipeline"
 	"github.com/linuxsuren/ks/kubectl-plugin/registry"
@@ -46,6 +47,7 @@ See also https://github.com/kubesphere/kubesphere`,
 		registry.NewRegistryCmd(client),
 		auth.NewAuthCmd(client),
 		tool.NewToolCmd(),
-		install.NewInstallCmd())
+		install.NewInstallCmd(),
+		config.NewConfigRootCmd(client))
 	return
 }

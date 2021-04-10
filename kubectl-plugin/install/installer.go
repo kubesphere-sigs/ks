@@ -41,7 +41,7 @@ type installerOption struct {
 
 	// inner fields
 	client      dynamic.Interface
-	ksInstaller ksInstaller
+	ksInstaller common.KSInstallerSpec
 }
 
 func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
@@ -54,7 +54,7 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 	_, o.nightly = common.GetNightlyTag(o.nightly)
 
 	// parse the ks-installer
-	o.ksInstaller = ksInstaller{
+	o.ksInstaller = common.KSInstallerSpec{
 		Version: o.version,
 		ImageNamespace: "kubesphere",
 	}
@@ -140,26 +140,6 @@ func (o *installerOption) runE(_ *cobra.Command, args []string) (err error) {
 		err = commander.execCommand("kubectl", "apply", "-f", ccPath)
 	}
 	return
-}
-
-type ksInstaller struct {
-	Version        string
-	ImageNamespace string
-
-	Servicemesh   componentStatus
-	Openpitrix    componentStatus
-	Notification  componentStatus
-	NetworkPolicy componentStatus
-	MetricsServer componentStatus
-	Logging       componentStatus
-	Events        componentStatus
-	DevOps        componentStatus
-	Auditing      componentStatus
-	Alerting      componentStatus
-}
-
-type componentStatus struct {
-	Enabled bool
 }
 
 var localStorageClass = `
