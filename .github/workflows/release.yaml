@@ -27,6 +27,10 @@ jobs:
         rm -rf upx-3.96-amd64_linux
         rm -rf xvf upx-3.96-amd64_linux.tar.xz
         upx -V
+    - name: Image Registry Login
+      run: |
+        docker login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{secrets.DOCKER_HUB_TOKEN}}
+        docker login ghcr.io/linuxsuren/ks/ks --username linuxsuren --password ${{secrets.GH_PUBLISH_SECRETS}}
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2.5.0
       with:
@@ -37,10 +41,9 @@ jobs:
     - name: Build image
       run: |
         ver=$(git describe --tags)
-        docker login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{secrets.DOCKER_HUB_TOKEN}}
         cp bin/ks_linux_amd64/ks build/ks
-        docker build ./build -t surenpi/ks:${ver}
-        docker push surenpi/ks:${ver}
+        docker build ./build -t surenpi/ks-tool:${ver}
+        docker push surenpi/ks-tool:${ver}
 
-        docker tag surenpi/ks:${ver} surenpi/ks:latest
-        docker push surenpi/ks:latest
+        docker tag surenpi/ks-tool:${ver} surenpi/ks-tool:latest
+        docker push surenpi/ks-tool:latest
