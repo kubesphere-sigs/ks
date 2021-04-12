@@ -11,6 +11,7 @@ func NewInstallCmd() (cmd *cobra.Command) {
 
 	cmd.AddCommand(newInstallWithKindCmd(),
 		newInstallWithKKCmd(),
-		newInstallerCmd())
+		newInstallerCmd(),
+		newInstallK3DCmd())
 	return
 }

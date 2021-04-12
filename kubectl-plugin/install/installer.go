@@ -55,7 +55,7 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 
 	// parse the ks-installer
 	o.ksInstaller = common.KSInstallerSpec{
-		Version: o.version,
+		Version:        o.version,
 		ImageNamespace: "kubesphere",
 	}
 	if o.nightly != "" {
