@@ -13,7 +13,9 @@ func newInstallK3DCmd() (cmd *cobra.Command) {
 		Short: "Install KubeSphere with k3d",
 		Long: `Install KubeSphere with k3d
 You can get more details from https://github.com/rancher/k3d/`,
-		RunE: opt.runE,
+		PreRunE:  opt.preRunE,
+		RunE:     opt.runE,
+		PostRunE: opt.postRunE,
 	}
 
 	flags := cmd.Flags()
