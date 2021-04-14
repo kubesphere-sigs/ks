@@ -7,6 +7,7 @@ import (
 	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"strconv"
@@ -68,6 +69,7 @@ func (o *EnableOption) enablePreRunE(cmd *cobra.Command, args []string) (err err
 }
 
 func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error) {
+	ctx := context.TODO()
 	if o.Edit {
 		err = common.UpdateWithEditor(kstypes.GetClusterConfiguration(), "kubesphere-system", "ks-installer", o.Client)
 	} else {
@@ -85,6 +87,30 @@ func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error)
 				err = integrateSonarQube(o.Client, ns, name, o.SonarQube, o.SonarQubeToken)
 			}
 			return
+		case "metering":
+			patchTarget = "metering"
+			if _, err = o.Client.Resource(kstypes.GetConfigMapSchema()).Namespace("kubesphere-system").
+				Get(ctx, "ks-metering-config", metav1.GetOptions{}); err != nil {
+				var data *unstructured.Unstructured
+				if data, err = kstypes.GetObjectFromYaml(`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ks-metering-config
+data:
+  ks-metering.yaml: |
+    retentionDay: 7d
+    billing:
+      priceInfo:
+        currencyUnit: "USD"
+        cpuPerCorePerHour: 1.5
+        memPerGigabytesPerHour: 5
+        ingressNetworkTrafficPerGiagabytesPerHour: 3.5
+        egressNetworkTrafficPerGigabytesPerHour: 0.5
+        pvcPerGigabytesPerHour: 2.1`); err == nil {
+					_, err = o.Client.Resource(kstypes.GetConfigMapSchema()).Namespace("kubesphere-system").Create(ctx, data, metav1.CreateOptions{})
+				}
+			}
 		case "all":
 			for _, item := range common.GetPluginAbleComponents() {
 				o.Name = item
@@ -98,12 +124,13 @@ func (o *EnableOption) enableRunE(cmd *cobra.Command, args []string) (err error)
 			return
 		}
 
-		patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s/enabled", "value": %s}]`, patchTarget, enabled)
-		ctx := context.TODO()
-		_, err = o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace(ns).Patch(ctx,
-			name, types.JSONPatchType,
-			[]byte(patch),
-			metav1.PatchOptions{})
+		if err == nil {
+			patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s/enabled", "value": %s}]`, patchTarget, enabled)
+			_, err = o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace(ns).Patch(ctx,
+				name, types.JSONPatchType,
+				[]byte(patch),
+				metav1.PatchOptions{})
+		}
 	}
 	return
 }

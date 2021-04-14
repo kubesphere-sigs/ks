@@ -54,6 +54,8 @@ spec:
   logging:                 # (CPU: 57 m, Memory: 2.76 G) Whether to install KubeSphere Logging system. Flexible Logging functions are provided for log query, collection and management in a unified console. Additional log collectors can be added, such as Elasticsearch, Kafka and Fluentd.
     enabled: {{ .Logging.Enabled }}
     logsidecarReplicas: 2
+  metering:
+    enabled: false
   metrics_server:                    # (CPU: 56 m, Memory: 44.35 MiB) Whether to install metrics-server. IT enables HPA (Horizontal Pod Autoscaler).
     enabled: {{ .MetricsServer.Enabled }}
   monitoring:
@@ -168,7 +170,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - DevOps.kubesphere.io
+  - devops.kubesphere.io
   resources:
   - '*'
   verbs:
@@ -180,7 +182,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - Logging.kubesphere.io
+  - logging.kubesphere.io
   resources:
   - '*'
   verbs:
@@ -234,19 +236,19 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - Notification.kubesphere.io
+  - notification.kubesphere.io
   resources:
   - '*'
   verbs:
   - '*'
 - apiGroups:
-  - Auditing.kubesphere.io
+  - auditing.kubesphere.io
   resources:
   - '*'
   verbs:
   - '*'
 - apiGroups:
-  - Events.kubesphere.io
+  - events.kubesphere.io
   resources:
   - '*'
   verbs:
