@@ -27,12 +27,17 @@ All features below work with [KubeSphere](https://github.com/kubsphere/kubespher
   * Update a component manually or automatically
   * Output the logs of a KubeSphere component
   * Edit a KubeSphere component
+  * Describe a KubeSphere component (wrapper of kubectl describe)
 * Pipeline management
   * Create a Pipeline with java, go template
   * Edit a Pipeline without give the fullname (namespace/name)
 * User Management
 * Working with [k3s](https://github.com/k3s-io/k3s) via setting environment `kubernetes_type=k3s`
-
+* KubeSphere installation
+  * Install KubeSphere via [ks-installer](https://github.com/kubesphere/ks-installer)
+  * Install KubeSphere via [k3d](https://github.com/rancher/k3d)
+  * Install KubeSphere via [kubekey](https://github.com/kubesphere/kubekey)
+  * Install KubeSphere via [kind](https://github.com/kubernetes-sigs/kind)
 ## Component
 
 ```

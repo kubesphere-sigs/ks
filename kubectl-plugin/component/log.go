@@ -25,8 +25,8 @@ type LogOption struct {
 	Tail   int64
 }
 
-// NewComponentLogCmd returns a command to enable (or disable) a component by name
-func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
+// newComponentLogCmd returns a command to enable (or disable) a component by name
+func newComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
 	opt := &LogOption{
 		Option: Option{
 			Clientset: clientset,
@@ -36,7 +36,7 @@ func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientse
 	cmd = &cobra.Command{
 		Use:               "log",
 		Short:             "Output the log of KubeSphere component",
-		ValidArgsFunction: common.ArrayCompletion("apiserver", "controller", "console", "jenkins", "installer"),
+		ValidArgsFunction: common.KubeSphereDeploymentCompletion(),
 		PreRunE:           opt.componentNameCheck,
 		RunE:              opt.logRunE,
 	}
