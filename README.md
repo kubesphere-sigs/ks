@@ -8,8 +8,6 @@
 
 `ks` is a tool which makes it be easy to work with [KubeSphere](https://github.com/kubsphere/kubesphere).
 
-It's also [a plugin of kubectl](https://github.com/kubernetes-sigs/krew).
-
 # Get started
 
 Install it via: `brew install linuxsuren/linuxsuren/ks`
@@ -17,7 +15,7 @@ Install it via: `brew install linuxsuren/linuxsuren/ks`
 Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
 ```
-hd install -t 8 linuxsuren/ks/kubectl-ks
+hd install linuxsuren/ks
 ```
 
 # Features
