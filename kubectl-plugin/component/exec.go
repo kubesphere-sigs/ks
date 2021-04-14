@@ -16,14 +16,16 @@ import (
 )
 
 func newComponentsExecCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	availableComs := common.ArrayCompletion("jenkins", "apiserver")
+	opt := &Option{
+		Client: client,
+	}
 
 	cmd = &cobra.Command{
 		Use:   "exec",
 		Short: "Execute a command in a container.",
 		Long: `Execute a command in a container.
 This command is similar with kubectl exec, the only difference is that you don't need to type the fullname'`,
-		ValidArgsFunction: availableComs,
+		ValidArgsFunction: common.KubeSphereDeploymentCompletion(),
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var kubectl string
@@ -31,51 +33,34 @@ This command is similar with kubectl exec, the only difference is that you don't
 				return
 			}
 
-			switch args[0] {
-			case "jenkins":
-				var jenkinsPodName string
-				var list *unstructured.UnstructuredList
-				if list, err = client.Resource(kstypes.GetPodSchema()).Namespace("kubesphere-devops-system").List(
-					context.TODO(), metav1.ListOptions{}); err == nil {
-					for _, item := range list.Items {
-						if strings.HasPrefix(item.GetName(), "ks-jenkins") {
-							jenkinsPodName = item.GetName()
-						}
-					}
-				} else {
-					fmt.Println(err)
-					return
-				}
-
-				if jenkinsPodName == "" {
-					err = fmt.Errorf("cannot found ks-jenkins pod")
-				} else {
-					err = syscall.Exec(kubectl, []string{"kubectl", "-n", "kubesphere-devops-system", "exec", "-it", jenkinsPodName, "bash"}, os.Environ())
-				}
-			case "apiserver":
-				var apiserverPodName string
-				var list *unstructured.UnstructuredList
-				if list, err = client.Resource(kstypes.GetPodSchema()).Namespace("kubesphere-system").List(
-					context.TODO(), metav1.ListOptions{}); err == nil {
-					for _, item := range list.Items {
-						if strings.HasPrefix(item.GetName(), "ks-apiserver") {
-							apiserverPodName = item.GetName()
-						}
-					}
-				} else {
-					fmt.Println(err)
-					return
-				}
-
-				if apiserverPodName == "" {
-					err = fmt.Errorf("cannot found ks-jenkins pod")
-				} else {
-					err = syscall.Exec(kubectl, []string{"kubectl", "-n", "kubesphere-system", "exec", "-it", apiserverPodName, "sh"}, os.Environ())
-				}
+			var podName string
+			var ns string
+			if ns, podName, err = opt.getPod(args[0]); err == nil {
+				err = syscall.Exec(kubectl, []string{"kubectl", "-n", ns, "exec", "-it", podName, "bash"}, os.Environ())
 			}
 			return
 		},
 	}
 
+	return
+}
+
+func (o *Option) getPod(name string) (ns, podName string, err error) {
+	var deployName string
+	var list *unstructured.UnstructuredList
+	ns, deployName = o.getNsAndName(name)
+	if list, err = o.Client.Resource(kstypes.GetPodSchema()).Namespace(ns).List(
+		context.TODO(), metav1.ListOptions{}); err == nil {
+		for _, item := range list.Items {
+			if strings.HasPrefix(item.GetName(), deployName) {
+				podName = item.GetName()
+				break
+			}
+		}
+	}
+
+	if podName == "" {
+		err = fmt.Errorf("cannot found %s pod", deployName)
+	}
 	return
 }
