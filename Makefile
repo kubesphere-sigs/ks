@@ -4,8 +4,10 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 	-X github.com/linuxsuren/cobra-extension/version.commit=$(COMMIT) \
 	-X github.com/linuxsuren/cobra-extension/version.date=$(shell date +'%Y-%m-%d') -w -s"
 
-build: pre-build
+simple-build:
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
+
+build: pre-build simple-build
 	upx bin/ks
 
 build-linux: pre-build
@@ -37,6 +39,8 @@ lint:
 	golint -set_exit_status ./...
 
 copy: build
+	sudo cp bin/ks /usr/local/bin/ks
+simple-copy: simple-build
 	sudo cp bin/ks /usr/local/bin/ks
 
 copy-plugin: build-plugin
