@@ -105,6 +105,9 @@ func (o *clusterOption) showClusterRole() (err error) {
 		installer := common.KSInstaller{}
 		if err = yaml.Unmarshal(yamlData, &installer); err == nil {
 			fmt.Printf("cluster role: %s\n", installer.Spec.Multicluster.ClusterRole)
+			if installer.Spec.Multicluster.ClusterRole == "member" {
+				fmt.Printf("host cluster jwtSecret: %s\n", installer.Spec.Authentication.JwtSecret)
+			}
 		}
 	}
 
@@ -117,7 +120,7 @@ func (o *clusterOption) showClusterRole() (err error) {
 
 		cfg := kubeSphereConfig{}
 		if err = yaml.Unmarshal([]byte(fmt.Sprintf("%v", kubeSphereCfg)), &cfg); err == nil {
-			fmt.Printf("jwtSecret: %s\n", cfg.Authentication.JwtSecret)
+			fmt.Printf("current jwtSecret: %s\n", cfg.Authentication.JwtSecret)
 		}
 	}
 	return
