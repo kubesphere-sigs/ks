@@ -3,26 +3,6 @@ project_name: ks
 builds:
 - env:
     - CGO_ENABLED=0
-  id: kubectl-ks
-  dir: kubectl-plugin
-  binary: kubectl-ks
-  goarch:
-    - amd64
-    - arm64
-  goos:
-    - windows
-    - linux
-    - darwin
-  hooks:
-    post:
-      - upx "{{ .Path }}"
-  ldflags:
-    - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
-    - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
-    - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
-    - -w
-- env:
-    - CGO_ENABLED=0
   id: "ks"
   binary: ks
   goarch:
@@ -113,3 +93,11 @@ nfpms:
       darwin: macOS
       linux: linux
       windows: windows
+dockers:
+  - goos: linux
+    goarch: amd64
+    image_templates:
+      - "surenpi/ks:latest"
+      - "surenpi/ks:{{.Tag}}"
+      - "ghcr.io/linuxsuren/ks/ks:latest"
+      - "ghcr.io/linuxsuren/ks/ks:{{.Tag}}"
