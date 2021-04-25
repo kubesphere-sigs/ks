@@ -42,8 +42,8 @@ jobs:
       run: |
         ver=$(git describe --tags)
         cp bin/ks_linux_amd64/ks build/ks
-        docker build ./build -t surenpi/ks-tool:${ver}
-        docker push surenpi/ks-tool:${ver}
+        docker build ./build -t surenpi/ks-tool:v1.17.0-${ver}
+        docker push surenpi/ks-tool:v1.17.0-${ver}
 
         docker tag surenpi/ks-tool:${ver} surenpi/ks-tool:latest
         docker push surenpi/ks-tool:latest

@@ -46,5 +46,8 @@ goreleaser-test:
 	goreleaser release --rm-dist --skip-publish --snapshot
 
 image: build-linux
-	cp bin/ks build/ks
+	cp bin/linux/ks build/ks
 	docker build ./build -t surenpi/ks
+
+image-push:
+	docker push surenpi/ks
