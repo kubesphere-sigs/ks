@@ -1,3 +1,4 @@
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/LinuxSuRen/ks)
 [![](https://goreportcard.com/badge/linuxsuren/ks)](https://goreportcard.com/report/linuxsuren/ks)
 [![](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/linuxsuren/ks)
 [![Contributors](https://img.shields.io/github/contributors/linuxsuren/ks.svg)](https://github.com/linuxsuren/ks/graphs/contributors)
@@ -6,36 +7,39 @@
 
 # ks
 
-`ks` 是 [KubeSphere](https://github.com/kubesphere/kubesphere) 的命令行客户端，可以简化用户、开发者的日常操作。
+`ks` is a tool which makes it be easy to work with [KubeSphere](https://github.com/kubesphere/kubesphere).
 
 # Get started
 
-通过 brew 安装: `brew install linuxsuren/linuxsuren/ks`
+Install it via: `brew install linuxsuren/linuxsuren/ks`
 
-通过 [hd](https://github.com/linuxsuren/http-downloader) 安装: `hd install linuxsuren/ks`
+Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
-# 特色功能
+```
+hd install linuxsuren/ks
+```
 
-以下的表述默认是以 [KubeSphere](https://github.com/kubesphere/kubesphere) 为上下文的：
+# Features
 
-* 组件管理
-  * 启用、禁用组件
-  * 手动（或自动）更新指定组件
-  * 输出组件日志
-  * 编辑组件
-  * 查看组件的事件（也就是命令 kubectl describe 的包装）
-* 流水线管理
-  * 通过 java, go 等模板创建流水线
-  * 编辑流水线
-* 重置用户密码
-* 支持通过设置环境变量 `kubernetes_type=k3s` 操作 [k3s](https://github.com/k3s-io/k3s) 
-* 安装 KubeSphere
-  * 通过 [ks-installer](https://github.com/kubesphere/ks-installer) 安装
-  * 通过 [k3d](https://github.com/rancher/k3d) 安装
-  * 通过 [kubekey](https://github.com/kubesphere/kubekey) 安装
-  * 通过 [kind](https://github.com/kubernetes-sigs/kind) 安装
+All features below work with [KubeSphere](https://github.com/kubesphere/kubesphere) instead of other concept.
 
-## 组件
+* Component Management
+  * Enable (disable) components
+  * Update a component manually or automatically
+  * Output the logs of a KubeSphere component
+  * Edit a KubeSphere component
+  * Describe a KubeSphere component (wrapper of kubectl describe)
+* Pipeline management
+  * Create a Pipeline with java, go template
+  * Edit a Pipeline without give the fullname (namespace/name)
+* User Management
+* Working with [k3s](https://github.com/k3s-io/k3s) via setting environment `kubernetes_type=k3s`
+* KubeSphere installation
+  * Install KubeSphere via [ks-installer](https://github.com/kubesphere/ks-installer)
+  * Install KubeSphere via [k3d](https://github.com/rancher/k3d)
+  * Install KubeSphere via [kubekey](https://github.com/kubesphere/kubekey)
+  * Install KubeSphere via [kind](https://github.com/kubernetes-sigs/kind)
+## Component
 
 ```
 ➜  ~ kubectl ks com
@@ -57,7 +61,7 @@ Available Commands:
   watch       Update images of ks-apiserver, ks-controller-manager, ks-console
 ```
 
-## 流水线
+## Pipeline
 
 ```
 ➜  ~ kubectl ks pip
@@ -80,7 +84,7 @@ Flags:
 Use "ks pipeline [command] --help" for more information about a command.
 ```
 
-## 安装
+## Installation
 
 ```
 Install KubeSphere with kind or kk
