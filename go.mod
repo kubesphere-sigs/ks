@@ -10,12 +10,11 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.10
 	github.com/linuxsuren/go-cli-alias v0.0.6
-	github.com/linuxsuren/http-downloader v0.0.27-0.20210502025510-543b2b12e6d7 // indirect
+	github.com/linuxsuren/http-downloader v0.0.27
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	k8s.io/api v0.19.4
 	k8s.io/apimachinery v0.19.4
