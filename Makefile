@@ -55,3 +55,7 @@ image: build-linux
 
 image-push:
 	docker push surenpi/ks
+
+update:
+	git fetch
+	git reset --hard origin/$(shell git branch --show-current)

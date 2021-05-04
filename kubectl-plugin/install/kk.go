@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 	"strings"
@@ -66,6 +67,14 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if err = o.versionCheck(); err != nil {
 		return
 	}
+
+	is := installer.Installer{
+		Provider: "github",
+	}
+	err = is.CheckDepAndInstall(map[string]string{
+		"kk": "kubesphere/kubekey",
+	})
+	fmt.Println(err, "check error")
 	return
 }
 

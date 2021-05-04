@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 	"html/template"
@@ -16,7 +17,8 @@ func newInstallWithKindCmd() (cmd *cobra.Command) {
 		Short: "Install KubeSphere with kind",
 		Example: `ks install kind --components DevOps
 ks install kind --nightly latest --components DevOps`,
-		RunE: opt.runE,
+		PreRunE: opt.preRunE,
+		RunE:    opt.runE,
 	}
 
 	flags := cmd.Flags()
@@ -62,6 +64,16 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	if err = commander.execCommand("kubectl", "ks", "com", "reset", "--nightly", o.Nightly, "-a"); err != nil {
 		return
 	}
+	return
+}
+
+func (o *kindOption) preRunE(_ *cobra.Command, _ []string) (err error) {
+	is := installer.Installer{
+		Provider: "github",
+	}
+	err = is.CheckDepAndInstall(map[string]string{
+		"kind": "kind",
+	})
 	return
 }
 

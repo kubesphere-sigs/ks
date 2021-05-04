@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 )
@@ -48,6 +49,14 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if o.name == "" && len(args) > 0 {
 		o.name = args[0]
 	}
+
+	is := installer.Installer{
+		Provider: "github",
+	}
+	err = is.CheckDepAndInstall(map[string]string{
+		"k3d": "rancher/k3d",
+	})
+	fmt.Println(err, "check error")
 	return
 }
 
