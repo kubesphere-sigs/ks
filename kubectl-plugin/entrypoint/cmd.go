@@ -11,6 +11,7 @@ import (
 	"github.com/linuxsuren/ks/kubectl-plugin/install"
 	"github.com/linuxsuren/ks/kubectl-plugin/pipeline"
 	"github.com/linuxsuren/ks/kubectl-plugin/registry"
+	"github.com/linuxsuren/ks/kubectl-plugin/source2image"
 	token2 "github.com/linuxsuren/ks/kubectl-plugin/token"
 	"github.com/linuxsuren/ks/kubectl-plugin/tool"
 	"github.com/linuxsuren/ks/kubectl-plugin/update"
@@ -48,6 +49,7 @@ See also https://github.com/kubesphere/kubesphere`,
 		auth.NewAuthCmd(client),
 		tool.NewToolCmd(),
 		install.NewInstallCmd(),
-		config.NewConfigRootCmd(client))
+		config.NewConfigRootCmd(client),
+		source2image.NewS2ICmd(client))
 	return
 }
