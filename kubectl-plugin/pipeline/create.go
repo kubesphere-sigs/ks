@@ -363,7 +363,6 @@ spec:
       owner: devops-ws
       repo: devops-ws/learn-pipeline-java
       server_name: https://gitlab.com
-      repo: learn-pipeline-java
     {{else if eq .SCMType "github" -}}
     github_source:
       discover_branches: 1
