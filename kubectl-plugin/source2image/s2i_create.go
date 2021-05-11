@@ -27,6 +27,7 @@ func createS2i(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 
 	flags := cmd.Flags()
+	flags.StringVarP(&opt.name, "name", "n", "", "The name of image builder")
 	flags.StringVarP(&opt.buildEnv, "build-env", "", "", "Build Environment")
 	flags.StringVarP(&opt.sourceURL, "source-url", "", "", "Code URL")
 	flags.StringVarP(&opt.sourceBranch, "source-branch", "", "master", "Code source branch name")
@@ -38,6 +39,7 @@ func createS2i(client dynamic.Interface) (cmd *cobra.Command) {
 
 type createOption struct {
 	// flags fields
+	name          string
 	buildEnv      string
 	sourceURL     string
 	sourceBranch  string
@@ -52,7 +54,7 @@ type createOption struct {
 }
 
 func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
-	codeFrameworks := []string{}
+	codeFrameworks := make([]string, 0)
 	if o.templates, err = o.getTemplates(); err == nil {
 		codeMap := map[string]string{}
 
@@ -92,6 +94,15 @@ func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		err = fmt.Errorf("failed to choose image registry, error: %v", err)
 		return
 	}
+
+	if len(args) > 0 {
+		o.name = args[0]
+	}
+	if o.name == "" {
+		if o.name, err = getInput("Input the builder name", ""); err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -120,7 +131,7 @@ func (o *createOption) runE(cmd *cobra.Command, args []string) (err error) {
 			Kind:       "S2iBuilder",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "hello",
+			GenerateName: o.name,
 			Annotations: map[string]string{
 				"languageType": o.codeFramework,
 			},
