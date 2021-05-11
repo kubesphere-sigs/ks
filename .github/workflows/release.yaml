@@ -45,5 +45,5 @@ jobs:
         docker build ./build -t surenpi/ks-tool:v1.17.0-${ver}
         docker push surenpi/ks-tool:v1.17.0-${ver}
 
-        docker tag surenpi/ks-tool:${ver} surenpi/ks-tool:latest
+        docker tag surenpi/ks-tool:v1.17.0-${ver} surenpi/ks-tool:latest
         docker push surenpi/ks-tool:latest
