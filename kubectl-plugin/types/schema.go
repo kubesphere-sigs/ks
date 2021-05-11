@@ -89,11 +89,37 @@ func GetConfigMapSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetSecretSchema returns the schema of Secret
+func GetSecretSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "secrets",
+	}
+}
+
 // GetStorageClassSchema returns the schema of StorageClass
 func GetStorageClassSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "storage.k8s.io",
 		Version:  "v1",
 		Resource: "storageclasses",
+	}
+}
+
+// GetS2iBuilderTemplateSchema returns the schema of S2iBuilderTemplate
+func GetS2iBuilderTemplateSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "s2ibuildertemplates",
+	}
+}
+
+// GetS2iBuilderSchema returns the schema of S2iBuilder
+func GetS2iBuilderSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "s2ibuilders",
 	}
 }
