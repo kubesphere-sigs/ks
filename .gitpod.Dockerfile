@@ -1,7 +1,8 @@
 FROM gitpod/workspace-full
 
-# Install custom tools, runtimes, etc.
-# For example "bastet", a command-line tetris clone:
-# RUN brew install bastet
-#
+ENV PATH /home/linuxbrew/.linuxbrew/bin:$PATH
+
 # More information: https://www.gitpod.io/docs/config-docker/
+RUN sudo rm -rf /usr/bin/hd && \
+    brew install linuxsuren/linuxsuren/hd && \
+    hd install kubesphere/kubekey
