@@ -67,9 +67,10 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 		"The SCM type of pipeline, could be gitlab, github")
 	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
 
-	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "multi-branch-gitlab"))
+	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple",
+		"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
-	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github"))
+	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github", "git"))
 
 	if client != nil {
 		// these features rely on the k8s client, ignore it if the client is nil
@@ -102,7 +103,8 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	}
 
 	if o.Template == "" {
-		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "multi-branch-gitlab"}); err != nil {
+		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple",
+			"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"}); err != nil {
 			return
 		}
 	}
@@ -149,9 +151,15 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		o.Jenkinsfile = jenkinsfileTemplateForGo
 	case "simple":
 		o.Jenkinsfile = jenkinsfileTemplateForSimple
+	case "multi-branch-git":
+		o.Type = "multi-branch-pipeline"
+		o.SCMType = "git"
 	case "multi-branch-gitlab":
 		o.Type = "multi-branch-pipeline"
 		o.SCMType = "gitlab"
+	case "multi-branch-github":
+		o.Type = "multi-branch-pipeline"
+		o.SCMType = "github"
 	default:
 		err = fmt.Errorf("%s is not support", o.Template)
 	}
@@ -344,6 +352,7 @@ spec:
     discarder:
       days_to_keep: "-1"
       num_to_keep: "-1"
+    {{if eq .SCMType "gitlab"}}
     gitlab_source:
       discover_branches: 1
       discover_pr_from_forks:
@@ -351,12 +360,28 @@ spec:
         trust: 2
       discover_pr_from_origin: 2
       discover_tags: true
-      owner: LinuxSuRen1
-      repo: LinuxSuRen1/learn-pipeline-java
+      owner: devops-ws
+      repo: devops-ws/learn-pipeline-java
       server_name: https://gitlab.com
-    name: gitlab
+      repo: learn-pipeline-java
+    {{else if eq .SCMType "github" -}}
+    github_source:
+      discover_branches: 1
+      discover_pr_from_forks:
+        strategy: 2
+        trust: 2
+      discover_pr_from_origin: 2
+      discover_tags: true
+      owner: devops-ws
+      repo: learn-pipeline-java
+    {{else if eq .SCMType "git" -}}
+    git_source:
+      discover_branches: true
+      url: https://gitee.com/devops-ws/learn-pipeline-java
+    {{end -}}
+    name: "{{.Name}}"
     script_path: Jenkinsfile
-    source_type: gitlab
+    source_type: {{.SCMType}}
   {{end -}}
   type: {{.Type}}
 status: {}
