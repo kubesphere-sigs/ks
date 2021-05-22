@@ -5,5 +5,5 @@ tasks:
   - init: |
       git config --global user.name $GIT_AUTHOR_NAME
       git config --global user.email $GIT_COMMITTER_EMAIL
-      echo Yes | gh repo fork
+      gh repo fork --remote
       make
