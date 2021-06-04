@@ -38,6 +38,15 @@ func GetWorkspaceSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetWorkspaceTemplate returns the schema of WorkspaceTemplate
+func GetWorkspaceTemplate() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "tenant.kubesphere.io",
+		Version:  "v1alpha2",
+		Resource: "workspacetemplates",
+	}
+}
+
 // GetNamespaceSchema returns the schema of namespaces
 func GetNamespaceSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
