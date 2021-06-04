@@ -19,10 +19,12 @@ func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "reset",
 		Short: "Reset the component by name",
-		Example: `'ks com reset -r=false -a' will reset ks-apiserver, ks-controller-manager, ks-console to the latest
+		Example: `'ks com reset -r=false --nightly latest console' will reset ks-console to the latest release
+'ks com reset -r=false -a' will reset ks-apiserver, ks-controller-manager, ks-console to the latest
 'ks com reset -a --nightly latest' will reset the images to the latest nightly which comes from yesterday
 'ks com reset -a --nightly latest-1' will reset the images to the nightly which comes from the day before yesterday`,
-		RunE: opt.resetRunE,
+		PreRunE: opt.preRunE,
+		RunE:    opt.resetRunE,
 	}
 
 	flags := cmd.Flags()
@@ -36,6 +38,13 @@ func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"Indicate if you want to update component to nightly build. It should be date, e.g. 2021-01-01. Or you can just use latest represents the last day")
 	flags.StringVarP(&opt.Name, "name", "n", "",
 		"The name of target component which you want to reset. This does not work if you provide flag --all")
+	return
+}
+
+func (o *ResetOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.Name == "" && len(args) > 0 {
+		o.Name = args[0]
+	}
 	return
 }
 
@@ -65,11 +74,10 @@ func (o *ResetOption) resetRunE(cmd *cobra.Command, args []string) (err error) {
 	if o.Release && o.Nightly == "" {
 		imageOrg = "kubesphere"
 	} else {
-		o.Tag = "latest"
+		// try to parse the nightly date
+		_, o.Tag = common.GetNightlyTag(o.Nightly)
 	}
 
-	// try to parse the nightly date
-	_, o.Tag = common.GetNightlyTag(o.Nightly)
 	if o.ResetAll {
 		o.Name = "apiserver"
 		if err = o.updateBy(imageOrg, o.Tag); err != nil {
@@ -91,7 +99,11 @@ func (o *ResetOption) resetRunE(cmd *cobra.Command, args []string) (err error) {
 			return
 		}
 	} else {
-		err = o.updateBy(imageOrg, o.Tag)
+		if o.Name == "" {
+			err = fmt.Errorf("please provide a component name")
+		} else {
+			err = o.updateBy(imageOrg, o.Tag)
+		}
 	}
 	return
 }
