@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/Masterminds/sprig"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"strings"
 )
@@ -91,13 +93,23 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	}
 
 	if o.Workspace == "" {
-		if o.Workspace, err = getInput("Please input the workspace name"); err != nil {
+		var wsNames []string
+		if wsNames, err = o.getWorkspaceTemplateNameList(); err == nil {
+			if o.Workspace, err = chooseObjectFromArray("workspace name", wsNames); err != nil {
+				return
+			}
+		} else {
 			return
 		}
 	}
 
 	if o.Project == "" {
-		if o.Project, err = getInput("Please input the project name"); err != nil {
+		var projectNames []string
+		if projectNames, err = o.getDevOpsProjectNameList(); err == nil {
+			if o.Project, err = chooseObjectFromArray("project name", projectNames); err != nil {
+				return
+			}
+		} else {
 			return
 		}
 	}
@@ -117,18 +129,24 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	return
 }
 
-func chooseOneFromArray(options []string) (result string, err error) {
+func chooseObjectFromArray(object string, options []string) (result string, err error) {
 	prompt := &survey.Select{
-		Message: "Please select:",
+		Message: fmt.Sprintf("Please select %s:", object),
 		Options: options,
 	}
 	err = survey.AskOne(prompt, &result)
 	return
 }
 
+func chooseOneFromArray(options []string) (result string, err error) {
+	result, err = chooseObjectFromArray("", options)
+	return
+}
+
 func getInput(title string) (result string, err error) {
 	prompt := &survey.Input{
 		Message: title,
+		Default: strings.ToLower(randomdata.SillyName()),
 	}
 	err = survey.AskOne(prompt, &result)
 	return
@@ -197,27 +215,73 @@ func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err erro
 	return
 }
 
+func (o *pipelineCreateOption) getDevOpsProjectNameList() (names []string, err error) {
+	names, err = o.getUnstructuredNameList(false, []string{}, types.GetDevOpsProjectSchema())
+	return
+}
+
 func (o *pipelineCreateOption) getWorkspaceNameList() (names []string, err error) {
+	names, err = o.getUnstructuredNameList(true, []string{"system-workspace"}, types.GetWorkspaceSchema())
+	return
+}
+
+func (o *pipelineCreateOption) getWorkspaceTemplateNameList() (names []string, err error) {
+	names, err = o.getUnstructuredNameList(true, []string{"system-workspace"}, types.GetWorkspaceTemplate())
+	return
+}
+
+func (o *pipelineCreateOption) getUnstructuredNameList(originalName bool, excludes []string, schemaType schema.GroupVersionResource) (names []string, err error) {
 	var wsList *unstructured.UnstructuredList
-	if wsList, err = o.getWorkspaceList(); err == nil {
-		names = make([]string, len(wsList.Items))
+	if wsList, err = o.getUnstructuredList(schemaType); err == nil {
+		names = make([]string, 0)
 		for i := range wsList.Items {
-			names[i] = wsList.Items[i].GetName()
+			var name string
+			if originalName {
+				name = wsList.Items[i].GetName()
+			} else {
+				name = wsList.Items[i].GetGenerateName()
+			}
+
+			exclude := false
+			for j := range excludes {
+				if name == excludes[j] {
+					exclude = true
+					break
+				}
+			}
+
+			if !exclude {
+				names = append(names, name)
+			}
 		}
 	}
 	return
 }
 
-func (o *pipelineCreateOption) getWorkspaceList() (wsList *unstructured.UnstructuredList, err error) {
+func (o *pipelineCreateOption) getUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
 	ctx := context.TODO()
-	wsList, err = o.Client.Resource(types.GetWorkspaceSchema()).List(ctx, metav1.ListOptions{})
+	wsList, err = o.Client.Resource(schemaType).List(ctx, metav1.ListOptions{})
+	return
+}
+
+func (o *pipelineCreateOption) getWorkspaceList() (wsList *unstructured.UnstructuredList, err error) {
+	wsList, err = o.getUnstructuredList(types.GetWorkspaceSchema())
+	return
+}
+
+func (o *pipelineCreateOption) getWorkspaceTemplateList() (wsList *unstructured.UnstructuredList, err error) {
+	wsList, err = o.getUnstructuredList(types.GetWorkspaceTemplate())
 	return
 }
 
 func (o *pipelineCreateOption) checkWorkspace() (ws *unstructured.Unstructured, err error) {
 	ctx := context.TODO()
-	ws, err = o.Client.Resource(types.GetWorkspaceSchema()).Get(ctx, o.Workspace, metav1.GetOptions{})
-	// TODO create the workspace if it's not exists
+	if ws, err = o.Client.Resource(types.GetWorkspaceSchema()).Get(ctx, o.Workspace, metav1.GetOptions{}); err == nil {
+		return
+	}
+
+	// TODO check workspaceTemplate when ks in a multi-cluster environment
+	ws, err = o.Client.Resource(types.GetWorkspaceTemplate()).Get(ctx, o.Workspace, metav1.GetOptions{})
 	return
 }
 
