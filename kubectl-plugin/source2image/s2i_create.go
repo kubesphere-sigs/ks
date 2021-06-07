@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +13,21 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/dynamic"
+	"strings"
+)
+
+const (
+	// BuilderTypeS2I represents builder type as s2i
+	BuilderTypeS2I = "s2i"
+	// BuilderTypeB2I represents builder type as b2i
+	BuilderTypeB2I = "b2i"
+)
+
+const (
+	// BinaryTypeJar represents binary type as jar
+	BinaryTypeJar = "jar"
+	// BinaryTypeWar represents binary type as war
+	BinaryTypeWar = "war"
 )
 
 func createS2i(client dynamic.Interface) (cmd *cobra.Command) {
@@ -34,6 +50,8 @@ func createS2i(client dynamic.Interface) (cmd *cobra.Command) {
 	flags.StringVarP(&opt.imageName, "image-name", "", "", "The target image name")
 	flags.StringVarP(&opt.imageTag, "image-tag", "", "latest", "The target image tag name")
 	flags.StringVarP(&opt.imageRegistry, "image-registry", "", "", "The target image registry name")
+	flags.StringVarP(&opt.builderType, "builder-type", "", "", "s2i or b2i")
+	flags.StringVarP(&opt.binaryType, "binary-type", "", "", fmt.Sprintf("%s or %s", BinaryTypeJar, BinaryTypeWar))
 	return
 }
 
@@ -46,6 +64,8 @@ type createOption struct {
 	imageName     string
 	imageTag      string
 	imageRegistry string
+	builderType   string
+	binaryType    string
 
 	// inner fields
 	client        dynamic.Interface
@@ -54,6 +74,11 @@ type createOption struct {
 }
 
 func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+	if o.builderType, err = chooseOneFromArray([]string{BuilderTypeS2I, BuilderTypeB2I}, "Please select builder type:"); err != nil {
+		err = fmt.Errorf("failed to choose builder type, error: %v", err)
+		return
+	}
+
 	codeFrameworks := make([]string, 0)
 	if o.templates, err = o.getTemplates(); err == nil {
 		codeMap := map[string]string{}
@@ -78,7 +103,32 @@ func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if o.sourceURL, err = getInput("Input the source code URL", "https://gitee.com/devops-ws/learn-pipeline-java"); err != nil {
+	switch o.builderType {
+	case BuilderTypeS2I:
+		if o.sourceURL, err = getInput("Input the source code URL", "https://gitee.com/devops-ws/learn-pipeline-java"); err != nil {
+			return
+		}
+	case BuilderTypeB2I:
+		if o.binaryType, err = chooseOneFromArray([]string{BinaryTypeWar, BinaryTypeJar}, "Please select binary type"); err != nil {
+			return
+		}
+
+		switch o.binaryType {
+		case BinaryTypeJar:
+			if o.sourceURL, err = getInput("Input the binary file URL", "https://github.com/devops-ws/learn-pipeline-java/releases/download/v0.0.1/demo-junit-1.0.1-20170422.jar"); err != nil {
+				return
+			}
+		case BinaryTypeWar:
+			if o.sourceURL, err = getInput("Input the binary file URL", "https://github.com/devops-ws/learn-pipeline-java/releases/download/v0.0.1/demo-junit-1.0.1-20170422.war"); err != nil {
+				return
+			}
+		default:
+			err = fmt.Errorf("unsupport binary type: %s", o.binaryType)
+			return
+		}
+		o.codeFramework = o.binaryType
+	default:
+		err = fmt.Errorf("unsupport builer type: %s", o.builderType)
 		return
 	}
 
@@ -87,9 +137,11 @@ func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var registries []string
-	if registries, err = o.getImageRegistries("test"); err != nil {
+	if registries, err = o.getImageRegistries("test"); err != nil || len(registries) == 0 {
+		err = fmt.Errorf("failed to get image registries, error: %v", err)
 		return
 	}
+
 	if o.imageRegistry, err = chooseOneFromArray(registries, "Please select image registry:"); err != nil {
 		err = fmt.Errorf("failed to choose image registry, error: %v", err)
 		return
@@ -99,7 +151,7 @@ func (o *createOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		o.name = args[0]
 	}
 	if o.name == "" {
-		if o.name, err = getInput("Input the builder name", ""); err != nil {
+		if o.name, err = getInput("Input the builder name", strings.ToLower(randomdata.SillyName())); err != nil {
 			return
 		}
 	}
@@ -143,6 +195,7 @@ func (o *createOption) runE(cmd *cobra.Command, args []string) (err error) {
 				Tag:          o.imageTag,
 				SourceURL:    o.sourceURL,
 				RevisionId:   o.sourceBranch,
+				IsBinaryURL:  o.builderType == BuilderTypeB2I,
 				PushAuthentication: &AuthConfig{
 					SecretRef: &corev1.LocalObjectReference{
 						Name: o.imageRegistry,
@@ -155,6 +208,13 @@ func (o *createOption) runE(cmd *cobra.Command, args []string) (err error) {
 				RuntimeImagePullPolicy: PullIfNotPresent,
 			},
 		},
+	}
+
+	if o.builderType == BuilderTypeB2I {
+		builder.Spec.Config.RuntimeArtifacts = []VolumeSpec{{
+			Source: "/deployments",
+		}}
+		builder.Annotations["kubesphere.io/file"] = "{\"name\":\"demo-junit-1.0.1-20170422.jar\",\"size\":5737,\"showProgress\":false,\"showFile\":true,\"percentage\":100,\"status\":\"active\"}"
 	}
 
 	var builderObj *unstructured.Unstructured
