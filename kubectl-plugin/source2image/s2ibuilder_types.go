@@ -18,24 +18,24 @@ type RunState string
 
 const (
 	// ResourceKindS2iBuilder s2i builder name
-	ResourceKindS2iBuilder     = "S2iBuilder"
+	ResourceKindS2iBuilder = "S2iBuilder"
 	// ResourceSingularS2iBuilder s2i builder singular name
 	ResourceSingularS2iBuilder = "s2ibuilder"
 	// ResourcePluralS2iBuilder s2i builder plural name
-	ResourcePluralS2iBuilder   = "s2ibuilders"
+	ResourcePluralS2iBuilder = "s2ibuilders"
 )
 
 const (
 	// NotRunning means not run yet
 	NotRunning RunState = "Not Running Yet"
 	// Running means running
-	Running    RunState = "Running"
+	Running RunState = "Running"
 	// Successful means success
 	Successful RunState = "Successful"
 	// Failed means failed
-	Failed     RunState = "Failed"
+	Failed RunState = "Failed"
 	// Unknown means unknow
-	Unknown    RunState = "Unknown"
+	Unknown RunState = "Unknown"
 )
 const (
 	AutoScaleAnnotations             = "devops.kubesphere.io/autoscale"

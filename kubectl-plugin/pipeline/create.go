@@ -28,6 +28,7 @@ type pipelineCreateOption struct {
 	Type        string
 	SCMType     string
 	Batch       bool
+	SkipCheck   bool
 
 	// Inner fields
 	Client       dynamic.Interface
@@ -68,6 +69,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	flags.StringVarP(&opt.SCMType, "scm-type", "", "",
 		"The SCM type of pipeline, could be gitlab, github")
 	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
+	flags.BoolVarP(&opt.SkipCheck, "skip-check", "", false, "Skip the resources check")
 
 	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple",
 		"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"))
@@ -196,12 +198,17 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err error) {
 	ctx := context.TODO()
 
-	var ws *unstructured.Unstructured
-	if ws, err = o.checkWorkspace(); err != nil {
-		return
+	var wdID string
+	if !o.SkipCheck {
+		var ws *unstructured.Unstructured
+		if ws, err = o.checkWorkspace(); err != nil {
+			return
+		}
+		wdID = string(ws.GetUID())
 	}
+
 	var project *unstructured.Unstructured
-	if project, err = o.checkDevOpsProject(ws); err != nil {
+	if project, err = o.checkDevOpsProject(wdID); err != nil {
 		return
 	}
 	o.Project = project.GetName() // the previous name is the generate name
@@ -307,7 +314,7 @@ func (o *pipelineCreateOption) getDevOpsProjectList() (wsList *unstructured.Unst
 	return
 }
 
-func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured) (project *unstructured.Unstructured, err error) {
+func (o *pipelineCreateOption) checkDevOpsProject(wsID string) (project *unstructured.Unstructured, err error) {
 	ctx := context.TODO()
 	var list *unstructured.UnstructuredList
 	if list, err = o.getDevOpsProjectList(); err != nil {
@@ -325,8 +332,9 @@ func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured)
 
 	if !found {
 		var tpl *template.Template
-		o.WorkspaceUID = string(ws.GetUID())
+		o.WorkspaceUID = wsID
 		if tpl, err = template.New("project").Parse(devopsProjectTemplate); err != nil {
+			err = fmt.Errorf("failed to parse devops project template, error is: %v", err)
 			return
 		}
 
@@ -341,7 +349,9 @@ func (o *pipelineCreateOption) checkDevOpsProject(ws *unstructured.Unstructured)
 			return
 		}
 
-		project, err = o.Client.Resource(types.GetDevOpsProjectSchema()).Create(ctx, projectObj, metav1.CreateOptions{})
+		if project, err = o.Client.Resource(types.GetDevOpsProjectSchema()).Create(ctx, projectObj, metav1.CreateOptions{}); err != nil {
+			err = fmt.Errorf("failed to create devops project with YAML: '%s'. Error is: %v", buf.String(), err)
+		}
 	}
 	return
 }
@@ -382,6 +392,7 @@ metadata:
   generateName: {{.Project}}
   labels:
     kubesphere.io/workspace: {{.Workspace}}
+  {{if ne .WorkspaceUID ""}}
   ownerReferences:
   - apiVersion: tenant.kubesphere.io/v1alpha1
     blockOwnerDeletion: true
@@ -389,6 +400,7 @@ metadata:
     kind: Workspace
     name: {{.Workspace}}
     uid: {{.WorkspaceUID}}
+  {{end}}
 `
 
 var pipelineTemplate = `
