@@ -11,7 +11,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.10
 	github.com/linuxsuren/go-cli-alias v0.0.6
-	github.com/linuxsuren/http-downloader v0.0.27
+	github.com/linuxsuren/http-downloader v0.0.29
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
