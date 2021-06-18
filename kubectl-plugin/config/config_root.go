@@ -13,6 +13,6 @@ func NewConfigRootCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Aliases: []string{"opt"},
 	}
 
-	cmd.AddCommand(newClusterCmd(client))
+	cmd.AddCommand(newClusterCmd(client), newMigrateCmd(client))
 	return
 }

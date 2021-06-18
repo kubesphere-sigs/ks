@@ -10,6 +10,15 @@ type clusterOption struct {
 	client dynamic.Interface
 }
 
+type migrateOption struct {
+	service   string
+	devops    bool
+	namespace string
+
+	// inner fields
+	client dynamic.Interface
+}
+
 type kubeSphereConfig struct {
 	Authentication authentication
 }
