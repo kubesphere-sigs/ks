@@ -100,7 +100,9 @@ func (o *migrateOption) getDevOpsPassword() (password string, err error) {
 			var mapObj map[string]interface{}
 			if obj, ok = mapData["devops"]; ok {
 				mapObj = obj.(map[string]interface{})
-				password = mapObj["password"].(string)
+				if passwdObj := mapObj["password"]; passwdObj != nil {
+					password = passwdObj.(string)
+				}
 			}
 		}
 	} else {
@@ -118,7 +120,8 @@ func updateAuthWithObj(yamlf string, dataMap map[string]interface{}) string {
 		if obj, ok = mapData["devops"]; ok {
 			mapObj = obj.(map[string]interface{})
 		} else {
-			return ""
+			mapObj = make(map[string]interface{})
+			mapData["devops"] = mapObj
 		}
 
 		for key, val := range dataMap {
