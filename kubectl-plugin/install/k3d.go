@@ -34,12 +34,15 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The nightly version you want to install")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components that you want to Enabled with KubeSphere")
+	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.18.20-k3s1",
+		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 	return
 }
 
 type k3dOption struct {
 	installerOption
 
+	image   string
 	name    string
 	agents  int
 	servers int
@@ -56,7 +59,6 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	err = is.CheckDepAndInstall(map[string]string{
 		"k3d": "rancher/k3d",
 	})
-	fmt.Println(err, "check error")
 	return
 }
 
@@ -71,7 +73,8 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		"-p", fmt.Sprintf(`%d:30880@agent[0]`, ports[0]),
 		"-p", fmt.Sprintf(`%d:30180@agent[0]`, ports[1]),
 		"--agents", fmt.Sprintf("%d", o.agents),
-		"--servers", fmt.Sprintf("%d", o.servers)}
+		"--servers", fmt.Sprintf("%d", o.servers),
+		"--image", o.image}
 	if o.name != "" {
 		k3dArgs = append(k3dArgs, o.name)
 	}
