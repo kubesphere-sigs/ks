@@ -5,6 +5,7 @@ import (
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
+	"runtime"
 )
 
 func newInstallK3DCmd() (cmd *cobra.Command) {
@@ -26,6 +27,8 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"Specify how many agents you want to create")
 	flags.IntVarP(&opt.servers, "servers", "", 1,
 		"Specify how many servers you want to create")
+	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.18.20-k3s1",
+		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 
 	// TODO find a better way to reuse the flags from another command
 	flags.StringVarP(&opt.version, "version", "", "v3.0.0",
@@ -34,8 +37,8 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The nightly version you want to install")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components that you want to Enabled with KubeSphere")
-	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.18.20-k3s1",
-		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
+	flags.BoolVarP(&opt.fetch, "fetch", "", true,
+		"Indicate if fetch the latest config of tools")
 	return
 }
 
@@ -55,6 +58,9 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 
 	is := installer.Installer{
 		Provider: "github",
+		OS:       runtime.GOOS,
+		Arch:     runtime.GOARCH,
+		Fetch:    o.fetch,
 	}
 	err = is.CheckDepAndInstall(map[string]string{
 		"k3d": "rancher/k3d",
