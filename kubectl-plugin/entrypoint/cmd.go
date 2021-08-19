@@ -26,8 +26,8 @@ import (
 func NewCmdKS(streams genericclioptions.IOStreams) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use: "ks",
-		Short: `kubectl plugin for Kubesphere
-Kubesphere is the enterprise-grade container platform tailored for multicloud and multi-cluster management
+		Short: `kubectl plugin for KubeSphere
+KubeSphere is the enterprise-grade container platform tailored for multicloud and multi-cluster management
 See also https://github.com/kubesphere/kubesphere`,
 	}
 
@@ -41,7 +41,7 @@ See also https://github.com/kubesphere/kubesphere`,
 	cmd.AddCommand(user.NewUserCmd(client),
 		pipeline.NewPipelineCmd(client),
 		update.NewUpdateCmd(client),
-		extver.NewVersionCmd("linuxsuren", "ks", "kubectl-ks", nil),
+		extver.NewVersionCmd("kubesphere-sigs", "ks", "kubectl-ks", nil),
 		pkg.NewCompletionCmd(cmd),
 		component.NewComponentCmd(client, clientSet),
 		token2.NewTokenCmd(client, clientSet),
