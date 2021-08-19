@@ -1,9 +1,9 @@
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/LinuxSuRen/ks)
-[![](https://goreportcard.com/badge/linuxsuren/ks)](https://goreportcard.com/report/linuxsuren/ks)
-[![](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/linuxsuren/ks)
-[![Contributors](https://img.shields.io/github/contributors/linuxsuren/ks.svg)](https://github.com/linuxsuren/ks/graphs/contributors)
-[![GitHub release](https://img.shields.io/github/release/linuxsuren/ks.svg?label=release)](https://github.com/linuxsuren/ks/releases/latest)
-![GitHub All Releases](https://img.shields.io/github/downloads/linuxsuren/ks/total)
+[![](https://goreportcard.com/badge/kubesphere-sigs/ks)](https://goreportcard.com/report/kubesphere-sigs/ks)
+[![](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/kubesphere-sigs/ks)
+[![Contributors](https://img.shields.io/github/contributors/kubesphere-sigs/ks.svg)](https://github.com/kubesphere-sigs/ks/graphs/contributors)
+[![GitHub release](https://img.shields.io/github/release/kubesphere-sigs/ks.svg?label=release)](https://github.com/kubesphere-sigs/ks/releases/latest)
+![GitHub All Releases](https://img.shields.io/github/downloads/kubesphere-sigs/ks/total)
 
 # ks
 
@@ -11,12 +11,12 @@
 
 # Get started
 
-Install it via: `brew install linuxsuren/linuxsuren/ks`
+Install it via: `brew install kubesphere-sigs/kubesphere-sigs/ks`
 
-Install it via [hd](https://github.com/linuxsuren/http-downloader):
+Install it via [hd](https://github.com/kubesphere-sigs/http-downloader):
 
 ```
-hd install linuxsuren/ks
+hd install kubesphere-sigs/ks
 ```
 
 # Features
