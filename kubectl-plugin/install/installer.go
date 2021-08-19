@@ -38,6 +38,7 @@ type installerOption struct {
 	version    string
 	nightly    string
 	components []string
+	fetch      bool
 
 	// inner fields
 	client      dynamic.Interface
