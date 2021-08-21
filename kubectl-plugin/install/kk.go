@@ -84,6 +84,7 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	}
 	switch o.container {
 	case "docker":
+		dep["docker"] = "docker"
 	case "containerd":
 		dep["containerd"] = "containerd/containerd"
 		dep["crictl"] = "kubernetes-sigs/cri-tools"

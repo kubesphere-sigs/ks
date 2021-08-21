@@ -63,7 +63,8 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		Fetch:    o.fetch,
 	}
 	err = is.CheckDepAndInstall(map[string]string{
-		"k3d": "rancher/k3d",
+		"k3d":    "rancher/k3d",
+		"docker": "docker",
 	})
 	return
 }
