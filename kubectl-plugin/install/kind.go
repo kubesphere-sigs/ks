@@ -72,7 +72,8 @@ func (o *kindOption) preRunE(_ *cobra.Command, _ []string) (err error) {
 		Provider: "github",
 	}
 	err = is.CheckDepAndInstall(map[string]string{
-		"kind": "kind",
+		"kind":   "kind",
+		"docker": "docker",
 	})
 	return
 }

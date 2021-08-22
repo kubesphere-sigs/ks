@@ -35,6 +35,8 @@ ks install kk --version nightly --components devops`,
 		"The components which you want to enable after the installation")
 	flags.StringVarP(&opt.zone, "zone", "", "cn",
 		"Set environment variables, for example export KKZONE=cn")
+	flags.StringVarP(&opt.container, "container", "", "docker",
+		"Indicate the container runtime type. Supported: docker, containerd")
 	return
 }
 
@@ -43,6 +45,7 @@ type kkOption struct {
 	kubernetesVersion string
 	components        []string
 	zone              string
+	container         string
 }
 
 func (o *kkOption) versionCheck() (err error) {
@@ -76,9 +79,18 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	is := installer.Installer{
 		Provider: "github",
 	}
-	err = is.CheckDepAndInstall(map[string]string{
+	dep := map[string]string{
 		"kk": "kubesphere/kubekey",
-	})
+	}
+	switch o.container {
+	case "docker":
+		dep["docker"] = "docker"
+	case "containerd":
+		dep["containerd"] = "containerd/containerd"
+		dep["crictl"] = "kubernetes-sigs/cri-tools"
+		dep["runc"] = "opencontainers/runc"
+	}
+	err = is.CheckDepAndInstall(dep)
 	return
 }
 
