@@ -33,7 +33,7 @@ func main() {
 	}
 
 	cmd = aliasCmd.CreateDefaultCmd(TargetCLI, AliasCLI)
-	cmd.AddCommand(extver.NewVersionCmd("linuxsuren", AliasCLI, AliasCLI, nil))
+	cmd.AddCommand(extver.NewVersionCmd("kubesphere-sigs", AliasCLI, AliasCLI, nil))
 
 	aliasCmd.AddAliasCmd(cmd, getDefault())
 	cmd.AddCommand(ext.NewCompletionCmd(cmd))
