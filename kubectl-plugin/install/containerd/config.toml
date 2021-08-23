@@ -1,0 +1,8 @@
+# /etc/containerd/config.toml
+[plugins]
+  [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "kubesphere/pause:3.2"
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+          endpoint = ["https://registry-1.docker.io"]

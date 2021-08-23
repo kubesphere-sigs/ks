@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
+	"github.com/linuxsuren/ks/kubectl-plugin/install/containerd"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -90,7 +93,23 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		dep["crictl"] = "kubernetes-sigs/cri-tools"
 		dep["runc"] = "opencontainers/runc"
 	}
-	err = is.CheckDepAndInstall(dep)
+	if err = is.CheckDepAndInstall(dep); err == nil {
+		err = setDefaultConfigFiles()
+	}
+	return
+}
+
+func setDefaultConfigFiles() (err error) {
+	if err = setDefaultIfNotExist([]byte(containerd.GetConfigToml()), "/etc/containerd/config.toml"); err == nil {
+		err = setDefaultIfNotExist([]byte(containerd.GetCrictl()), "/etc/crictl.yaml")
+	}
+	return
+}
+
+func setDefaultIfNotExist(data []byte, path string) (err error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = ioutil.WriteFile(path, data, 0644)
+	}
 	return
 }
 
