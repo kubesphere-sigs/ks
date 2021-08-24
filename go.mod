@@ -1,9 +1,9 @@
 module github.com/linuxsuren/ks
 
-go 1.15
+go 1.16
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.16
+	github.com/AlecAivazis/survey/v2 v2.3.1
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -11,7 +11,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.10
 	github.com/linuxsuren/go-cli-alias v0.0.6
-	github.com/linuxsuren/http-downloader v0.0.32-0.20210822064615-b730515cf035
+	github.com/linuxsuren/http-downloader v0.0.33
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
