@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"html/template"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -35,6 +36,8 @@ ks install kind --nightly latest --components DevOps`,
 	flags.BoolVarP(&opt.Reset, "reset", "", false, "")
 	flags.StringVarP(&opt.Nightly, "nightly", "", "",
 		"Supported date format is '20200101', or you can use 'latest' which means yesterday")
+	flags.BoolVarP(&opt.fetch, "fetch", "", true,
+		"Indicate if fetch the latest config of tools")
 
 	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("DevOps"))
 	return
@@ -70,6 +73,9 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 func (o *kindOption) preRunE(_ *cobra.Command, _ []string) (err error) {
 	is := installer.Installer{
 		Provider: "github",
+		OS:       runtime.GOOS,
+		Arch:     runtime.GOARCH,
+		Fetch:    o.fetch,
 	}
 	err = is.CheckDepAndInstall(map[string]string{
 		"kind":   "kind",
@@ -224,6 +230,7 @@ type kindOption struct {
 	portMappings map[string]string
 	ksVersion    string
 	components   []string
+	fetch        bool
 
 	Reset   bool
 	Nightly string

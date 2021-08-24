@@ -8,4 +8,6 @@ import (
 func TestEmebdContent(t *testing.T) {
 	assert.NotEmpty(t, GetCrictl(), "crictl config file is empty")
 	assert.NotEmpty(t, GetConfigToml(), "containerd config file is empty")
+	assert.NotEmpty(t, GetKKConfig(), "kk config file is empty")
+	assert.NotEmpty(t, GetContainerdService(), "containerd.service is empty")
 }
