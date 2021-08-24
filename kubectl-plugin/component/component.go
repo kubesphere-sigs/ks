@@ -97,7 +97,7 @@ func (o *Option) getResourceType(component string) schema.GroupVersionResource {
 	}
 }
 
-func (o *Option) updateBy(image, tag string) (err error) {
+func (o *Option) updateBy(image string) (err error) {
 	ns, name := o.getNsAndName(o.Name)
 	err = o.updateDeploy(ns, name, fmt.Sprintf("%s/%s", image, name), o.Tag)
 	return
