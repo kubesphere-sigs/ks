@@ -51,7 +51,7 @@ jobs:
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          args: '-exclude=G402,G204,G304,G110,CWE-276 ./...'
+          args: '-exclude=G402,G204,G304,G110,G306 ./...'
   CodeQL:
     name: CodeQL
     runs-on: ubuntu-latest
