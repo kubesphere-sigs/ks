@@ -35,7 +35,8 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd.AddCommand(NewDelPipelineCmd(client),
 		NewPipelineEditCmd(client),
 		NewPipelineViewCmd(client),
-		newPipelineCreateCmd(client))
+		newPipelineCreateCmd(client),
+		newPipelineRunCmd(client))
 	return
 }
 
