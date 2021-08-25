@@ -46,15 +46,14 @@ func (o *pipelineRunOpt) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	buf := &bytes.Buffer{}
-	if err = tpl.Execute(buf, map[string]string{
+	var buf bytes.Buffer
+	if err = tpl.Execute(&buf, map[string]string{
 		"name":      o.pipeline,
 		"namespace": o.namespace,
 	}); err != nil {
 		err = fmt.Errorf("failed render pipeline template, error: %v", err)
 		return
 	}
-	fmt.Println(buf.String())
 
 	var pipelineRunObj *unstructured.Unstructured
 	if pipelineRunObj, err = types.GetObjectFromYaml(buf.String()); err != nil {
@@ -62,7 +61,10 @@ func (o *pipelineRunOpt) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	_, err = o.client.Resource(types.GetPipelineRunSchema()).Create(context.TODO(), pipelineRunObj, metav1.CreateOptions{})
+	if _, err = o.client.Resource(types.GetPipelineRunSchema()).Namespace(o.namespace).Create(context.TODO(),
+		pipelineRunObj, metav1.CreateOptions{}); err != nil {
+		err = fmt.Errorf("failed create PipelineRun, error: %v", err)
+	}
 	return
 }
 
