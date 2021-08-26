@@ -20,6 +20,15 @@ func GetPipelineSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetPipelineRunSchema returns the schema of pipelineruns
+func GetPipelineRunSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha4",
+		Resource: "pipelineruns",
+	}
+}
+
 // GetDevOpsProjectSchema returns the schema of DevOpsProject
 func GetDevOpsProjectSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{

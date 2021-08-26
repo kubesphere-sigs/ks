@@ -15,7 +15,6 @@ import (
 
 // NewPipelineViewCmd returns a command to view pipeline
 func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	ctx := context.TODO()
 	cmd = &cobra.Command{
 		Use:   "view",
 		Short: "Output the YAML format of a Pipeline",
@@ -27,7 +26,7 @@ func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
 					var rawPip *unstructured.Unstructured
 					var data []byte
 					buf := bytes.NewBuffer(data)
-					if rawPip, err = client.Resource(types.GetPipelineSchema()).Namespace(ns).Get(ctx, pip, metav1.GetOptions{}); err == nil {
+					if rawPip, err = getPipeline(pip, ns, client); err == nil {
 						enc := json.NewEncoder(buf)
 						enc.SetIndent("", "    ")
 						if err = enc.Encode(rawPip); err != nil {
@@ -49,5 +48,10 @@ func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
 			return
 		},
 	}
+	return
+}
+
+func getPipeline(name, namespace string, client dynamic.Interface) (rawPip *unstructured.Unstructured, err error) {
+	rawPip, err = client.Resource(types.GetPipelineSchema()).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	return
 }
