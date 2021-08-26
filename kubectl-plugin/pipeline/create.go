@@ -222,6 +222,11 @@ func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err erro
 	return
 }
 
+func (o *pipelineCreateOption) getDevOpsNamespaceList() (names []string, err error) {
+	names, err = o.getUnstructuredNameList(true, []string{}, types.GetDevOpsProjectSchema())
+	return
+}
+
 func (o *pipelineCreateOption) getDevOpsProjectNameList() (names []string, err error) {
 	names, err = o.getUnstructuredNameList(false, []string{}, types.GetDevOpsProjectSchema())
 	return
@@ -237,9 +242,15 @@ func (o *pipelineCreateOption) getWorkspaceTemplateNameList() (names []string, e
 	return
 }
 
-func (o *pipelineCreateOption) getUnstructuredNameList(originalName bool, excludes []string, schemaType schema.GroupVersionResource) (names []string, err error) {
+func (o *pipelineCreateOption) getUnstructuredNameListInNamespace(namespace string, originalName bool, excludes []string, schemaType schema.GroupVersionResource) (names []string, err error) {
 	var wsList *unstructured.UnstructuredList
-	if wsList, err = o.getUnstructuredList(schemaType); err == nil {
+	if namespace != "" {
+		wsList, err = o.getUnstructuredListInNamespace(namespace, schemaType)
+	} else {
+		wsList, err = o.getUnstructuredList(schemaType)
+	}
+
+	if err == nil {
 		names = make([]string, 0)
 		for i := range wsList.Items {
 			var name string
@@ -262,6 +273,17 @@ func (o *pipelineCreateOption) getUnstructuredNameList(originalName bool, exclud
 			}
 		}
 	}
+	return
+}
+
+func (o *pipelineCreateOption) getUnstructuredNameList(originalName bool, excludes []string, schemaType schema.GroupVersionResource) (names []string, err error) {
+	return o.getUnstructuredNameListInNamespace("", originalName, excludes, schemaType)
+}
+
+func (o *pipelineCreateOption) getUnstructuredListInNamespace(namespace string, schemaType schema.GroupVersionResource) (
+	wsList *unstructured.UnstructuredList, err error) {
+	ctx := context.TODO()
+	wsList, err = o.Client.Resource(schemaType).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	return
 }
 
