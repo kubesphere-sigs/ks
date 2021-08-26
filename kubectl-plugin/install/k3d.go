@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"runtime"
 )
@@ -31,7 +32,7 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 
 	// TODO find a better way to reuse the flags from another command
-	flags.StringVarP(&opt.version, "version", "", "v3.0.0",
+	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
 		"The version of KubeSphere which you want to install")
 	flags.StringVarP(&opt.nightly, "nightly", "", "",
 		"The nightly version you want to install")
