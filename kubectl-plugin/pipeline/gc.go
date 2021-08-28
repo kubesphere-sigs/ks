@@ -74,7 +74,7 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 			break
 		}
 
-		if okToDelete (item.Object, o.maxAge) {
+		if okToDelete(item.Object, o.maxAge) {
 			delErr := o.client.Resource(types.GetPipelineRunSchema()).Namespace(namespace).Delete(
 				context.TODO(), item.GetName(), metav1.DeleteOptions{})
 			if delErr != nil {
@@ -99,13 +99,14 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 }
 
 func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
-	cmd.Printf("start to gc PipelineRuns in %d namespaces\n", len(o.namespaces))
+	cmd.Printf("starting to gc PipelineRuns in %d namespaces\n", len(o.namespaces))
 	errorsNs := []string{}
 
 	for i := range o.namespaces {
 		ns := o.namespaces[i]
 		if err := o.cleanPipelineRunInNamespace(ns); err != nil {
 			cmd.PrintErrf("failed to clean PipelineRuns in '%s'\n", ns)
+			errorsNs = append(errorsNs, ns)
 		}
 	}
 
