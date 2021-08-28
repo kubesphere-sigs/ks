@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/linuxsuren/ks/kubectl-plugin/entrypoint"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/entrypoint"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"

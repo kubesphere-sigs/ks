@@ -1,4 +1,4 @@
-[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/LinuxSuRen/ks)
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/kubesphere-sigs/ks)
 [![](https://goreportcard.com/badge/kubesphere-sigs/ks)](https://goreportcard.com/report/kubesphere-sigs/ks)
 [![](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/kubesphere-sigs/ks)
 [![Contributors](https://img.shields.io/github/contributors/kubesphere-sigs/ks.svg)](https://github.com/kubesphere-sigs/ks/graphs/contributors)

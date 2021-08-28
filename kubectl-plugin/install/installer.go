@@ -2,8 +2,8 @@ package install
 
 import (
 	"fmt"
-	"github.com/linuxsuren/ks/kubectl-plugin/common"
-	"github.com/linuxsuren/ks/kubectl-plugin/install/storage"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/storage"
 	"github.com/spf13/cobra"
 	"html/template"
 	"k8s.io/client-go/dynamic"

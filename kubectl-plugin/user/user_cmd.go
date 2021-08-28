@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
-	kstype "github.com/linuxsuren/ks/kubectl-plugin/types"
+	kstype "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

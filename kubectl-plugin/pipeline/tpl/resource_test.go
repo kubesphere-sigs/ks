@@ -1,7 +1,7 @@
 package tpl_test
 
 import (
-	"github.com/linuxsuren/ks/kubectl-plugin/pipeline/tpl"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/tpl"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

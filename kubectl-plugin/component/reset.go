@@ -3,8 +3,8 @@ package component
 import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/linuxsuren/ks/kubectl-plugin/common"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
 )

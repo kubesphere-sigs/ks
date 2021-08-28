@@ -1,4 +1,4 @@
-module github.com/linuxsuren/ks
+module github.com/kubesphere-sigs/ks
 
 go 1.16
 
