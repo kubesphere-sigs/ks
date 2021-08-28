@@ -5,7 +5,7 @@ import (
 	ext "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
 	aliasCmd "github.com/linuxsuren/go-cli-alias/pkg/cmd"
-	"github.com/linuxsuren/ks/kubectl-plugin/entrypoint"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/entrypoint"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"

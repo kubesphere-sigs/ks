@@ -2,7 +2,7 @@ package install
 
 import (
 	"fmt"
-	"github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

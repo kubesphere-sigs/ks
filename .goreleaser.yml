@@ -55,7 +55,7 @@ brews:
       owner: linuxsuren
       name: homebrew-linuxsuren
     folder: Formula
-    homepage: "https://github.com/linuxsuren/ks"
+    homepage: "https://github.com/kubesphere-sigs/ks"
     description: ks is a tool which makes it be easy to work with KubeSphere.
     dependencies:
       - name: vim
@@ -74,7 +74,7 @@ brews:
 nfpms:
   - file_name_template: "ks-{{.Os}}-{{.Arch}}"
     id: "ks"
-    homepage: https://github.com/linuxsuren/ks
+    homepage: https://github.com/kubesphere-sigs/ks
     description: ks is a tool which makes it be easy to work with KubeSphere.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
