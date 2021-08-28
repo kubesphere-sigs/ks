@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/Pallinder/go-randomdata"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
+	"github.com/linuxsuren/ks/kubectl-plugin/pipeline/tpl"
 	"github.com/linuxsuren/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"html/template"
@@ -71,7 +72,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
 	flags.BoolVarP(&opt.SkipCheck, "skip-check", "", false, "Skip the resources check")
 
-	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple",
+	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "longRun",
 		"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
 	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github", "git"))
@@ -117,7 +118,7 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	}
 
 	if o.Template == "" {
-		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple",
+		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "longRun",
 			"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"}); err != nil {
 			return
 		}
@@ -166,11 +167,13 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 	switch o.Template {
 	case "":
 	case "java":
-		o.Jenkinsfile = jenkinsfileTemplateForJava
+		o.Jenkinsfile = tpl.GetBuildJava()
 	case "go":
-		o.Jenkinsfile = jenkinsfileTemplateForGo
+		o.Jenkinsfile = tpl.GetBuildGo()
 	case "simple":
-		o.Jenkinsfile = jenkinsfileTemplateForSimple
+		o.Jenkinsfile = tpl.GetSimple()
+	case "longRun":
+		o.Jenkinsfile = tpl.GetLongRunPipeline()
 	case "multi-branch-git":
 		o.Type = "multi-branch-pipeline"
 		o.SCMType = "git"
