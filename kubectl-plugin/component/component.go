@@ -3,8 +3,8 @@ package component
 import (
 	"context"
 	"fmt"
-	"github.com/linuxsuren/ks/kubectl-plugin/common"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -97,7 +97,7 @@ func (o *Option) getResourceType(component string) schema.GroupVersionResource {
 	}
 }
 
-func (o *Option) updateBy(image, tag string) (err error) {
+func (o *Option) updateBy(image string) (err error) {
 	ns, name := o.getNsAndName(o.Name)
 	err = o.updateDeploy(ns, name, fmt.Sprintf("%s/%s", image, name), o.Tag)
 	return

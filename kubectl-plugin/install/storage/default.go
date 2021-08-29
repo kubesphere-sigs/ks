@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 )

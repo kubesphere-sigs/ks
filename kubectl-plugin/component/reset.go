@@ -3,8 +3,8 @@ package component
 import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/linuxsuren/ks/kubectl-plugin/common"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
 )
@@ -73,36 +73,36 @@ func (o *ResetOption) resetRunE(cmd *cobra.Command, args []string) (err error) {
 	imageOrg := "kubespheredev"
 	if o.Release && o.Nightly == "" {
 		imageOrg = "kubesphere"
-	} else {
+	} else if o.Tag == "" {
 		// try to parse the nightly date
 		_, o.Tag = common.GetNightlyTag(o.Nightly)
 	}
 
 	if o.ResetAll {
 		o.Name = "apiserver"
-		if err = o.updateBy(imageOrg, o.Tag); err != nil {
+		if err = o.updateBy(imageOrg); err != nil {
 			return
 		}
 
 		o.Name = "controller"
-		if err = o.updateBy(imageOrg, o.Tag); err != nil {
+		if err = o.updateBy(imageOrg); err != nil {
 			return
 		}
 
 		o.Name = "console"
-		if err = o.updateBy(imageOrg, o.Tag); err != nil {
+		if err = o.updateBy(imageOrg); err != nil {
 			return
 		}
 
 		o.Name = "installer"
-		if err = o.updateBy(imageOrg, o.Tag); err != nil {
+		if err = o.updateBy(imageOrg); err != nil {
 			return
 		}
 	} else {
 		if o.Name == "" {
 			err = fmt.Errorf("please provide a component name")
 		} else {
-			err = o.updateBy(imageOrg, o.Tag)
+			err = o.updateBy(imageOrg)
 		}
 	}
 	return

@@ -2,7 +2,11 @@ package install
 
 import (
 	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -14,8 +18,8 @@ func TestVersionCheck(t *testing.T) {
 		returnErr bool
 		message   string
 	}{{
-		param:     DefaultKubeSphereVersion,
-		expect:    DefaultKubeSphereVersion,
+		param:     types.KsVersion,
+		expect:    types.KsVersion,
 		returnErr: false,
 		message:   "do nothing with the default version",
 	}, {
@@ -56,4 +60,18 @@ func TestVersionCheck(t *testing.T) {
 			assert.Equal(t, item.expect, opt.version, item.message)
 		}
 	}
+}
+
+func TestSetDefaultIfNotExist(t *testing.T) {
+	data := []byte("data")
+	file := filepath.Join(os.TempDir(), "fake")
+	defer func(filePath string) {
+		_ = os.RemoveAll(filePath)
+	}(file)
+
+	err := setDefaultIfNotExist(data, file)
+	assert.Nil(t, err, "failed to setDefaultIfNotExist")
+	gotData, err := ioutil.ReadFile(file)
+	assert.Nil(t, err, "failed to get the got data file")
+	assert.Equal(t, string(data), string(gotData))
 }

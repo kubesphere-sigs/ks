@@ -3,7 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
-	"github.com/linuxsuren/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
 	"os/exec"
 	"runtime"

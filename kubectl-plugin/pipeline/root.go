@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -35,7 +35,8 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd.AddCommand(NewDelPipelineCmd(client),
 		NewPipelineEditCmd(client),
 		NewPipelineViewCmd(client),
-		newPipelineCreateCmd(client))
+		newPipelineCreateCmd(client),
+		newPipelineRunCmd(client))
 	return
 }
 
