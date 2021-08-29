@@ -5,6 +5,7 @@ import (
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/linuxsuren/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
+	"os/exec"
 	"runtime"
 )
 
@@ -18,6 +19,11 @@ You can get more details from https://github.com/rancher/k3d/`,
 		PreRunE:  opt.preRunE,
 		RunE:     opt.runE,
 		PostRunE: opt.postRunE,
+	}
+
+	commander := Commander{}
+	if err := commander.execCommand("docker", "ps"); err != nil {
+		return
 	}
 
 	flags := cmd.Flags()
@@ -56,6 +62,7 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		o.name = args[0]
 	}
 
+	exec.Command("docker","ps")
 	is := installer.Installer{
 		Provider: "github",
 		OS:       runtime.GOOS,

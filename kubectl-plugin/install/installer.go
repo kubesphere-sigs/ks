@@ -24,6 +24,11 @@ You can get more details about the ks-installer from https://github.com/kubesphe
 		RunE:    opt.runE,
 	}
 
+	commander := Commander{}
+	if err := commander.execCommand("docker", "ps"); err != nil {
+		return
+	}
+
 	flags := cmd.Flags()
 	flags.StringVarP(&opt.version, "version", "", "v3.0.0",
 		"The version of KubeSphere which you want to install")

@@ -21,6 +21,11 @@ ks install kind --nightly latest --components DevOps`,
 		RunE:    opt.runE,
 	}
 
+	commander := Commander{}
+	if err := commander.execCommand("docker", "ps"); err != nil {
+		return
+	}
+
 	flags := cmd.Flags()
 	flags.StringVarP(&opt.name, "name", "n", "kind",
 		"The name of kind")

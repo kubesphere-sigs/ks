@@ -28,6 +28,11 @@ ks install kk --version nightly --components devops`,
 		RunE:              opt.runE,
 	}
 
+	commander := Commander{}
+	if err := commander.execCommand("docker", "ps"); err != nil {
+		return
+	}
+
 	flags := cmd.Flags()
 	flags.StringVarP(&opt.version, "version", "v", DefaultKubeSphereVersion,
 		fmt.Sprintf("The version of KubeSphere. Support value could be %s, nightly, nightly-20210309. nightly equals to nightly-latest", DefaultKubeSphereVersion))
