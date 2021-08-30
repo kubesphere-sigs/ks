@@ -2,9 +2,9 @@ package install
 
 import (
 	"fmt"
-	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/storage"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/installer"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/storage"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"html/template"

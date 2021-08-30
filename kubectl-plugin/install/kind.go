@@ -2,9 +2,9 @@ package install
 
 import (
 	"fmt"
-	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/spf13/cobra"
 	"html/template"
 	"os"

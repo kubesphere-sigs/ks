@@ -20,7 +20,6 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"time"
 )
 
 // NewCmdKS returns the root command of kubeclt-ks
@@ -39,7 +38,6 @@ See also https://github.com/kubesphere/kubesphere`,
 		fmt.Printf("failed to init the k8s client: %v\n", err)
 	}
 
-	fmt.Println(time.Now())
 	cmd.AddCommand(user.NewUserCmd(client),
 		pipeline.NewPipelineCmd(client),
 		update.NewUpdateCmd(client),
