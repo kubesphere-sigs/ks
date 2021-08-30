@@ -29,8 +29,14 @@ tools:  export GOPROXY=https://goproxy.io
 tools:
 	go get -u golang.org/x/lint/golint
 
-test: fmt lint mod-tidy
+test: test-without-lint
 	go test ./...
+
+test-without-lint: fmt mod-tidy
+	go test ./...
+
+benchmark:
+	go test -bench=. -run=none ./...
 
 mod-tidy:
 	go mod tidy

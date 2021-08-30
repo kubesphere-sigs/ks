@@ -2,8 +2,6 @@ package entrypoint
 
 import (
 	"fmt"
-	pkg "github.com/linuxsuren/cobra-extension"
-	extver "github.com/linuxsuren/cobra-extension/version"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/auth"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/component"
@@ -16,6 +14,8 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/tool"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/update"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/user"
+	pkg "github.com/linuxsuren/cobra-extension"
+	extver "github.com/linuxsuren/cobra-extension/version"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"

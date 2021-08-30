@@ -35,37 +35,40 @@ func TestUpdateWhichHasAuth(t *testing.T) {
 }
 
 var expected = `authentication:
-  authenticateRateLimiterMaxTries: 10
-  authenticateRateLimiterDuration: 10m0s
-  loginHistoryRetentionPeriod: 168h
-  maximumClockSkew: 10s
-  multipleLogin: True
-  kubectlImage: kubespheredev/kubectl:v1.17.0
-  jwtSecret: "Fa9bYHL24E1u7tMwHM9Ko1iwQ77aTRXE"
-  identityProviders:
-  - name: GitHub
-    type: GitHubIdentityProvider
-    mappingMethod: auto
-    provider:
-      clientID: 76b2f45277bb5314457f
-      clientSecret: ed04cf65d99cb7818a6eb11a72b77efcedef9c24
-      endpoint:
-        authURL: https://github.com/login/oauth/authorize
-        tokenURL: https://github.com/login/oauth/access_token
-      redirectURL: "http://139.198.3.176:30880/oauth/redirect"
-      scopes:
-      - user
+    authenticateRateLimiterDuration: 10m0s
+    authenticateRateLimiterMaxTries: 10
+    jwtSecret: Fa9bYHL24E1u7tMwHM9Ko1iwQ77aTRXE
+    kubectlImage: kubespheredev/kubectl:v1.17.0
+    loginHistoryRetentionPeriod: 168h
+    maximumClockSkew: 10s
+    multipleLogin: true
+    oauthOptions:
+        accessTokenInactivityTimeout: 30m
+        accessTokenMaxAge: 1h
+        identityProviders:
+            - mappingMethod: auto
+              name: GitHub
+              provider:
+                clientID: 76b2f45277bb5314457f
+                clientSecret: ed04cf65d99cb7818a6eb11a72b77efcedef9c24
+                endpoint:
+                    authURL: https://github.com/login/oauth/authorize
+                    tokenURL: https://github.com/login/oauth/access_token
+                redirectURL: http://139.198.3.176:30880/auth/redirect
+                scopes:
+                    - user
+              type: GitHubIdentityProvider
 ldap:
-  host: openldap.kubesphere-system.svc:389
-  managerDN: cn=admin,dc=kubesphere,dc=io
-  managerPassword: admin
-  userSearchBase: ou=Users,dc=kubesphere,dc=io
-  groupSearchBase: ou=Groups,dc=kubesphere,dc=io
+    groupSearchBase: ou=Groups,dc=kubesphere,dc=io
+    host: openldap.kubesphere-system.svc:389
+    managerDN: cn=admin,dc=kubesphere,dc=io
+    managerPassword: admin
+    userSearchBase: ou=Users,dc=kubesphere,dc=io
 redis:
-  host: redis.kubesphere-system.svc
-  port: 6379
-  password: ""
-  db: 0
+    db: 0
+    host: redis.kubesphere-system.svc
+    password: ""
+    port: 6379
 `
 
 var yamlFile = `
@@ -91,36 +94,32 @@ redis:
 `
 
 var expectedhasAuthYaml = `authentication:
-  authenticateRateLimiterMaxTries: 10
-  authenticateRateLimiterDuration: 10m0s
-  loginHistoryRetentionPeriod: 168h
-  maximumClockSkew: 10s
-  multipleLogin: True
-  kubectlImage: kubespheredev/kubectl:v1.17.0
-  jwtSecret: "Fa9bYHL24E1u7tMwHM9Ko1iwQ77aTRXE"
-  identityProviders:
-  - name: GitHub
-    type: GitHubIdentityProvider
-    mappingMethod: auto
-    provider:
-      clientID: 76b2f45277bb5314457f
-      clientSecret: ed04cf65d99cb7818a6eb11a72b77efcedef9c24
-      redirectURL: "http://139.198.3.176:30880/oauth/redirect"
-      scopes:
-      - user
-  - mappingMethod: auto
-    name: fake
+    authenticateRateLimiterDuration: 10m0s
+    authenticateRateLimiterMaxTries: 10
+    identityProviders:
+        - mappingMethod: auto
+          name: fake
+    jwtSecret: Fa9bYHL24E1u7tMwHM9Ko1iwQ77aTRXE
+    kubectlImage: kubespheredev/kubectl:v1.17.0
+    loginHistoryRetentionPeriod: 168h
+    maximumClockSkew: 10s
+    multipleLogin: true
+    oauthOptions:
+        accessTokenInactivityTimeout: 30m
+        accessTokenMaxAge: 1h
+        identityProviders:
+            - {}
 ldap:
-  host: openldap.kubesphere-system.svc:389
-  managerDN: cn=admin,dc=kubesphere,dc=io
-  managerPassword: admin
-  userSearchBase: ou=Users,dc=kubesphere,dc=io
-  groupSearchBase: ou=Groups,dc=kubesphere,dc=io
+    groupSearchBase: ou=Groups,dc=kubesphere,dc=io
+    host: openldap.kubesphere-system.svc:389
+    managerDN: cn=admin,dc=kubesphere,dc=io
+    managerPassword: admin
+    userSearchBase: ou=Users,dc=kubesphere,dc=io
 redis:
-  host: redis.kubesphere-system.svc
-  port: 6379
-  password: ""
-  db: 0
+    db: 0
+    host: redis.kubesphere-system.svc
+    password: ""
+    port: 6379
 `
 
 var hasAuthYaml = `
