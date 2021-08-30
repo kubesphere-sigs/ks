@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"runtime"
 )
@@ -29,9 +30,11 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"Specify how many servers you want to create")
 	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.18.20-k3s1",
 		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
+	flags.StringVarP(&opt.registry, "registry", "r", "registry",
+		"Connect to one or more k3d-managed registries running locally")
 
 	// TODO find a better way to reuse the flags from another command
-	flags.StringVarP(&opt.version, "version", "", "v3.0.0",
+	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
 		"The version of KubeSphere which you want to install")
 	flags.StringVarP(&opt.nightly, "nightly", "", "",
 		"The nightly version you want to install")
@@ -45,10 +48,11 @@ You can get more details from https://github.com/rancher/k3d/`,
 type k3dOption struct {
 	installerOption
 
-	image   string
-	name    string
-	agents  int
-	servers int
+	image    string
+	name     string
+	agents   int
+	servers  int
+	registry string
 }
 
 func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
@@ -76,12 +80,16 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
+	// always to create a registry to make sure it's exist
+	_ = common.ExecCommand("k3d", "registry", "create", o.registry)
+
 	k3dArgs := []string{"cluster", "create",
 		"-p", fmt.Sprintf(`%d:30880@agent[0]`, ports[0]),
 		"-p", fmt.Sprintf(`%d:30180@agent[0]`, ports[1]),
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
-		"--image", o.image}
+		"--image", o.image,
+		"--registry-use", o.registry}
 	if o.name != "" {
 		k3dArgs = append(k3dArgs, o.name)
 	}

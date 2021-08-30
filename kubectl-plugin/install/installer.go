@@ -2,8 +2,10 @@ package install
 
 import (
 	"fmt"
-	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/storage"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/install/installer"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"html/template"
 	"k8s.io/client-go/dynamic"
@@ -25,7 +27,7 @@ You can get more details about the ks-installer from https://github.com/kubesphe
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&opt.version, "version", "", "v3.0.0",
+	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
 		"The version of KubeSphere which you want to install")
 	flags.StringVarP(&opt.nightly, "nightly", "", "",
 		"The nightly version you want to install")
@@ -96,12 +98,12 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 
 func (o *installerOption) getCrdAndCC() (crd, cc string, err error) {
 	var crdTmp *template.Template
-	if crdTmp, err = template.New("crd").Parse(ks3_0CRD); err != nil {
+	if crdTmp, err = template.New("crd").Parse(installer.GetKSInstaller()); err != nil {
 		err = fmt.Errorf("failed to parse the crd template, error: %v", err)
 		return
 	}
 	var ccTmp *template.Template
-	if ccTmp, err = template.New("cc").Parse(clusterConfiguration); err != nil {
+	if ccTmp, err = template.New("cc").Parse(installer.GetClusterConfig()); err != nil {
 		err = fmt.Errorf("failed to parse the clusterConfigration template, error: %v", err)
 		return
 	}

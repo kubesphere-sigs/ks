@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"html/template"
 	"os"
@@ -29,7 +30,7 @@ ks install kind --nightly latest --components DevOps`,
 		"The version for Kubernetes")
 	flags.StringToStringVarP(&opt.portMappings, "portMappings", "", map[string]string{"30880": "30881",
 		"30180": "30181"}, "The extraPortMappings")
-	flags.StringVarP(&opt.ksVersion, "ksVersion", "", "v3.0.0",
+	flags.StringVarP(&opt.ksVersion, "ksVersion", "", types.KsVersion,
 		"The version of KubeSphere")
 	flags.StringSliceVarP(&opt.components, "components", "", []string{},
 		"Which components will enable")
