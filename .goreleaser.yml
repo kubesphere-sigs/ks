@@ -20,10 +20,30 @@ builds:
     - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
     - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
     - -w
+- env:
+    - CGO_ENABLED=0
+  id: "kubectl-ks"
+  binary: kubectl-ks
+  main: ./kubectl-plugin/kubectl-ks.go
+  goarch:
+    - amd64
+  goos:
+    - linux
+    - darwin
+  hooks:
+    post:
+      - upx "{{ .Path }}"
+  ldflags:
+    - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
+    - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
+    - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+    - -w
 dist: bin
 archives:
   - name_template: "ks-{{ .Os }}-{{ .Arch }}"
     id: "ks"
+    builds:
+      - ks
     replacements:
       darwin: darwin
       linux: linux
@@ -33,6 +53,17 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files:
+      - README.md
+      - LICENSE
+  - name_template: "kubectl-ks-{{ .Os }}-{{ .Arch }}"
+    id: "kubectl-ks"
+    builds:
+      - "kubectl-ks"
+    replacements:
+      darwin: darwin
+      linux: linux
+      amd64: amd64
     files:
       - README.md
       - LICENSE
