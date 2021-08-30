@@ -99,7 +99,8 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 }
 
 func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
-	cmd.Printf("starting to gc PipelineRuns in %d namespaces\n", len(o.namespaces))
+	// keep below log output until replace it with a logger
+	//cmd.Printf("starting to gc PipelineRuns in %d namespaces\n", len(o.namespaces))
 	errorsNs := []string{}
 
 	for i := range o.namespaces {
