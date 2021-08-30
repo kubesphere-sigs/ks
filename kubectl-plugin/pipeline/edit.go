@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// NewPipelineEditCmd returns a command to edit the pipeline
-func NewPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
+// newPipelineEditCmd returns a command to edit the pipeline
+func newPipelineEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	ctx := context.TODO()
 	cmd = &cobra.Command{
 		Use:     "edit",

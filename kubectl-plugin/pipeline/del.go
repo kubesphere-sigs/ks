@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-// NewDelPipelineCmd returns a command to delete pipelines
-func NewDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
+// newDelPipelineCmd returns a command to delete pipelines
+func newDelPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "delete",
 		Aliases: []string{"del", "remove", "rm"},

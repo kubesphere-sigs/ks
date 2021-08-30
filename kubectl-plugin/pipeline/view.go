@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// NewPipelineViewCmd returns a command to view pipeline
-func NewPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
+// newPipelineViewCmd returns a command to view pipeline
+func newPipelineViewCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "view",
 		Short: "Output the YAML format of a Pipeline",
