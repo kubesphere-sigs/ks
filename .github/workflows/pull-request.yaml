@@ -32,6 +32,14 @@ jobs:
       - name: Test
         run: |
           make test-without-lint
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
   Benchmark:
     name: Benchmark
     runs-on: ubuntu-20.04
