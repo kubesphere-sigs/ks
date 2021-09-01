@@ -4,6 +4,9 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 	-X github.com/linuxsuren/cobra-extension/version.commit=$(COMMIT) \
 	-X github.com/linuxsuren/cobra-extension/version.date=$(shell date +'%Y-%m-%d') -w -s"
 
+all: test build
+.PHONY : all
+
 simple-build:
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
 
@@ -29,17 +32,16 @@ tools:  export GOPROXY=https://goproxy.io
 tools:
 	go get -u golang.org/x/lint/golint
 
-test: test-without-lint
-	go test ./...
+test: test-without-lint lint
 
 test-without-lint: fmt mod-tidy
-	go test ./...
+	go test ./... -coverprofile coverage.out
 
 benchmark:
 	go test -bench=. -run=none ./...
 
 mod-tidy:
-	go mod tidy
+	go mod tidy -e
 
 fmt:
 	go fmt ./...
