@@ -315,7 +315,19 @@ func (o *pipelineCreateOption) checkWorkspace() (ws *unstructured.Unstructured, 
 	}
 
 	// TODO check workspaceTemplate when ks in a multi-cluster environment
-	ws, err = o.Client.Resource(types.GetWorkspaceTemplate()).Get(ctx, o.Workspace, metav1.GetOptions{})
+	if ws, err = o.Client.Resource(types.GetWorkspaceTemplate()).Get(ctx, o.Workspace, metav1.GetOptions{}); err != nil {
+		// create workspacetemplate
+		var wsTemplate *unstructured.Unstructured
+		if wsTemplate, err = types.GetObjectFromYaml(fmt.Sprintf(`apiVersion: tenant.kubesphere.io/v1alpha2
+kind: WorkspaceTemplate
+metadata:
+  name: %s`, o.Workspace)); err != nil {
+			err = fmt.Errorf("failed to unmarshal yaml to DevOpsProject object, %v", err)
+			return
+		}
+
+		ws, err = o.Client.Resource(types.GetWorkspaceTemplate()).Create(ctx, wsTemplate, metav1.CreateOptions{})
+	}
 	return
 }
 
