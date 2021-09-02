@@ -16,6 +16,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/user"
 	pkg "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
+	hdcmd "github.com/linuxsuren/http-downloader/pkg/cmd"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
@@ -50,6 +51,11 @@ See also https://github.com/kubesphere/kubesphere`,
 		tool.NewToolCmd(),
 		install.NewInstallCmd(),
 		config.NewConfigRootCmd(client),
-		source2image.NewS2ICmd(client))
+		source2image.NewS2ICmd(client),
+		hdcmd.NewInitCommand(map[string]string{
+			"kubectl": "kubectl",
+		}, map[string]string{
+			"vim": "vim",
+		}))
 	return
 }
