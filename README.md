@@ -11,9 +11,9 @@
 
 # Get started
 
-Install it via: `brew install kubesphere-sigs/kubesphere-sigs/ks`
+Install it via: `brew install linuxsuren/linuxsuren/hd`
 
-Install it via [hd](https://github.com/kubesphere-sigs/http-downloader):
+Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
 ```
 hd install kubesphere-sigs/ks
