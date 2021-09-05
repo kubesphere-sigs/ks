@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"html/template"
 	"os"
+	"path"
 	"runtime"
 	"sync"
 )
@@ -86,9 +87,19 @@ func (o *kindOption) preRunE(_ *cobra.Command, _ []string) (err error) {
 }
 
 func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
-	writeConfigFile("config.yaml", o.portMappings)
+
+	kindImage := fmt.Sprintf("kindest/node:%s", o.version)
+
+	kindConfig := KindConfig{
+		Image:        kindImage,
+		PortMappings: o.portMappings,
+	}
+
+	kindConfigF := path.Join(os.TempDir(), "config.yaml")
+
+	writeConfigFile(kindConfigF, kindConfig)
 	commander := Commander{}
-	if err = commander.execCommand("kind", "create", "cluster", "--image", "kindest/node:v1.18.2", "--config", "config.yaml", "--name", o.name); err != nil {
+	if err = commander.execCommand("kind", "create", "cluster", "--config", kindConfigF, "--name", o.name); err != nil {
 		return
 	}
 
@@ -96,7 +107,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if err = loadCoreImageOfKS(); err != nil {
+	if err = loadCoreImageOfKS(o.ksVersion); err != nil {
 		return
 	}
 
@@ -113,7 +124,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	for _, com := range o.components {
 		switch com {
 		case "DevOps":
-			err = loadImagesOfDevOps()
+			err = loadImagesOfDevOps(o.ksVersion)
 		}
 	}
 
@@ -123,9 +134,9 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-func loadImagesOfDevOps() (err error) {
+func loadImagesOfDevOps(ksVersion string) (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync("kubesphere/jenkins-uc:v3.0.0", &wg); err != nil {
+	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/jenkins-uc:%s", ksVersion), &wg); err != nil {
 		return
 	}
 	if err = pullAndLoadImageSync("jenkins/jenkins:2.176.2", &wg); err != nil {
@@ -150,18 +161,18 @@ func loadImagesOfDevOps() (err error) {
 	return
 }
 
-func loadCoreImageOfKS() (err error) {
+func loadCoreImageOfKS(ksVersion string) (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync("kubesphere/ks-installer:v3.0.0", &wg); err != nil {
+	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-installer:%s", ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/ks-apiserver:v3.0.0", &wg); err != nil {
+	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-apiserver:%s", ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/ks-controller-manager:v3.0.0", &wg); err != nil {
+	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-controller-manager:%s", ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/ks-console:v3.0.0", &wg); err != nil {
+	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-console:%s", ksVersion), &wg); err != nil {
 		return
 	}
 	if err = pullAndLoadImageSync("redis:5.0.5-alpine", &wg); err != nil {
@@ -197,12 +208,13 @@ func pullAndLoadImage(image string) (err error) {
 	return
 }
 
-func writeConfigFile(filename string, portMapping map[string]string) {
+func writeConfigFile(filename string, kindConfig KindConfig) {
 	kindTemplate, err := template.New("config").Parse(`
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+  image: {{ .Image }}
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -210,7 +222,7 @@ nodes:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
   extraPortMappings:
-{{- range $k, $v := . }}
+{{- range $k, $v := .PortMappings }}
   - containerPort: {{$k}}
     hostPort: {{$v}}
     protocol: TCP
@@ -220,7 +232,7 @@ nodes:
 		fmt.Println("failed to write kind config file", err)
 	}
 	f, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0600)
-	if err := kindTemplate.Execute(f, portMapping); err != nil {
+	if err := kindTemplate.Execute(f, kindConfig); err != nil {
 		fmt.Println("failed to render kind template", err)
 	}
 }
@@ -235,4 +247,10 @@ type kindOption struct {
 
 	Reset   bool
 	Nightly string
+}
+
+// KindConfig config template variables
+type KindConfig struct {
+	Image        string
+	PortMappings map[string]string
 }
