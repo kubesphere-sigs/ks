@@ -52,16 +52,16 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-installer:%s", tag), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-installer:%s", tag), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-apiserver:%s", tag), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-apiserver:%s", tag), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-controller-manager:%s", tag), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-controller-manager:%s", tag), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-console:%s", tag), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-console:%s", tag), &wg); err != nil {
 		return
 	}
 	wg.Wait()
@@ -107,7 +107,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if err = loadCoreImageOfKS(o.ksVersion); err != nil {
+	if err = o.loadCoreImageOfKS(); err != nil {
 		return
 	}
 
@@ -124,7 +124,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	for _, com := range o.components {
 		switch com {
 		case "DevOps":
-			err = loadImagesOfDevOps(o.ksVersion)
+			err = o.loadImagesOfDevOps()
 		}
 	}
 
@@ -134,77 +134,72 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-func loadImagesOfDevOps(ksVersion string) (err error) {
+func (o *kindOption) loadImagesOfDevOps() (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/jenkins-uc:%s", ksVersion), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubesphere/jenkins-uc:%s", o.ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("jenkins/jenkins:2.176.2", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("jenkins/jenkins:2.176.2", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("jenkins/jnlp-slave:3.27-1", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("jenkins/jnlp-slave:3.27-1", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/builder-base:v2.1.0", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("kubesphere/builder-base:v2.1.0", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/builder-nodejs:v2.1.0", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("kubesphere/builder-nodejs:v2.1.0", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/builder-go:v2.1.0", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("kubesphere/builder-go:v2.1.0", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("kubesphere/builder-maven:v2.1.0", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("kubesphere/builder-maven:v2.1.0", &wg); err != nil {
 		return
 	}
 	wg.Wait()
 	return
 }
 
-func loadCoreImageOfKS(ksVersion string) (err error) {
+func (o *kindOption) loadCoreImageOfKS() (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-installer:%s", ksVersion), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-installer:%s", o.ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-apiserver:%s", ksVersion), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-apiserver:%s", o.ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-controller-manager:%s", ksVersion), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-controller-manager:%s", o.ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-console:%s", ksVersion), &wg); err != nil {
+	if err = o.pullAndLoadImageSync(fmt.Sprintf("kubesphere/ks-console:%s", o.ksVersion), &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("redis:5.0.5-alpine", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("redis:5.0.5-alpine", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("osixia/openldap:1.3.0", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("osixia/openldap:1.3.0", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("minio/minio:RELEASE.2019-08-07T01-59-21Z", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("minio/minio:RELEASE.2019-08-07T01-59-21Z", &wg); err != nil {
 		return
 	}
-	if err = pullAndLoadImageSync("mysql:8.0.11", &wg); err != nil {
+	if err = o.pullAndLoadImageSync("mysql:8.0.11", &wg); err != nil {
 		return
 	}
 	wg.Wait()
 	return
 }
 
-func pullAndLoadImageSync(image string, wg *sync.WaitGroup) (err error) {
+func (o *kindOption) pullAndLoadImageSync(image string, wg *sync.WaitGroup) (err error) {
 	wg.Add(1)
 	go func(imageName string, wgInner *sync.WaitGroup) {
-		_ = pullAndLoadImage(imageName)
+		commander := Commander{}
+		if err = commander.execCommand("docker", "pull", image); err == nil {
+			err = commander.execCommand("kind", "load", "docker-image", "--name", o.name, image)
+		}
 		wgInner.Done()
 	}(image, wg)
-	return
-}
-
-func pullAndLoadImage(image string) (err error) {
-	commander := Commander{}
-	if err = commander.execCommand("docker", "pull", image); err == nil {
-		err = commander.execCommand("kind", "load", "docker-image", image)
-	}
 	return
 }
 
