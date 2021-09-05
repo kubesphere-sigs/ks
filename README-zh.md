@@ -11,9 +11,14 @@
 
 # Get started
 
-通过 brew 安装: `brew install linuxsuren/linuxsuren/hd`
+通过 brew 安装: `brew install linuxsuren/linuxsuren/ks`
 
-通过 [hd](https://github.com/linuxsuren/http-downloader) 安装: `hd install kubesphere-sigs/ks`
+通过 [hd](https://github.com/linuxsuren/http-downloader) 安装: 
+
+```
+brew install linuxsuren/linuxsuren/hd
+hd install kubesphere-sigs/ks
+```
 
 # 特色功能
 
