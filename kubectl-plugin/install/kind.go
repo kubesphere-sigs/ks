@@ -99,7 +99,17 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 
 	kindConfigF := path.Join(os.TempDir(), "config.yaml")
 
-	writeConfigFile(kindConfigF, kindConfig)
+	defer func() {
+		err := os.Remove(kindConfigF)
+		if err != nil {
+			return
+		}
+	}()
+
+	if err != writeConfigFile(kindConfigF, kindConfig) {
+		return
+	}
+
 	commander := Commander{}
 	if err = commander.execCommand("kind", "create", "cluster", "--config", kindConfigF, "--name", o.name); err != nil {
 		return
@@ -184,17 +194,22 @@ func (o *kindOption) loadCoreImageOfKS() (err error) {
 
 func pullAndLoadImageSync(image string, kindName string, wg *sync.WaitGroup) (err error) {
 	wg.Add(1)
-	go func(imageName string, wgInner *sync.WaitGroup) {
-		commander := Commander{}
-		if err = commander.execCommand("docker", "pull", image); err == nil {
-			err = commander.execCommand("kind", "load", "docker-image", "--name", kindName, image)
-		}
+	go func(imageName string, kindClusterName string, wgInner *sync.WaitGroup) {
+		_ = pullAndLoadImage(imageName, kindClusterName)
 		wgInner.Done()
-	}(image, wg)
+	}(image, kindName, wg)
 	return
 }
 
-func writeConfigFile(filename string, kindConfig KindConfig) {
+func pullAndLoadImage(image string, kindName string) (err error) {
+	commander := Commander{}
+	if err = commander.execCommand("docker", "pull", image); err == nil {
+		err = commander.execCommand("kind", "load", "docker-image", "--name", kindName, image)
+	}
+	return
+}
+
+func writeConfigFile(filename string, kindConfig KindConfig) (err error) {
 	kindTemplate, err := template.New("config").Parse(`
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -216,11 +231,15 @@ nodes:
 `)
 	if err != nil {
 		fmt.Println("failed to write kind config file", err)
+		return
 	}
 	f, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0600)
-	if err := kindTemplate.Execute(f, kindConfig); err != nil {
+	if err = kindTemplate.Execute(f, kindConfig); err != nil {
 		fmt.Println("failed to render kind template", err)
+		return
 	}
+
+	return
 }
 
 type kindOption struct {
