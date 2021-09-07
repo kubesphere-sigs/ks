@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"html/template"
 	"os"
+	"path"
 	"runtime"
 	"sync"
 )
@@ -51,18 +52,20 @@ func (o *kindOption) reset(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-installer:%s", tag), &wg); err != nil {
-		return
+
+	images := map[string]string{
+		"kubesphere/ks-installer":          tag,
+		"kubesphere/ks-apiserver":          tag,
+		"kubesphere/ks-controller-manager": tag,
+		"kubesphere/ks-console":            tag,
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-apiserver:%s", tag), &wg); err != nil {
-		return
+
+	for image, version := range images {
+		if err = pullAndLoadImageSync(fmt.Sprintf("%s:%s", image, version), o.name, &wg); err != nil {
+			return
+		}
 	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-controller-manager:%s", tag), &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync(fmt.Sprintf("kubespheredev/ks-console:%s", tag), &wg); err != nil {
-		return
-	}
+
 	wg.Wait()
 	commander := Commander{}
 	if err = commander.execCommand("kubectl", "ks", "com", "reset", "--nightly", o.Nightly, "-a"); err != nil {
@@ -86,9 +89,29 @@ func (o *kindOption) preRunE(_ *cobra.Command, _ []string) (err error) {
 }
 
 func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
-	writeConfigFile("config.yaml", o.portMappings)
+
+	kindImage := fmt.Sprintf("kindest/node:%s", o.version)
+
+	kindConfig := KindConfig{
+		Image:        kindImage,
+		PortMappings: o.portMappings,
+	}
+
+	kindConfigF := path.Join(os.TempDir(), "config.yaml")
+
+	defer func() {
+		err := os.Remove(kindConfigF)
+		if err != nil {
+			return
+		}
+	}()
+
+	if err != writeConfigFile(kindConfigF, kindConfig) {
+		return
+	}
+
 	commander := Commander{}
-	if err = commander.execCommand("kind", "create", "cluster", "--image", "kindest/node:v1.18.2", "--config", "config.yaml", "--name", o.name); err != nil {
+	if err = commander.execCommand("kind", "create", "cluster", "--config", kindConfigF, "--name", o.name); err != nil {
 		return
 	}
 
@@ -96,7 +119,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if err = loadCoreImageOfKS(); err != nil {
+	if err = o.loadCoreImageOfKS(); err != nil {
 		return
 	}
 
@@ -113,7 +136,7 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	for _, com := range o.components {
 		switch com {
 		case "DevOps":
-			err = loadImagesOfDevOps()
+			err = o.loadImagesOfDevOps()
 		}
 	}
 
@@ -123,86 +146,76 @@ func (o *kindOption) runE(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-func loadImagesOfDevOps() (err error) {
+func (o *kindOption) loadImagesOfDevOps() (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync("kubesphere/jenkins-uc:v3.0.0", &wg); err != nil {
-		return
+
+	images := map[string]string{
+		"kubesphere/jenkins-uc":     "v3.0.0",
+		"jenkins/jenkins":           "2.176.2",
+		"jenkins/jnlp-slave":        "3.27-1",
+		"kubesphere/builder-base":   "v2.1.0",
+		"kubesphere/builder-go":     "v2.1.0",
+		"kubesphere/builder-maven":  "v2.1.0",
+		"kubesphere/builder-nodejs": "v2.1.0",
 	}
-	if err = pullAndLoadImageSync("jenkins/jenkins:2.176.2", &wg); err != nil {
-		return
+
+	for image, tag := range images {
+		if err = pullAndLoadImageSync(fmt.Sprintf("%s:%s", image, tag), o.name, &wg); err != nil {
+			return
+		}
 	}
-	if err = pullAndLoadImageSync("jenkins/jnlp-slave:3.27-1", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("kubesphere/builder-base:v2.1.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("kubesphere/builder-nodejs:v2.1.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("kubesphere/builder-go:v2.1.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("kubesphere/builder-maven:v2.1.0", &wg); err != nil {
-		return
-	}
+
 	wg.Wait()
 	return
 }
 
-func loadCoreImageOfKS() (err error) {
+func (o *kindOption) loadCoreImageOfKS() (err error) {
 	var wg sync.WaitGroup
-	if err = pullAndLoadImageSync("kubesphere/ks-installer:v3.0.0", &wg); err != nil {
-		return
+
+	images := map[string]string{
+		"kubesphere/ks-installer":          o.ksVersion,
+		"kubesphere/ks-apiserver":          o.ksVersion,
+		"kubesphere/ks-console":            o.ksVersion,
+		"kubesphere/ks-controller-manager": o.ksVersion,
+		"minio/minio":                      "RELEASE.2019-08-07T01-59-21Z",
+		"mysql":                            "8.0.11",
+		"osixia/openldap":                  "1.3.0",
 	}
-	if err = pullAndLoadImageSync("kubesphere/ks-apiserver:v3.0.0", &wg); err != nil {
-		return
+
+	for image, tag := range images {
+		if err = pullAndLoadImageSync(fmt.Sprintf("%s:%s", image, tag), o.name, &wg); err != nil {
+			return
+		}
 	}
-	if err = pullAndLoadImageSync("kubesphere/ks-controller-manager:v3.0.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("kubesphere/ks-console:v3.0.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("redis:5.0.5-alpine", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("osixia/openldap:1.3.0", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("minio/minio:RELEASE.2019-08-07T01-59-21Z", &wg); err != nil {
-		return
-	}
-	if err = pullAndLoadImageSync("mysql:8.0.11", &wg); err != nil {
-		return
-	}
+
 	wg.Wait()
 	return
 }
 
-func pullAndLoadImageSync(image string, wg *sync.WaitGroup) (err error) {
+func pullAndLoadImageSync(image string, kindName string, wg *sync.WaitGroup) (err error) {
 	wg.Add(1)
-	go func(imageName string, wgInner *sync.WaitGroup) {
-		_ = pullAndLoadImage(imageName)
+	go func(imageName string, kindClusterName string, wgInner *sync.WaitGroup) {
+		_ = pullAndLoadImage(imageName, kindClusterName)
 		wgInner.Done()
-	}(image, wg)
+	}(image, kindName, wg)
 	return
 }
 
-func pullAndLoadImage(image string) (err error) {
+func pullAndLoadImage(image string, kindName string) (err error) {
 	commander := Commander{}
 	if err = commander.execCommand("docker", "pull", image); err == nil {
-		err = commander.execCommand("kind", "load", "docker-image", image)
+		err = commander.execCommand("kind", "load", "docker-image", "--name", kindName, image)
 	}
 	return
 }
 
-func writeConfigFile(filename string, portMapping map[string]string) {
+func writeConfigFile(filename string, kindConfig KindConfig) (err error) {
 	kindTemplate, err := template.New("config").Parse(`
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+  image: {{ .Image }}
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -210,7 +223,7 @@ nodes:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
   extraPortMappings:
-{{- range $k, $v := . }}
+{{- range $k, $v := .PortMappings }}
   - containerPort: {{$k}}
     hostPort: {{$v}}
     protocol: TCP
@@ -218,11 +231,15 @@ nodes:
 `)
 	if err != nil {
 		fmt.Println("failed to write kind config file", err)
+		return
 	}
 	f, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0600)
-	if err := kindTemplate.Execute(f, portMapping); err != nil {
+	if err = kindTemplate.Execute(f, kindConfig); err != nil {
 		fmt.Println("failed to render kind template", err)
+		return
 	}
+
+	return
 }
 
 type kindOption struct {
@@ -235,4 +252,10 @@ type kindOption struct {
 
 	Reset   bool
 	Nightly string
+}
+
+// KindConfig config template variables
+type KindConfig struct {
+	Image        string
+	PortMappings map[string]string
 }
