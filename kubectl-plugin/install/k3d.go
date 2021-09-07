@@ -32,6 +32,10 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 	flags.StringVarP(&opt.registry, "registry", "r", "registry",
 		"Connect to one or more k3d-managed registries running locally")
+	flags.BoolVarP(&opt.withKubeSphere, "with-kubesphere", "", true,
+		"Indicate if install KubeSphere as well")
+	flags.BoolVarP(&opt.withKubeSphere, "with-ks", "", true,
+		"Indicate if install KubeSphere as well")
 
 	// TODO find a better way to reuse the flags from another command
 	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
@@ -98,6 +102,11 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 }
 
 func (o *k3dOption) postRunE(cmd *cobra.Command, args []string) (err error) {
+	if !o.withKubeSphere {
+		// no need to continue due to no require for KubeSphere
+		return
+	}
+
 	if err = o.installerOption.preRunE(cmd, args); err == nil {
 		err = o.installerOption.runE(cmd, args)
 	}
