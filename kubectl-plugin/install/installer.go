@@ -37,10 +37,11 @@ You can get more details about the ks-installer from https://github.com/kubesphe
 }
 
 type installerOption struct {
-	version    string
-	nightly    string
-	components []string
-	fetch      bool
+	version        string
+	nightly        string
+	components     []string
+	fetch          bool
+	withKubeSphere bool
 
 	// inner fields
 	client      dynamic.Interface

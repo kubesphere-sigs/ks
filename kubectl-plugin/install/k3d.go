@@ -22,7 +22,7 @@ You can get more details from https://github.com/rancher/k3d/`,
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&opt.name, "name", "n", "",
+	flags.StringVarP(&opt.name, "name", "n", "k3s-default",
 		"The name of k3d cluster")
 	flags.IntVarP(&opt.agents, "agents", "", 1,
 		"Specify how many agents you want to create")
@@ -32,6 +32,12 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 	flags.StringVarP(&opt.registry, "registry", "r", "registry",
 		"Connect to one or more k3d-managed registries running locally")
+	flags.BoolVarP(&opt.withKubeSphere, "with-kubesphere", "", true,
+		"Indicate if install KubeSphere as well")
+	flags.BoolVarP(&opt.withKubeSphere, "with-ks", "", true,
+		"Indicate if install KubeSphere as well")
+	flags.BoolVarP(&opt.reInstall, "reinstall", "", false,
+		"Indicate if re-install the k3d cluster with given name")
 
 	// TODO find a better way to reuse the flags from another command
 	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
@@ -48,15 +54,16 @@ You can get more details from https://github.com/rancher/k3d/`,
 type k3dOption struct {
 	installerOption
 
-	image    string
-	name     string
-	agents   int
-	servers  int
-	registry string
+	image     string
+	name      string
+	agents    int
+	servers   int
+	registry  string
+	reInstall bool
 }
 
 func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
-	if o.name == "" && len(args) > 0 {
+	if len(args) > 0 {
 		o.name = args[0]
 	}
 
@@ -67,8 +74,9 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		Fetch:    o.fetch,
 	}
 	err = is.CheckDepAndInstall(map[string]string{
-		"k3d":    "rancher/k3d",
-		"docker": "docker",
+		"k3d":     "rancher/k3d",
+		"docker":  "docker",
+		"kubectl": "kubectl",
 	})
 	return
 }
@@ -83,21 +91,28 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	// always to create a registry to make sure it's exist
 	_ = common.ExecCommand("k3d", "registry", "create", o.registry)
 
+	if o.reInstall {
+		_ = common.ExecCommand("k3d", "cluster", "delete", o.name)
+	}
+
 	k3dArgs := []string{"cluster", "create",
 		"-p", fmt.Sprintf(`%d:30880@agent[0]`, ports[0]),
 		"-p", fmt.Sprintf(`%d:30180@agent[0]`, ports[1]),
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
 		"--image", o.image,
-		"--registry-use", o.registry}
-	if o.name != "" {
-		k3dArgs = append(k3dArgs, o.name)
-	}
+		"--registry-use", o.registry,
+		o.name}
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
 }
 
 func (o *k3dOption) postRunE(cmd *cobra.Command, args []string) (err error) {
+	if !o.withKubeSphere {
+		// no need to continue due to no require for KubeSphere
+		return
+	}
+
 	if err = o.installerOption.preRunE(cmd, args); err == nil {
 		err = o.installerOption.runE(cmd, args)
 	}
