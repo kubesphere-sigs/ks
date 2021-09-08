@@ -30,6 +30,8 @@ func newPipelineRunCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"The Pipeline name that you want to run")
 	flags.StringVarP(&opt.namespace, "namespace", "n", "",
 		"The namespace of target Pipeline")
+	flags.StringVarP(&opt.project, "project", "", "",
+		"The project of target Pipeline")
 	flags.BoolVarP(&opt.batch, "batch", "b", false, "Run pipeline as batch mode")
 	flags.StringToStringVarP(&opt.parameters, "parameters", "P", map[string]string{}, "The parameters that you want to pass, example of single parameter: name=value")
 	return
@@ -38,6 +40,7 @@ func newPipelineRunCmd(client dynamic.Interface) (cmd *cobra.Command) {
 type pipelineRunOpt struct {
 	pipeline   string
 	namespace  string
+	project    string
 	batch      bool
 	parameters map[string]string
 
@@ -49,6 +52,16 @@ type pipelineRunOpt struct {
 func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if o.pipeline == "" && len(args) > 0 {
 		o.pipeline = args[0]
+	}
+
+	if o.project != "" {
+		var devopsProject *unstructured.Unstructured
+		if devopsProject, err = o.getDevOpsProjectByGenerateName(o.project); err == nil && devopsProject != nil {
+			o.namespace = devopsProject.GetName()
+		} else {
+			err = fmt.Errorf("unable to find namespace by devops project: %s, error: %v", o.project, err)
+			return
+		}
 	}
 
 	if err = o.wizard(cmd, args); err != nil {
@@ -117,6 +130,22 @@ func (o *pipelineRunOpt) wizard(_ *cobra.Command, _ []string) (err error) {
 		} else if len(pipelineNames) == 0 {
 			err = fmt.Errorf("no Pipelines found in namespace '%s', please create it first", o.namespace)
 			return
+		}
+	}
+	return
+}
+
+func (o *pipelineRunOpt) getDevOpsProjectByGenerateName(name string) (result *unstructured.Unstructured, err error) {
+	ctx := context.TODO()
+	var projectList *unstructured.UnstructuredList
+	if projectList, err = o.Client.Resource(types.GetDevOpsProjectSchema()).List(ctx, metav1.ListOptions{}); err == nil {
+		for i := range projectList.Items {
+			item := projectList.Items[i]
+
+			if item.GetGenerateName() == name {
+				result = &item
+				return
+			}
 		}
 	}
 	return

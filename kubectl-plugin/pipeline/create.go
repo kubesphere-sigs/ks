@@ -72,7 +72,7 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
 	flags.BoolVarP(&opt.SkipCheck, "skip-check", "", false, "Skip the resources check")
 
-	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "longRun",
+	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "parameter", "longRun",
 		"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
 	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github", "git"))
@@ -120,7 +120,7 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	}
 
 	if o.Template == "" {
-		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "longRun",
+		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "parameter", "longRun",
 			"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"}); err != nil {
 			return
 		}
@@ -174,6 +174,8 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		o.Jenkinsfile = tpl.GetBuildGo()
 	case "simple":
 		o.Jenkinsfile = tpl.GetSimple()
+	case "parameter":
+		o.Jenkinsfile = tpl.GetParameter()
 	case "longRun":
 		o.Jenkinsfile = tpl.GetLongRunPipeline()
 	case "multi-branch-git":
