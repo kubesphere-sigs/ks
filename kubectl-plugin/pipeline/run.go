@@ -54,6 +54,16 @@ func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) 
 		o.pipeline = args[0]
 	}
 
+	if o.project != "" {
+		var devopsProject *unstructured.Unstructured
+		if devopsProject, err = o.getDevOpsProjectByGenerateName(o.project); err == nil && devopsProject != nil {
+			o.namespace = devopsProject.GetName()
+		} else {
+			err = fmt.Errorf("unable to find namespace by devops project: %s, error: %v", o.project, err)
+			return
+		}
+	}
+
 	if err = o.wizard(cmd, args); err != nil {
 		return
 	}
@@ -100,16 +110,6 @@ func (o *pipelineRunOpt) wizard(_ *cobra.Command, _ []string) (err error) {
 		}
 	}
 
-	if o.project != "" {
-		var devopsProject *unstructured.Unstructured
-		if devopsProject, err = o.getDevOpsProjectByGenerateName(o.project); err == nil {
-			o.namespace = devopsProject.GetName()
-		} else {
-			err = fmt.Errorf("unable to find namespace by devops project: %s, error: %v", o.project, err)
-			return
-		}
-	}
-
 	if o.namespace == "" {
 		var projectNames []string
 		if projectNames, err = o.getDevOpsNamespaceList(); err == nil {
@@ -139,7 +139,7 @@ func (o *pipelineRunOpt) getDevOpsProjectByGenerateName(name string) (result *un
 	ctx := context.TODO()
 	var projectList *unstructured.UnstructuredList
 	if projectList, err = o.Client.Resource(types.GetDevOpsProjectSchema()).List(ctx, metav1.ListOptions{}); err == nil {
-		for i, _ := range projectList.Items {
+		for i := range projectList.Items {
 			item := projectList.Items[i]
 
 			if item.GetGenerateName() == name {

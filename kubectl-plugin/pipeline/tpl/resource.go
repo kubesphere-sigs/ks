@@ -14,6 +14,8 @@ var (
 	buildGo string
 	//go:embed simple.groovy
 	simple string
+	//go:embed parameter.groovy
+	parameter string
 )
 
 // GetLongRunPipeline returns the content of long run Pipeline
@@ -34,4 +36,9 @@ func GetBuildGo() string {
 // GetSimple returns the content of a simple Jenkinsfile template
 func GetSimple() string {
 	return simple
+}
+
+// GetParameter return the content of a parameter Jenkinsfile template
+func GetParameter() string {
+	return parameter
 }
