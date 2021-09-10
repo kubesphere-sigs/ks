@@ -103,7 +103,8 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		dep["crictl"] = "kubernetes-sigs/cri-tools"
 		dep["runc"] = "opencontainers/runc"
 	}
-	if err = is.CheckDepAndInstall(dep); err == nil {
+
+	if err = is.CheckDepAndInstall(dep); err == nil && o.container == "containerd" {
 		err = setDefaultConfigFiles()
 	}
 
