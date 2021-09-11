@@ -28,7 +28,7 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"Specify how many agents you want to create")
 	flags.IntVarP(&opt.servers, "servers", "", 1,
 		"Specify how many servers you want to create")
-	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.18.20-k3s1",
+	flags.StringVarP(&opt.image, "image", "", "rancher/k3s:v1.19.14-k3s1",
 		"The image of k3s, get more images from https://hub.docker.com/r/rancher/k3s/tags")
 	flags.StringVarP(&opt.registry, "registry", "r", "registry",
 		"Connect to one or more k3d-managed registries running locally")
@@ -48,6 +48,11 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"The components that you want to Enabled with KubeSphere")
 	flags.BoolVarP(&opt.fetch, "fetch", "", true,
 		"Indicate if fetch the latest config of tools")
+
+	// completion for flags
+	_ = cmd.RegisterFlagCompletionFunc("image", common.ArrayCompletion("rancher/k3s:v1.19.14-k3s1",
+		"rancher/k3s:v1.20.10-k3s1",
+		"rancher/k3s:v1.21.4-k3s1"))
 	return
 }
 
