@@ -24,7 +24,7 @@ func GetPipelineSchema() schema.GroupVersionResource {
 func GetPipelineRunSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "devops.kubesphere.io",
-		Version:  "v1alpha4",
+		Version:  "v1alpha3",
 		Resource: "pipelineruns",
 	}
 }

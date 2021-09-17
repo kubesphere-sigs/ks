@@ -20,7 +20,6 @@ func newPipelineRunCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Start a Pipeline",
-		Long:    "Start a Pipeline. Only v1alpha4 is supported",
 		PreRunE: opt.preRunE,
 		RunE:    opt.runE,
 	}
@@ -176,7 +175,7 @@ func parsePipelineRunTpl(data map[string]interface{}) (pipelineRunYaml string, e
 }
 
 var pipelineRunTpl = `
-apiVersion: devops.kubesphere.io/v1alpha4
+apiVersion: devops.kubesphere.io/v1alpha3
 kind: PipelineRun
 metadata:
   generateName: {{.name}}
