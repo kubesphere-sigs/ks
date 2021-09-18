@@ -23,14 +23,27 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+type rootOpt struct {
+	context string
+}
+
+func (o *rootOpt) persistentPreRunE(cmd *cobra.Command, args []string) (err error) {
+	factory := cmd.Context().Value(common.ClientFactory{})
+	factory.(*common.ClientFactory).SetContext(o.context)
+	return
+}
+
 // NewCmdKS returns the root command of kubeclt-ks
 func NewCmdKS(streams genericclioptions.IOStreams) (cmd *cobra.Command) {
+	opt := &rootOpt{}
 	cmd = &cobra.Command{
 		Use: "ks",
 		Short: `kubectl plugin for KubeSphere
 KubeSphere is the enterprise-grade container platform tailored for multicloud and multi-cluster management
 See also https://github.com/kubesphere/kubesphere`,
+		PersistentPreRunE: opt.persistentPreRunE,
 	}
+	cmd.PersistentFlags().StringVarP(&opt.context, "context", "c", "", "")
 
 	var err error
 	var client dynamic.Interface

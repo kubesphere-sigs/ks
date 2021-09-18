@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,7 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Aliases: []string{"pip"},
 		Short:   "Manage the Pipeline of KubeSphere DevOps",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			client := common.GetDynamicClient(cmd.Context())
 			var pips []string
 			if _, pips, err = getPipelines(client, args); err == nil {
 				for _, pip := range pips {
@@ -36,7 +38,7 @@ func NewPipelineCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		newPipelineEditCmd(client),
 		newPipelineViewCmd(client),
 		newPipelineCreateCmd(client),
-		newPipelineRunCmd(client),
+		newPipelineRunCmd(),
 		newGCCmd(client))
 	return
 }
