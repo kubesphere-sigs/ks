@@ -43,7 +43,10 @@ KubeSphere is the enterprise-grade container platform tailored for multicloud an
 See also https://github.com/kubesphere/kubesphere`,
 		PersistentPreRunE: opt.persistentPreRunE,
 	}
-	cmd.PersistentFlags().StringVarP(&opt.context, "context", "c", "", "")
+	cmd.SetOut(streams.Out)
+	cmd.SetErr(streams.ErrOut)
+	cmd.PersistentFlags().StringVarP(&opt.context, "context", "", "",
+		"Sets a context entry in kubeconfig")
 
 	var err error
 	var client dynamic.Interface
