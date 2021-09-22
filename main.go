@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/entrypoint"
 	ext "github.com/linuxsuren/cobra-extension"
 	extver "github.com/linuxsuren/cobra-extension/version"
@@ -47,8 +49,11 @@ func main() {
 			ErrOut: os.Stderr,
 		})
 		kubectlPluginCmds := kubectlPluginCmdRoot.Commands()
+		cmd.PersistentFlags().AddFlagSet(kubectlPluginCmdRoot.PersistentFlags())
+		cmd.PersistentPreRunE = kubectlPluginCmdRoot.PersistentPreRunE
 		cmd.AddCommand(kubectlPluginCmds...)
 	}
 
-	aliasCmd.Execute(cmd, targetCommand, getDefault(), nil)
+	aliasCmd.ExecuteContext(cmd, context.WithValue(context.TODO(), common.ClientFactory{}, &common.ClientFactory{}),
+		targetCommand, getDefault(), nil)
 }

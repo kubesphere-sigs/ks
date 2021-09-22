@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,11 +13,8 @@ import (
 	"text/template"
 )
 
-func newPipelineRunCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := &pipelineRunOpt{
-		client:               client,
-		pipelineCreateOption: pipelineCreateOption{Client: client},
-	}
+func newPipelineRunCmd() (cmd *cobra.Command) {
+	opt := &pipelineRunOpt{}
 	cmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Start a Pipeline",
@@ -49,6 +47,9 @@ type pipelineRunOpt struct {
 }
 
 func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) {
+	o.client = common.GetDynamicClient(cmd.Root().Context())
+	o.pipelineCreateOption.Client = o.client
+
 	if o.pipeline == "" && len(args) > 0 {
 		o.pipeline = args[0]
 	}

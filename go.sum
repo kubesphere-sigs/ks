@@ -362,8 +362,8 @@ github.com/linuxsuren/cobra-extension v0.0.3/go.mod h1:UqHi31q7Dj+46nzcVWNZz5Z1J
 github.com/linuxsuren/cobra-extension v0.0.6/go.mod h1:qcEJv7BbL0UpK6MbrTESP/nKf1+z1wQdMAnE1NBl3QQ=
 github.com/linuxsuren/cobra-extension v0.0.10 h1:ciZDb2Bp/aAFqr4YoeVuH2uyBaBFfO6pwz1WBih7R4A=
 github.com/linuxsuren/cobra-extension v0.0.10/go.mod h1:nDsXgvm0lSWVV+byAEfwhIGFDoIp0Sq9wkfNUDBp5do=
-github.com/linuxsuren/go-cli-alias v0.0.6 h1:PGYf1xqy5GzGINeRhiZR1PTlp09cbyC66MGcXp+iC1Q=
-github.com/linuxsuren/go-cli-alias v0.0.6/go.mod h1:Sa7xNUI72BgHTcywDU8MXVSH1q72SLdMALZSSANwuUM=
+github.com/linuxsuren/go-cli-alias v0.0.7 h1:Il870YXx17VF4wTh+r/JXAKdtwY/0pVNWXL/wuNfuOw=
+github.com/linuxsuren/go-cli-alias v0.0.7/go.mod h1:Sa7xNUI72BgHTcywDU8MXVSH1q72SLdMALZSSANwuUM=
 github.com/linuxsuren/http-downloader v0.0.2-0.20201207132639-19888a6beaec/go.mod h1:zRZY9FCDBuYNDxbI2Ny5suasZsMk7J6q9ecQ3V3PIqI=
 github.com/linuxsuren/http-downloader v0.0.6/go.mod h1:xxgh2OE7WGL9TwDE9L8Gh7Lqq9fFPuHbh5tofUitEfE=
 github.com/linuxsuren/http-downloader v0.0.35 h1:hZ+ctSWdhSej5C5nbpHKYEFCh72q30qwfvAin+XYtz4=

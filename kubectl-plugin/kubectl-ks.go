@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/entrypoint"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -16,7 +18,7 @@ func main() {
 		Out:    os.Stdout,
 		ErrOut: os.Stderr,
 	})
-	if err := root.Execute(); err != nil {
+	if err := root.ExecuteContext(context.WithValue(context.TODO(), common.ClientFactory{}, &common.ClientFactory{})); err != nil {
 		os.Exit(1)
 	}
 }
