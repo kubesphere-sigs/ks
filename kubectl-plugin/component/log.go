@@ -13,8 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 )
 
 // LogOption is the option for component log command
@@ -26,13 +24,8 @@ type LogOption struct {
 }
 
 // newComponentLogCmd returns a command to enable (or disable) a component by name
-func newComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
-	opt := &LogOption{
-		Option: Option{
-			Clientset: clientset,
-			Client:    client,
-		},
-	}
+func newComponentLogCmd() (cmd *cobra.Command) {
+	opt := &LogOption{}
 	cmd = &cobra.Command{
 		Use:               "log",
 		Short:             "Output the log of KubeSphere component",

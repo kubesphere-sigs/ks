@@ -6,16 +6,11 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/dynamic"
 )
 
 // NewComponentResetCmd returns a command to enable (or disable) a component by name
-func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := &ResetOption{
-		Option: Option{
-			Client: client,
-		},
-	}
+func NewComponentResetCmd() (cmd *cobra.Command) {
+	opt := &ResetOption{}
 	cmd = &cobra.Command{
 		Use:   "reset",
 		Short: "Reset the component by name",
@@ -42,6 +37,10 @@ func NewComponentResetCmd(client dynamic.Interface) (cmd *cobra.Command) {
 }
 
 func (o *ResetOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+	ctx := cmd.Root().Context()
+	o.Client = common.GetDynamicClient(ctx)
+	o.Clientset = common.GetClientset(ctx)
+
 	if o.Name == "" && len(args) > 0 {
 		o.Name = args[0]
 	}

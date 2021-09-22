@@ -17,10 +17,8 @@ type killOption struct {
 	name      string
 }
 
-func newComponentsKillCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := killOption{
-		client: client,
-	}
+func newComponentsKillCmd() (cmd *cobra.Command) {
+	opt := killOption{}
 	cmd = &cobra.Command{
 		Use:               "kill",
 		Short:             "Kill the pods of the components",
@@ -42,6 +40,9 @@ func (o *killOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if len(args) > 0 {
 		o.name = args[0]
 	}
+
+	ctx := cmd.Root().Context()
+	o.client = common.GetDynamicClient(ctx)
 
 	switch o.name {
 	case "apiserver":
