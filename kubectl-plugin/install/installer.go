@@ -33,6 +33,8 @@ You can get more details about the ks-installer from https://github.com/kubesphe
 		"The nightly version you want to install")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components that you want to Enabled with KubeSphere")
+
+	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
 	return
 }
 

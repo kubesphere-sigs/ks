@@ -44,6 +44,9 @@ ks install kk --version nightly --components devops`,
 		"Indicate the container runtime type. Supported: docker, containerd")
 	flags.BoolVarP(&opt.fetch, "fetch", "", true,
 		"Indicate if fetch the latest config of tools")
+
+	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
+	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("docker", "containerd"))
 	return
 }
 
