@@ -53,6 +53,7 @@ You can get more details from https://github.com/rancher/k3d/`,
 	_ = cmd.RegisterFlagCompletionFunc("image", common.ArrayCompletion("rancher/k3s:v1.19.14-k3s1",
 		"rancher/k3s:v1.20.10-k3s1",
 		"rancher/k3s:v1.21.4-k3s1"))
+	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
 	return
 }
 
