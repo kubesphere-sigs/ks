@@ -9,7 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"strconv"
 )
 
@@ -22,13 +21,8 @@ type EnableOption struct {
 }
 
 // newComponentEnableCmd returns a command to enable (or disable) a component by name
-func newComponentEnableCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := &EnableOption{
-		Option: Option{
-			Client: client,
-		},
-	}
-
+func newComponentEnableCmd() (cmd *cobra.Command) {
+	opt := &EnableOption{}
 	cmd = &cobra.Command{
 		Use:   "enable",
 		Short: "Enable or disable the specific KubeSphere component",
@@ -61,6 +55,10 @@ Or it's possible to enable all components via: ks com enable all'`,
 }
 
 func (o *EnableOption) enablePreRunE(cmd *cobra.Command, args []string) (err error) {
+	ctx := cmd.Root().Context()
+	o.Client = common.GetDynamicClient(ctx)
+	o.Clientset = common.GetClientset(ctx)
+
 	if o.Edit {
 		return
 	}

@@ -21,15 +21,15 @@ func NewComponentCmd(client dynamic.Interface, clientset *kubernetes.Clientset) 
 		Short:   "Manage the components of KubeSphere",
 	}
 
-	cmd.AddCommand(newComponentEnableCmd(client),
-		NewComponentEditCmd(client),
-		NewComponentResetCmd(client),
-		NewComponentWatchCmd(client),
-		newComponentLogCmd(client, clientset),
-		newComponentsExecCmd(client),
-		newComponentsKillCmd(client),
+	cmd.AddCommand(newComponentEnableCmd(),
+		NewComponentEditCmd(),
+		NewComponentResetCmd(),
+		NewComponentWatchCmd(),
+		newComponentLogCmd(),
+		newComponentsExecCmd(),
+		newComponentsKillCmd(),
 		newScaleCmd(),
-		newComponentDescribeCmd(client, clientset))
+		newComponentDescribeCmd())
 	return
 }
 
@@ -141,10 +141,8 @@ type simpleDeploy struct {
 }
 
 // NewComponentEditCmd returns a command to enable (or disable) a component by name
-func NewComponentEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := &Option{
-		Client: client,
-	}
+func NewComponentEditCmd() (cmd *cobra.Command) {
+	opt := &Option{}
 	cmd = &cobra.Command{
 		Use:     "edit",
 		Short:   "Edit the target component",
@@ -159,6 +157,10 @@ func NewComponentEditCmd(client dynamic.Interface) (cmd *cobra.Command) {
 }
 
 func (o *Option) componentNameCheck(cmd *cobra.Command, args []string) (err error) {
+	ctx := cmd.Root().Context()
+	o.Client = common.GetDynamicClient(ctx)
+	o.Clientset = common.GetClientset(ctx)
+
 	if len(args) > 0 {
 		o.Name = args[0]
 	}

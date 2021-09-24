@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -17,12 +16,8 @@ import (
 )
 
 // NewComponentWatchCmd returns a command to enable (or disable) a component by name
-func NewComponentWatchCmd(client dynamic.Interface) (cmd *cobra.Command) {
-	opt := &WatchOption{
-		Option: Option{
-			Client: client,
-		},
-	}
+func NewComponentWatchCmd() (cmd *cobra.Command) {
+	opt := &WatchOption{}
 	cmd = &cobra.Command{
 		Use:   "watch",
 		Short: "Update images of ks-apiserver, ks-controller-manager, ks-console",
@@ -73,6 +68,10 @@ func (o *WatchOption) getDigest(image, tag string) string {
 }
 
 func (o *WatchOption) watchPreRunE(cmd *cobra.Command, args []string) (err error) {
+	ctx := cmd.Root().Context()
+	o.Client = common.GetDynamicClient(ctx)
+	o.Clientset = common.GetClientset(ctx)
+
 	if o.PrivateRegistry == "" {
 		o.PrivateRegistry = os.Getenv("kS_PRIVATE_REG")
 	}

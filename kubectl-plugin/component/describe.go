@@ -4,17 +4,10 @@ import (
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 )
 
-func newComponentDescribeCmd(client dynamic.Interface, _ *kubernetes.Clientset) (cmd *cobra.Command) {
-	opt := &describeOption{
-		Option{
-			Client: client,
-		},
-	}
-
+func newComponentDescribeCmd() (cmd *cobra.Command) {
+	opt := &describeOption{}
 	cmd = &cobra.Command{
 		Use:               "describe",
 		Short:             "Wrapper of kubectl describe",
@@ -32,6 +25,9 @@ type describeOption struct {
 }
 
 func (o *describeOption) preRunE(cmd *cobra.Command, args []string) (err error) {
+	ctx := cmd.Root().Context()
+	o.Client = common.GetDynamicClient(ctx)
+
 	if len(args) > 0 {
 		o.Name = args[0]
 	}

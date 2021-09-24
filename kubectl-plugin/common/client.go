@@ -20,10 +20,17 @@ func GetClient() (client dynamic.Interface, clientSet *kubernetes.Clientset, err
 	return
 }
 
-// GetDynamicClient get the dynamic k8s client from context
+// GetDynamicClient gets the dynamic k8s client from context
 func GetDynamicClient(ctx context.Context) (client dynamic.Interface) {
 	factory := ctx.Value(ClientFactory{})
 	client, _ = factory.(*ClientFactory).GetClient()
+	return
+}
+
+// GetClientset gets the clientset of k8s
+func GetClientset(ctx context.Context) (clientset *kubernetes.Clientset) {
+	factory := ctx.Value(ClientFactory{})
+	_, clientset = factory.(*ClientFactory).GetClient()
 	return
 }
 
