@@ -42,6 +42,7 @@ ks install kind --nightly latest --components DevOps`,
 		"Indicate if fetch the latest config of tools")
 
 	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
+	_ = cmd.RegisterFlagCompletionFunc("nightly", common.ArrayCompletion("latest"))
 	return
 }
 
