@@ -78,30 +78,6 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-brews:
-  - name: ks
-    ids:
-      - "ks"
-    tap:
-      owner: linuxsuren
-      name: homebrew-linuxsuren
-    folder: Formula
-    homepage: "https://github.com/kubesphere-sigs/ks"
-    description: ks is a tool which makes it be easy to work with KubeSphere.
-    dependencies:
-      - name: vim
-        type: optional
-      - name: bash-completion
-        type: optional
-      - name: kubectl
-        type: optional
-    test: |
-      version_output = shell_output("#{bin}/ks version")
-      assert_match version.to_s, version_output
-    install: |
-      bin.install name
-
-      prefix.install_metafiles
 nfpms:
   - file_name_template: "ks-{{.Os}}-{{.Arch}}"
     id: "ks"
@@ -109,7 +85,7 @@ nfpms:
     description: ks is a tool which makes it be easy to work with KubeSphere.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
-    vendor: Jenkins
+    vendor: KubeSphere
     formats:
       - deb
       - rpm
