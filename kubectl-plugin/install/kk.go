@@ -46,7 +46,7 @@ ks install kk --version nightly --components devops`,
 		"Indicate if fetch the latest config of tools")
 
 	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
-	_ = cmd.RegisterFlagCompletionFunc("components", common.ArrayCompletion("docker", "containerd"))
+	_ = cmd.RegisterFlagCompletionFunc("container", common.ArrayCompletion("docker", "containerd"))
 	return
 }
 

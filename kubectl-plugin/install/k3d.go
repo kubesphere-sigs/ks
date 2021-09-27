@@ -54,6 +54,7 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"rancher/k3s:v1.20.10-k3s1",
 		"rancher/k3s:v1.21.4-k3s1"))
 	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
+	_ = cmd.RegisterFlagCompletionFunc("nightly", common.ArrayCompletion("latest"))
 	return
 }
 
@@ -71,6 +72,11 @@ type k3dOption struct {
 func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if len(args) > 0 {
 		o.name = args[0]
+	}
+
+	// make the name of nightly k3d be clear
+	if o.name == "k3s-default" && o.nightly != "" {
+		_, o.name = common.GetNightlyTag(o.nightly)
 	}
 
 	is := installer.Installer{
