@@ -47,7 +47,7 @@ func newPipelineCreateCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		Long: `Create a Pipeline in the KubeSphere cluster
 You can create a Pipeline with a java, go template. Before you do that, please make sure the workspace exists.
 KubeSphere supports multiple types Pipeline. Currently, this CLI only support the simple one with Jenkinsfile inside.'`,
-		Example: "ks pip create --ws simple --template java --name java --project test",
+		Example: "ks pip create --ws simple --project test --template simple --name simple",
 		PreRunE: opt.preRunE,
 		RunE:    opt.runE,
 	}
@@ -72,8 +72,8 @@ KubeSphere supports multiple types Pipeline. Currently, this CLI only support th
 	flags.BoolVarP(&opt.Batch, "batch", "b", false, "Create pipeline as batch mode")
 	flags.BoolVarP(&opt.SkipCheck, "skip-check", "", false, "Skip the resources check")
 
-	_ = cmd.RegisterFlagCompletionFunc("template", common.ArrayCompletion("java", "go", "simple", "parameter", "longRun",
-		"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"))
+	_ = cmd.RegisterFlagCompletionFunc("template",
+		common.ArrayCompletion(tpl.GetAllTemplates()...))
 	_ = cmd.RegisterFlagCompletionFunc("type", common.ArrayCompletion("pipeline", "multi-branch-pipeline"))
 	_ = cmd.RegisterFlagCompletionFunc("scm-type", common.ArrayCompletion("gitlab", "github", "git"))
 
@@ -120,14 +120,14 @@ func (o *pipelineCreateOption) wizard(_ *cobra.Command, _ []string) (err error) 
 	}
 
 	if o.Template == "" {
-		if o.Template, err = chooseOneFromArray([]string{"java", "go", "simple", "parameter", "longRun",
-			"multi-branch-gitlab", "multi-branch-github", "multi-branch-git"}); err != nil {
+		if o.Template, err = chooseOneFromArray(tpl.GetAllTemplates()); err != nil {
 			return
 		}
 	}
 
 	if o.Name == "" {
-		if o.Name, err = getInput("Please input the Pipeline name"); err != nil {
+		defaultVal := fmt.Sprintf("%s-%s", o.Template, strings.ToLower(randomdata.SillyName()))
+		if o.Name, err = getInput("Please input the Pipeline name", defaultVal); err != nil {
 			return
 		}
 	}
@@ -148,10 +148,10 @@ func chooseOneFromArray(options []string) (result string, err error) {
 	return
 }
 
-func getInput(title string) (result string, err error) {
+func getInput(title, defaultVal string) (result string, err error) {
 	prompt := &survey.Input{
 		Message: title,
-		Default: strings.ToLower(randomdata.SillyName()),
+		Default: defaultVal,
 	}
 	err = survey.AskOne(prompt, &result)
 	return
@@ -178,6 +178,8 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		o.Jenkinsfile = tpl.GetParameter()
 	case "longRun":
 		o.Jenkinsfile = tpl.GetLongRunPipeline()
+	case "parallel":
+		o.Jenkinsfile = tpl.GetParallel()
 	case "multi-branch-git":
 		o.Type = "multi-branch-pipeline"
 		o.SCMType = "git"

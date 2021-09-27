@@ -12,4 +12,6 @@ func TestEmebdContent(t *testing.T) {
 	assert.NotEmpty(t, tpl.GetBuildGo(), "go building Pipeline content is empty")
 	assert.NotEmpty(t, tpl.GetSimple(), "simple Pipeline content is empty")
 	assert.NotEmpty(t, tpl.GetParameter(), "parameter Pipeline content is empty")
+	assert.NotEmpty(t, tpl.GetParallel(), "parallel Pipeline content is empty")
+	assert.Equal(t, len(tpl.GetAllTemplates()), 9)
 }
