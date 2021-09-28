@@ -3,8 +3,11 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/tpl"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/ui"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
@@ -18,6 +21,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"strings"
 )
 
 type dashboardOption struct {
@@ -25,9 +29,12 @@ type dashboardOption struct {
 	clientset  *kubernetes.Clientset
 	restClient *rest.RESTClient
 
-	namespace string
-	pipeline  string
+	namespace             string
+	pipeline              string
+	namespaceWorkspaceMap map[string]string
+	namespaceProjectMap   map[string]string
 
+	stack            *ui.Stack
 	header           *tview.TextView
 	footer           *tview.Table
 	app              *tview.Application
@@ -35,7 +42,10 @@ type dashboardOption struct {
 }
 
 func newDashboardCmd() (cmd *cobra.Command) {
-	opt := &dashboardOption{}
+	opt := &dashboardOption{
+		namespaceWorkspaceMap: map[string]string{},
+		namespaceProjectMap:   map[string]string{},
+	}
 	cmd = &cobra.Command{
 		Use:     "dashboard",
 		Aliases: []string{"dash"},
@@ -46,6 +56,8 @@ func newDashboardCmd() (cmd *cobra.Command) {
 
 func (o *dashboardOption) runE(cmd *cobra.Command, args []string) (err error) {
 	o.app = tview.NewApplication()
+	o.stack = ui.NewStack(o.app)
+
 	o.client = common.GetDynamicClient(cmd.Root().Context())
 	o.clientset = common.GetClientset(cmd.Root().Context())
 	o.restClient = common.GetRestClient(cmd.Root().Context())
@@ -69,7 +81,10 @@ func (o *dashboardOption) runE(cmd *cobra.Command, args []string) (err error) {
 	go func() {
 		o.getComponentsInfo()
 	}()
-	if err = o.app.SetRoot(grid, true).Run(); err != nil {
+	o.stack.Push(grid)
+	if err = o.app.
+		//SetRoot(grid, true).
+		Run(); err != nil {
 		panic(err)
 	}
 	return
@@ -119,7 +134,7 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 	listView = table
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		o.header.Clear()
-		o.header.SetText("(r) Run a Pipeline, (v) List the PipelineRuns")
+		o.header.SetText("(r) Run a Pipeline and go to PipelineRun, (R) Run a Pipeline, (v) List the PipelineRuns, (c) Create a Pipeline")
 		switch key := event.Rune(); key {
 		case 'v':
 			o.listPipelineRuns(0, o.namespace, "", 0)
@@ -132,6 +147,16 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 			pipeline := cell.Text
 			_ = run.triggerPipeline(o.namespace, pipeline, nil)
 			o.listPipelineRuns(0, o.namespace, "", 0)
+		case 'R':
+			run := &pipelineRunOpt{
+				client: o.client,
+			}
+			row, col := table.GetSelection()
+			cell := table.GetCell(row, col)
+			pipeline := cell.Text
+			_ = run.triggerPipeline(o.namespace, pipeline, nil)
+		case 'c':
+			o.pipelineCreationForm()
 		}
 		if event.Key() == tcell.KeyESC {
 			o.listPipelines(0, o.namespace, "", 0)
@@ -173,6 +198,45 @@ func (o *dashboardOption) getTable(ns, kind string, table *tview.Table) (err err
 	return
 }
 
+func (o *dashboardOption) pipelineCreationForm() {
+	form := tview.NewForm()
+	form.AddButton("OK", func() {
+		nameItem := form.GetFormItemByLabel("Name")
+		templateItem := form.GetFormItemByLabel("Template")
+		if nameItem != nil && templateItem != nil {
+			nameField := nameItem.(*tview.InputField)
+			templateField := templateItem.(*tview.DropDown)
+			_, templateName := templateField.GetCurrentOption()
+
+			opt := &pipelineCreateOption{
+				Name:      nameField.GetText(),
+				Project:   o.namespaceProjectMap[o.namespace],
+				Template:  templateName,
+				Workspace: o.namespaceWorkspaceMap[o.namespace],
+				Batch:     true,
+				Type:      "pipeline",
+				Client:    o.client,
+			}
+			_ = opt.parseTemplate()
+			_ = opt.createPipeline() // need to find a way to show the errors
+		}
+
+		o.stack.Pop()
+	}).
+		AddButton("Cancel", func() {
+			o.stack.Pop()
+		})
+	form.AddDropDown("Template", tpl.GetAllTemplates(), 0, func(option string, optionIndex int) {
+		if formItem := form.GetFormItemByLabel("Name"); formItem != nil {
+			inputField := formItem.(*tview.InputField)
+			inputField.SetText(strings.ToLower(fmt.Sprintf("%s-%s", option, randomdata.SillyName())))
+		}
+	})
+	form.AddInputField("Name", "", 20, nil, nil)
+	form.SetTitle("Create a new Pipeline").SetBorder(true)
+	o.stack.Push(form)
+}
+
 func (o *dashboardOption) listPipelines(index int, mainText string, secondaryText string, shortcut rune) {
 	o.pipelineListView.Clear()
 	o.namespace = mainText
@@ -201,6 +265,12 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 					ss := &corev1.Namespace{}
 					if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unss.Object, ss); err == nil {
 						list.AddItem(ss.Name, "", 0, nil)
+					}
+
+					if devopsProject, err := o.client.Resource(types.GetDevOpsProjectSchema()).
+						Get(context.TODO(), ss.Name, metav1.GetOptions{}); err == nil {
+						o.namespaceWorkspaceMap[ss.Name] = devopsProject.GetLabels()["kubesphere.io/workspace"]
+						o.namespaceProjectMap[ss.Name] = devopsProject.GetGenerateName()
 					}
 				case watch.Deleted:
 					for i := 0; i < list.GetItemCount(); i++ {
