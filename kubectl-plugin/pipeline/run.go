@@ -46,6 +46,29 @@ type pipelineRunOpt struct {
 	pipelineCreateOption
 }
 
+func (o *pipelineRunOpt) triggerPipeline(ns, pipeline string, parameters map[string]string) (err error) {
+	pipelineRunYaml, err := parsePipelineRunTpl(map[string]interface{}{
+		"name":       pipeline,
+		"namespace":  ns,
+		"parameters": parameters,
+	})
+	if err != nil {
+		return err
+	}
+
+	var pipelineRunObj *unstructured.Unstructured
+	if pipelineRunObj, err = types.GetObjectFromYaml(pipelineRunYaml); err != nil {
+		err = fmt.Errorf("failed to unmarshal yaml to Pipelinerun object, %v", err)
+		return
+	}
+
+	if _, err = o.client.Resource(types.GetPipelineRunSchema()).Namespace(ns).Create(context.TODO(),
+		pipelineRunObj, metav1.CreateOptions{}); err != nil {
+		err = fmt.Errorf("failed create PipelineRun, error: %v", err)
+	}
+	return
+}
+
 func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) {
 	o.client = common.GetDynamicClient(cmd.Root().Context())
 	o.pipelineCreateOption.Client = o.client
@@ -71,25 +94,7 @@ func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) 
 }
 
 func (o *pipelineRunOpt) runE(_ *cobra.Command, _ []string) (err error) {
-	pipelineRunYaml, err := parsePipelineRunTpl(map[string]interface{}{
-		"name":       o.pipeline,
-		"namespace":  o.namespace,
-		"parameters": o.parameters,
-	})
-	if err != nil {
-		return err
-	}
-
-	var pipelineRunObj *unstructured.Unstructured
-	if pipelineRunObj, err = types.GetObjectFromYaml(pipelineRunYaml); err != nil {
-		err = fmt.Errorf("failed to unmarshal yaml to Pipelinerun object, %v", err)
-		return
-	}
-
-	if _, err = o.client.Resource(types.GetPipelineRunSchema()).Namespace(o.namespace).Create(context.TODO(),
-		pipelineRunObj, metav1.CreateOptions{}); err != nil {
-		err = fmt.Errorf("failed create PipelineRun, error: %v", err)
-	}
+	err = o.triggerPipeline(o.namespace, o.pipeline, o.parameters)
 	return
 }
 
