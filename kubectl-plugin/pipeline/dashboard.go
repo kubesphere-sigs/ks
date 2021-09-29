@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/Pallinder/go-randomdata"
@@ -17,7 +18,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -134,7 +137,7 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 	listView = table
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		o.header.Clear()
-		o.header.SetText("(r) Run a Pipeline and go to PipelineRun, (R) Run a Pipeline, (v) List the PipelineRuns, (c) Create a Pipeline")
+		o.header.SetText(`(r) Run a Pipeline and go to PipelineRun, (R) Run a Pipeline, (v) List the PipelineRuns, (c) Create a Pipeline, (y) View the as YAML`)
 		switch key := event.Rune(); key {
 		case 'v':
 			o.listPipelineRuns(0, o.namespace, "", 0)
@@ -157,6 +160,15 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 			_ = run.triggerPipeline(o.namespace, pipeline, nil)
 		case 'c':
 			o.pipelineCreationForm()
+		case 'y':
+			row, col := table.GetSelection()
+			cell := table.GetCell(row, col)
+			pipeline := cell.Text
+			if strings.HasPrefix(table.GetTitle(), "pipelinerun") {
+				o.resourceYAMLView(types.GetPipelineRunSchema(), o.namespace, pipeline)
+			} else if strings.HasPrefix(table.GetTitle(), "pipeline") {
+				o.resourceYAMLView(types.GetPipelineSchema(), o.namespace, pipeline)
+			}
 		}
 		if event.Key() == tcell.KeyESC {
 			o.listPipelines(0, o.namespace, "", 0)
@@ -196,6 +208,30 @@ func (o *dashboardOption) getTable(ns, kind string, table *tview.Table) (err err
 		table.SetTitle(fmt.Sprintf("%s(%s)[%d]", kind, ns, len(tableData.Rows)))
 	}
 	return
+}
+
+func (o *dashboardOption) resourceYAMLView(groupVer schema.GroupVersionResource, ns, name string) {
+	textView := tview.NewTextView()
+	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyESC {
+			o.stack.Pop()
+		}
+		return event
+	})
+	textView.SetBorder(true)
+	textView.SetTitle(fmt.Sprintf("%s(%s/%s)", groupVer.Resource, ns, name))
+	var data *unstructured.Unstructured
+	var err error
+	if data, err = o.client.Resource(groupVer).Namespace(ns).Get(context.TODO(), name, metav1.GetOptions{}); err == nil {
+		data.SetManagedFields(nil)
+
+		buffer := bytes.NewBuffer([]byte{})
+		printer := &printers.YAMLPrinter{}
+		if err = printer.PrintObj(data.DeepCopyObject(), buffer); err == nil {
+			textView.SetText(buffer.String())
+		}
+	}
+	o.stack.Push(textView)
 }
 
 func (o *dashboardOption) pipelineCreationForm() {
