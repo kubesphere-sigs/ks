@@ -3,11 +3,13 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"sort"
 	"time"
 )
 
@@ -31,14 +33,24 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"Maximum number to keep PipelineRuns")
 	flags.DurationVarP(&opt.maxAge, "max-age", "", 7*24*time.Hour,
 		"Maximum age to keep PipelineRuns")
+	flags.StringVarP(&opt.condition, "condition", "", "and",
+		"The condition between --max-count and --max-age")
 	flags.StringArrayVarP(&opt.namespaces, "namespaces", "", nil,
 		"Indicate namespaces do you want to clean. Clean all namespaces if it's empty")
+
+	_ = cmd.RegisterFlagCompletionFunc("condition", common.ArrayCompletion(conditionAnd, conditionOr))
 	return
 }
+
+const (
+	conditionAnd = "and"
+	conditionOr  = "or"
+)
 
 type gcOption struct {
 	maxCount   int
 	maxAge     time.Duration
+	condition  string
 	namespaces []string
 
 	// inner fields
@@ -66,6 +78,8 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 		return
 	}
 
+	ascOrderWithCompletionTime(pipelineList.Items)
+
 	for i := range items {
 		item := items[i]
 
@@ -74,7 +88,7 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 			break
 		}
 
-		if okToDelete(item.Object, o.maxAge) {
+		if (o.condition == conditionAnd && okToDelete(item.Object, o.maxAge)) || o.condition == conditionOr {
 			delErr := o.client.Resource(types.GetPipelineRunSchema()).Namespace(namespace).Delete(
 				context.TODO(), item.GetName(), metav1.DeleteOptions{})
 			if delErr != nil {
@@ -86,6 +100,35 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 		}
 	}
 	return
+}
+
+func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
+	sort.Slice(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+
+		var leftCompletionTime time.Time
+		var rightCompletionTime time.Time
+		var err error
+
+		if leftCompletionTimeStr, ok, nestErr := unstructured.NestedString(left.Object, "status", "completionTime"); ok && nestErr == nil {
+			if leftCompletionTime, err = time.Parse(time.RFC3339, leftCompletionTimeStr); err != nil {
+				return false
+			}
+		} else {
+			return false
+		}
+
+		if rightCompletionTimeStr, ok, nestErr := unstructured.NestedString(right.Object, "status", "completionTime"); ok && nestErr == nil {
+			if rightCompletionTime, err = time.Parse(time.RFC3339, rightCompletionTimeStr); err != nil {
+				return false
+			}
+		} else {
+			return false
+		}
+
+		return leftCompletionTime.Before(rightCompletionTime)
+	})
 }
 
 func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
