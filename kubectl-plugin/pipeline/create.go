@@ -166,6 +166,21 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		return
 	}
 
+	if err = o.parseTemplate(); err != nil {
+		return
+	}
+
+	if o.Name == "" && len(args) > 0 {
+		o.Name = args[0]
+	}
+
+	if o.Name == "" {
+		err = fmt.Errorf("please provide the name of Pipeline")
+	}
+	return
+}
+
+func (o *pipelineCreateOption) parseTemplate() (err error) {
 	switch o.Template {
 	case "":
 	case "java":
@@ -193,18 +208,10 @@ func (o *pipelineCreateOption) preRunE(cmd *cobra.Command, args []string) (err e
 		err = fmt.Errorf("%s is not support", o.Template)
 	}
 	o.Jenkinsfile = strings.TrimSpace(o.Jenkinsfile)
-
-	if o.Name == "" && len(args) > 0 {
-		o.Name = args[0]
-	}
-
-	if o.Name == "" {
-		err = fmt.Errorf("please provide the name of Pipeline")
-	}
 	return
 }
 
-func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err error) {
+func (o *pipelineCreateOption) createPipeline() (err error) {
 	ctx := context.TODO()
 
 	var wdID string
@@ -228,6 +235,11 @@ func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err erro
 			err = fmt.Errorf("failed to create Pipeline, %v", err)
 		}
 	}
+	return
+}
+
+func (o *pipelineCreateOption) runE(cmd *cobra.Command, args []string) (err error) {
+	err = o.createPipeline()
 	return
 }
 
