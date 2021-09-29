@@ -29,12 +29,12 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 
 	flags := cmd.Flags()
-	flags.IntVarP(&opt.maxCount, "max-count", "", 10,
+	flags.IntVarP(&opt.maxCount, "max-count", "", 30,
 		"Maximum number to keep PipelineRuns")
 	flags.DurationVarP(&opt.maxAge, "max-age", "", 7*24*time.Hour,
 		"Maximum age to keep PipelineRuns")
-	flags.StringVarP(&opt.condition, "condition", "", "and",
-		"The condition between --max-count and --max-age")
+	flags.StringVarP(&opt.condition, "condition", "", conditionAnd,
+		fmt.Sprintf("The condition between --max-count and --max-age, supported conditions: '%s', '%s'", conditionAnd, conditionOr))
 	flags.StringArrayVarP(&opt.namespaces, "namespaces", "", nil,
 		"Indicate namespaces do you want to clean. Clean all namespaces if it's empty")
 
@@ -44,7 +44,7 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 
 const (
 	conditionAnd = "and"
-	conditionOr  = "or"
+	conditionOr  = "ignoreTime"
 )
 
 type gcOption struct {
@@ -111,19 +111,10 @@ func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
 		var rightCompletionTime time.Time
 		var err error
 
-		if leftCompletionTimeStr, ok, nestErr := unstructured.NestedString(left.Object, "status", "completionTime"); ok && nestErr == nil {
-			if leftCompletionTime, err = time.Parse(time.RFC3339, leftCompletionTimeStr); err != nil {
-				return false
-			}
-		} else {
+		if leftCompletionTime, err = getCompletionTimeFromObject(left.Object); err != nil {
 			return false
 		}
-
-		if rightCompletionTimeStr, ok, nestErr := unstructured.NestedString(right.Object, "status", "completionTime"); ok && nestErr == nil {
-			if rightCompletionTime, err = time.Parse(time.RFC3339, rightCompletionTimeStr); err != nil {
-				return false
-			}
-		} else {
+		if rightCompletionTime, err = getCompletionTimeFromObject(right.Object); err != nil {
 			return false
 		}
 
@@ -131,12 +122,20 @@ func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
 	})
 }
 
+func getCompletionTimeFromObject(obj map[string]interface{}) (completionTime time.Time, err error) {
+	var (
+		completionTimeStr string
+		ok                bool
+	)
+	if completionTimeStr, ok, err = unstructured.NestedString(obj, "status", "completionTime"); ok && err == nil {
+		completionTime, err = time.Parse(time.RFC3339, completionTimeStr)
+	}
+	return
+}
+
 func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
-	completionTimeStr, ok, nestErr := unstructured.NestedString(object, "status", "completionTime")
-	if ok && nestErr == nil {
-		if completionTime, parseErr := time.Parse(time.RFC3339, completionTimeStr); parseErr == nil {
-			return completionTime.Add(maxAge).Before(time.Now())
-		}
+	if completionTime, err := getCompletionTimeFromObject(object); err == nil {
+		return completionTime.Add(maxAge).Before(time.Now())
 	}
 	return false
 }
