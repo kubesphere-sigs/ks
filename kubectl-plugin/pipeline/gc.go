@@ -34,17 +34,17 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	flags.DurationVarP(&opt.maxAge, "max-age", "", 7*24*time.Hour,
 		"Maximum age to keep PipelineRuns")
 	flags.StringVarP(&opt.condition, "condition", "", conditionAnd,
-		fmt.Sprintf("The condition between --max-count and --max-age, supported conditions: '%s', '%s'", conditionAnd, conditionOr))
+		fmt.Sprintf("The condition between --max-count and --max-age, supported conditions: '%s', '%s'", conditionAnd, conditionIgnore))
 	flags.StringArrayVarP(&opt.namespaces, "namespaces", "", nil,
 		"Indicate namespaces do you want to clean. Clean all namespaces if it's empty")
 
-	_ = cmd.RegisterFlagCompletionFunc("condition", common.ArrayCompletion(conditionAnd, conditionOr))
+	_ = cmd.RegisterFlagCompletionFunc("condition", common.ArrayCompletion(conditionAnd, conditionIgnore))
 	return
 }
 
 const (
-	conditionAnd = "and"
-	conditionOr  = "ignoreTime"
+	conditionAnd    = "and"
+	conditionIgnore = "ignoreTime"
 )
 
 type gcOption struct {
@@ -88,7 +88,7 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 			break
 		}
 
-		if (o.condition == conditionAnd && okToDelete(item.Object, o.maxAge)) || o.condition == conditionOr {
+		if (o.condition == conditionAnd && okToDelete(item.Object, o.maxAge)) || o.condition == conditionIgnore {
 			delErr := o.client.Resource(types.GetPipelineRunSchema()).Namespace(namespace).Delete(
 				context.TODO(), item.GetName(), metav1.DeleteOptions{})
 			if delErr != nil {
