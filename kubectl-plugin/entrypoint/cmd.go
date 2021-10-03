@@ -14,7 +14,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/tool"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/update"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/user"
-	pkg "github.com/linuxsuren/cobra-extension"
+	pkg "github.com/linuxsuren/cobra-extension/pkg"
 	extver "github.com/linuxsuren/cobra-extension/version"
 	hdcmd "github.com/linuxsuren/http-downloader/pkg/cmd"
 	"github.com/spf13/cobra"
