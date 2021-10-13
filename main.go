@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/entrypoint"
-	ext "github.com/linuxsuren/cobra-extension"
+	ext "github.com/linuxsuren/cobra-extension/pkg"
 	extver "github.com/linuxsuren/cobra-extension/version"
 	aliasCmd "github.com/linuxsuren/go-cli-alias/pkg/cmd"
 	"github.com/spf13/cobra"
