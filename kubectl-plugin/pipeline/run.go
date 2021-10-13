@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +44,7 @@ type pipelineRunOpt struct {
 
 	// inner fields
 	client dynamic.Interface
-	pipelineCreateOption
+	option.PipelineCreateOption
 }
 
 func (o *pipelineRunOpt) triggerPipeline(ns, pipeline string, parameters map[string]string) (err error) {
@@ -71,7 +72,7 @@ func (o *pipelineRunOpt) triggerPipeline(ns, pipeline string, parameters map[str
 
 func (o *pipelineRunOpt) preRunE(cmd *cobra.Command, args []string) (err error) {
 	o.client = common.GetDynamicClient(cmd.Root().Context())
-	o.pipelineCreateOption.Client = o.client
+	o.PipelineCreateOption.Client = o.client
 
 	if o.pipeline == "" && len(args) > 0 {
 		o.pipeline = args[0]
@@ -106,8 +107,8 @@ func (o *pipelineRunOpt) wizard(_ *cobra.Command, _ []string) (err error) {
 
 	if o.Workspace == "" {
 		var wsNames []string
-		if wsNames, err = o.getWorkspaceTemplateNameList(); err == nil {
-			if o.Workspace, err = chooseObjectFromArray("workspace name", wsNames); err != nil {
+		if wsNames, err = o.GetWorkspaceTemplateNameList(); err == nil {
+			if o.Workspace, err = option.ChooseObjectFromArray("workspace name", wsNames); err != nil {
 				return
 			}
 		} else {
@@ -117,8 +118,8 @@ func (o *pipelineRunOpt) wizard(_ *cobra.Command, _ []string) (err error) {
 
 	if o.namespace == "" {
 		var projectNames []string
-		if projectNames, err = o.getDevOpsNamespaceList(); err == nil {
-			if o.namespace, err = chooseObjectFromArray("project name", projectNames); err != nil {
+		if projectNames, err = o.GetDevOpsNamespaceList(); err == nil {
+			if o.namespace, err = option.ChooseObjectFromArray("project name", projectNames); err != nil {
 				return
 			}
 		} else {
@@ -129,7 +130,7 @@ func (o *pipelineRunOpt) wizard(_ *cobra.Command, _ []string) (err error) {
 	if o.pipeline == "" {
 		var pipelineNames []string
 		if pipelineNames, err = o.getPipelineNameList(); err == nil && len(pipelineNames) > 0 {
-			if o.pipeline, err = chooseObjectFromArray("pipeline name", pipelineNames); err != nil {
+			if o.pipeline, err = option.ChooseObjectFromArray("pipeline name", pipelineNames); err != nil {
 				return
 			}
 		} else if len(pipelineNames) == 0 {
@@ -157,7 +158,7 @@ func (o *pipelineRunOpt) getDevOpsProjectByGenerateName(name string) (result *un
 }
 
 func (o *pipelineRunOpt) getPipelineNameList() (names []string, err error) {
-	names, err = o.getUnstructuredNameListInNamespace(o.namespace, true, []string{}, types.GetPipelineSchema())
+	names, err = o.GetUnstructuredNameListInNamespace(o.namespace, true, []string{}, types.GetPipelineSchema())
 	return
 }
 

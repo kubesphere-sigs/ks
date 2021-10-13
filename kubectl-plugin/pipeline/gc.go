@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ import (
 func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	opt := &gcOption{
 		client: client,
-		pipelineCreateOption: pipelineCreateOption{
+		PipelineCreateOption: option.PipelineCreateOption{
 			Client: client,
 		},
 	}
@@ -55,7 +56,7 @@ type gcOption struct {
 
 	// inner fields
 	client dynamic.Interface
-	pipelineCreateOption
+	option.PipelineCreateOption
 }
 
 func (o *gcOption) preRunE(cmd *cobra.Command, args []string) (err error) {
@@ -67,7 +68,7 @@ func (o *gcOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 
 func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 	var pipelineList *unstructured.UnstructuredList
-	if pipelineList, err = o.getUnstructuredListInNamespace(namespace, types.GetPipelineRunSchema()); err != nil {
+	if pipelineList, err = o.GetUnstructuredListInNamespace(namespace, types.GetPipelineRunSchema()); err != nil {
 		err = fmt.Errorf("failed to get PipelineRun list, error: %v", err)
 		return
 	}

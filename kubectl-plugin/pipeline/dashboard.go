@@ -7,19 +7,18 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/tpl"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/ui"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/ui/project"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -244,7 +243,7 @@ func (o *dashboardOption) pipelineCreationForm() {
 			templateField := templateItem.(*tview.DropDown)
 			_, templateName := templateField.GetCurrentOption()
 
-			opt := &pipelineCreateOption{
+			opt := &option.PipelineCreateOption{
 				Name:      nameField.GetText(),
 				Project:   o.namespaceProjectMap[o.namespace],
 				Template:  templateName,
@@ -253,8 +252,8 @@ func (o *dashboardOption) pipelineCreationForm() {
 				Type:      "pipeline",
 				Client:    o.client,
 			}
-			_ = opt.parseTemplate()
-			_ = opt.createPipeline() // need to find a way to show the errors
+			_ = opt.ParseTemplate()
+			_ = opt.CreatePipeline() // need to find a way to show the errors
 		}
 
 		o.stack.Pop()
@@ -288,43 +287,15 @@ func (o *dashboardOption) listPipelines(index int, mainText string, secondaryTex
 }
 
 func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
-	list := tview.NewList()
-	list.SetBorder(true).SetTitle("namespaces")
-	go func() {
-		if watchEvent, err := o.client.Resource(types.GetNamespaceSchema()).Watch(context.TODO(), metav1.ListOptions{
-			LabelSelector: "kubesphere.io/devopsproject",
-		}); err == nil {
-			for event := range watchEvent.ResultChan() {
-				switch event.Type {
-				case watch.Added:
-					unss := event.Object.(*unstructured.Unstructured)
-					ss := &corev1.Namespace{}
-					if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unss.Object, ss); err == nil {
-						list.AddItem(ss.Name, "", 0, nil)
-					}
-
-					if devopsProject, err := o.client.Resource(types.GetDevOpsProjectSchema()).
-						Get(context.TODO(), ss.Name, metav1.GetOptions{}); err == nil {
-						o.namespaceWorkspaceMap[ss.Name] = devopsProject.GetLabels()["kubesphere.io/workspace"]
-						o.namespaceProjectMap[ss.Name] = devopsProject.GetGenerateName()
-					}
-				case watch.Deleted:
-					for i := 0; i < list.GetItemCount(); i++ {
-						name, _ := list.GetItemText(i)
-						unss := event.Object.(*unstructured.Unstructured)
-						ss := &corev1.Namespace{}
-						if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unss.Object, ss); err == nil {
-							if name == ss.Name {
-								list.RemoveItem(i)
-								break
-							}
-						}
-					}
-				}
-				o.app.Draw()
-			}
+	list := ui.NewResourceList(o.client, o.app, o.stack)
+	list.PutItemAddingListener(func(name string) {
+		if devopsProject, err := o.client.Resource(types.GetDevOpsProjectSchema()).
+			Get(context.TODO(), name, metav1.GetOptions{}); err == nil {
+			o.namespaceWorkspaceMap[name] = devopsProject.GetLabels()["kubesphere.io/workspace"]
+			o.namespaceProjectMap[name] = devopsProject.GetGenerateName()
 		}
-	}()
+	})
+	list.Load("", types.GetNamespaceSchema(), "kubesphere.io/devopsproject")
 	list.SetChangedFunc(o.listPipelines)
 	o.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Rune(); key {
@@ -339,7 +310,25 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 		}
 		return event
 	})
+	inputCapture := list.GetInputCapture()
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch key := event.Rune(); key {
+		case 'p':
+			o.createProject()
+		}
+		return inputCapture(event)
+	})
 	o.app.SetFocus(list)
 	listView = list
 	return
+}
+
+func (o *dashboardOption) createProject() {
+	form := project.NewProjectForm(o.client)
+	form.SetConfirmEvent(func() {
+		o.stack.Pop()
+	}).SetCancelEvent(func() {
+		o.stack.Pop()
+	})
+	o.stack.Push(form)
 }
