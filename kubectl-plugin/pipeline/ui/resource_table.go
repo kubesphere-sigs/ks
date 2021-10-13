@@ -46,16 +46,17 @@ func (t *ResourceTable) Load(ns, kind, labelSelector string) {
 	t.ticker = time.NewTicker(time.Second * 2)
 
 	go func() {
+		ctx :=  context.TODO()
 		// give it an initial data setting
-		t.reload(ns, kind, labelSelector, context.TODO())
+		t.reload(ctx, ns, kind, labelSelector)
 
-		for _ = range t.ticker.C {
-			t.reload(ns, kind, labelSelector, context.TODO())
+		for range t.ticker.C {
+			t.reload(ctx, ns, kind, labelSelector)
 		}
 	}()
 }
 
-func (t *ResourceTable) reload(ns, kind, labelSelector string, ctx context.Context) {
+func (t *ResourceTable) reload(ctx context.Context, ns, kind, labelSelector string) {
 	listOpt := metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
