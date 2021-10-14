@@ -259,7 +259,7 @@ func (o *dashboardOption) listPipelines(index int, mainText string, secondaryTex
 }
 
 func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
-	list := ui.NewResourceList(o.client, o.app, o.stack)
+	list := project.NewProjectList(o.client, o.app, o.stack)
 	list.PutItemAddingListener(func(name string) {
 		if devopsProject, err := o.client.Resource(types.GetDevOpsProjectSchema()).
 			Get(context.TODO(), name, metav1.GetOptions{}); err == nil {
@@ -267,7 +267,6 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 			o.namespaceProjectMap[name] = devopsProject.GetGenerateName()
 		}
 	})
-	list.Load("", types.GetNamespaceSchema(), "kubesphere.io/devopsproject")
 	list.SetChangedFunc(o.listPipelines)
 	o.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Rune(); key {
@@ -282,25 +281,7 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 		}
 		return event
 	})
-	inputCapture := list.GetInputCapture()
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch key := event.Rune(); key {
-		case 'p':
-			o.createProject()
-		}
-		return inputCapture(event)
-	})
 	o.app.SetFocus(list)
 	listView = list
 	return
-}
-
-func (o *dashboardOption) createProject() {
-	form := project.NewProjectForm(o.client)
-	form.SetConfirmEvent(func() {
-		o.stack.Pop()
-	}).SetCancelEvent(func() {
-		o.stack.Pop()
-	})
-	o.stack.Push(form)
 }

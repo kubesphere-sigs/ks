@@ -7,8 +7,8 @@ type (
 	cancelFunc func()
 )
 
-// ShowDelete pops a resource deletion dialog.
-func ShowDelete(msg string, ok okFunc, cancel cancelFunc) *tview.Modal {
+// ShowConfirm pops a resource deletion dialog.
+func ShowConfirm(msg string, ok okFunc, cancel cancelFunc) *tview.Modal {
 	confirm := tview.NewModal()
 	confirm.SetText(msg)
 	confirm.AddButtons([]string{"OK", "Cancel"})

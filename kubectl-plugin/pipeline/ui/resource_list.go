@@ -86,7 +86,7 @@ func (r *ResourceList) eventHandler(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyCtrlD:
 		name, _ := r.GetItemText(r.GetCurrentItem())
-		r.stack.Push(dialog.ShowDelete(fmt.Sprintf("Delete %s [%s]?", r.resource.Resource, name), func() {
+		r.stack.Push(dialog.ShowConfirm(fmt.Sprintf("Delete %s [%s]?", r.resource.Resource, name), func() {
 			r.stack.Pop()
 			r.deleteItemAndResource(name)
 		}, func() {
