@@ -46,7 +46,7 @@ func (t *ResourceTable) Load(ns, kind, labelSelector string) {
 	t.ticker = time.NewTicker(time.Second * 2)
 
 	go func() {
-		ctx :=  context.TODO()
+		ctx := context.TODO()
 		// give it an initial data setting
 		t.reload(ctx, ns, kind, labelSelector)
 
