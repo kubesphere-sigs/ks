@@ -16,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +40,7 @@ type dashboardOption struct {
 	header           *ui.Header
 	footer           *tview.Table
 	app              *tview.Application
-	pipelineListView *tview.Table
+	pipelineListView *ui.ResourceTable
 }
 
 func newDashboardCmd() (cmd *cobra.Command) {
@@ -82,7 +81,6 @@ func (o *dashboardOption) runE(cmd *cobra.Command, args []string) (err error) {
 	}()
 	o.stack.Push(grid)
 	if err = o.app.
-		//SetRoot(grid, true).
 		Run(); err != nil {
 		panic(err)
 	}
@@ -125,10 +123,7 @@ func updateTable(table *tview.Table, name string, values ...string) {
 }
 
 func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
-	table := tview.NewTable()
-	table.SetBorder(true).SetTitle("pipelines")
-	table.SetSelectable(true, false).Select(1, 0).SetFixed(1, 0)
-	table.SetBorderPadding(0, 0, 1, 1)
+	table := ui.NewResourceTable(o.restClient, o.app)
 	o.pipelineListView = table
 	listView = table
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -178,29 +173,12 @@ func (o *dashboardOption) listPipelineRuns(index int, mainText string, secondary
 	_ = o.getTable(mainText, "pipelineruns", o.pipelineListView)
 }
 
-func (o *dashboardOption) getTable(ns, kind string, table *tview.Table) (err error) {
-	tableData := &metav1beta1.Table{}
-	table.Clear()
-	table.SetTitle(fmt.Sprintf("%s(%s)[%d]", kind, ns, 0))
-	listOpt := &metav1.ListOptions{}
+func (o *dashboardOption) getTable(ns, kind string, table *ui.ResourceTable) (err error) {
+	var labelSelector string
 	if kind == "pipelineruns" {
-		listOpt.LabelSelector = fmt.Sprintf("devops.kubesphere.io/pipeline=%s", o.pipeline)
+		labelSelector = fmt.Sprintf("devops.kubesphere.io/pipeline=%s", o.pipeline)
 	}
-
-	if err = o.restClient.Get().Namespace(ns).Resource(kind).
-		VersionedParams(listOpt, metav1.ParameterCodec).
-		SetHeader("Accept", "application/json;as=Table;v=v1beta1;g=meta.k8s.io").
-		Do(context.TODO()).Into(tableData); err == nil {
-		for i, col := range tableData.ColumnDefinitions {
-			table.SetCellSimple(0, i, col.Name)
-		}
-		for i, row := range tableData.Rows {
-			for j, cell := range row.Cells {
-				table.SetCellSimple(i+1, j, fmt.Sprintf("%v", cell))
-			}
-		}
-		table.SetTitle(fmt.Sprintf("%s(%s)[%d]", kind, ns, len(tableData.Rows)))
-	}
+	table.Load(ns, kind, labelSelector)
 	return
 }
 
