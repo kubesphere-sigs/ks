@@ -38,7 +38,7 @@ type dashboardOption struct {
 	namespaceProjectMap   map[string]string
 
 	stack            *ui.Stack
-	header           *tview.TextView
+	header           *ui.Header
 	footer           *tview.Table
 	app              *tview.Application
 	pipelineListView *tview.Table
@@ -65,17 +65,13 @@ func (o *dashboardOption) runE(cmd *cobra.Command, args []string) (err error) {
 	o.clientset = common.GetClientset(cmd.Root().Context())
 	o.restClient = common.GetRestClient(cmd.Root().Context())
 
-	newPrimitive := func(text string) *tview.TextView {
-		return tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText(text)
+	grid := ui.ResourcePrimitive{
+		Grid: tview.NewGrid(),
 	}
-
-	grid := tview.NewGrid()
 	grid.SetRows(3, 0, 3)
 	grid.SetColumns(30, 0, 30)
 	grid.SetBorder(true)
-	o.header = newPrimitive("header")
+	o.header = ui.NewHeader(o.clientset, o.stack)
 	o.footer = tview.NewTable()
 	grid.AddItem(o.header, 0, 0, 1, 3, 0, 0, false)
 	grid.AddItem(o.footer, 2, 0, 1, 3, 0, 0, false)
@@ -136,8 +132,6 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 	o.pipelineListView = table
 	listView = table
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		o.header.Clear()
-		o.header.SetText(`(r) Run a Pipeline and go to PipelineRun, (R) Run a Pipeline, (v) List the PipelineRuns, (c) Create a Pipeline, (y) View the as YAML`)
 		switch key := event.Rune(); key {
 		case 'v':
 			o.listPipelineRuns(0, o.namespace, "", 0)
