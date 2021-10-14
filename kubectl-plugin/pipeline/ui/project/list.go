@@ -46,11 +46,10 @@ func NewProjectList(client dynamic.Interface, app *tview.Application, stack *ui.
 }
 
 func (l *List) detectIfNoProjects() {
-	if unstructuredList, err := l.client.Resource(types.GetDevOpsProjectSchema()).
+	if unstructuredList, err := l.client.Resource(types.GetNamespaceSchema()).
 		List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector}); err == nil && len(unstructuredList.Items) == 0 {
 		l.stack.Push(dialog.ShowConfirm("No DevOps projects found, if you want to create one?", func() {
 			l.stack.Pop()
-
 			l.showProjectCreatingForm()
 		}, func() {
 			l.stack.Pop()

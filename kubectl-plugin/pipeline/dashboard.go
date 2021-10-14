@@ -122,9 +122,10 @@ func updateTable(table *tview.Table, name string, values ...string) {
 }
 
 func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
-	table := ui.NewResourceTable(o.restClient, o.app)
+	table := ui.NewResourceTable(o.restClient, o.app, o.stack)
 	o.pipelineListView = table
 	listView = table
+	oldInputCapture := table.GetInputCapture()
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Rune(); key {
 		case 'v':
@@ -161,7 +162,7 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 		if event.Key() == tcell.KeyESC {
 			o.listPipelines(0, o.namespace, "", 0)
 		}
-		return event
+		return oldInputCapture(event)
 	})
 	return
 }

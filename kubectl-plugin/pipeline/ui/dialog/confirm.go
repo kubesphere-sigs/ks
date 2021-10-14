@@ -16,8 +16,9 @@ func ShowConfirm(msg string, ok okFunc, cancel cancelFunc) *tview.Modal {
 		switch label {
 		case "OK":
 			ok()
+		default:
+			cancel()
 		}
-		cancel()
 	})
 	return confirm
 }
