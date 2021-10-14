@@ -22,7 +22,7 @@ type ResourceList struct {
 	//client *rest.RESTClient
 	client dynamic.Interface
 	app    *tview.Application
-	stack *Stack
+	stack  *Stack
 
 	// inner fields
 	itemAddingListeners []ItemAddingListener
@@ -39,7 +39,7 @@ func NewResourceList(client dynamic.Interface, app *tview.Application, stack *St
 		List:   list,
 		client: client,
 		app:    app,
-		stack: stack,
+		stack:  stack,
 	}
 	list.SetInputCapture(resourceList.eventHandler)
 	return resourceList
