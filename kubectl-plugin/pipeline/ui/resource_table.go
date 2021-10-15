@@ -54,7 +54,7 @@ func (t *ResourceTable) Load(ns, kind, labelSelector string) {
 	// TODO provide a way to let users set it
 	t.ticker = time.NewTicker(time.Second * 2)
 
-	go func() {
+	go func(ns, kind, labelSelector string) {
 		ctx := context.TODO()
 		// give it an initial data setting
 		t.reload(ctx, ns, kind, labelSelector)
@@ -62,7 +62,7 @@ func (t *ResourceTable) Load(ns, kind, labelSelector string) {
 		for range t.ticker.C {
 			t.reload(ctx, ns, kind, labelSelector)
 		}
-	}()
+	}(ns, kind, labelSelector)
 }
 
 func (t *ResourceTable) eventHandler(event *tcell.EventKey) *tcell.EventKey {

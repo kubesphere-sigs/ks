@@ -127,6 +127,10 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 	listView = table
 	oldInputCapture := table.GetInputCapture()
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		currentRow, currentCol := table.GetSelection()
+		currentCell := table.GetCell(currentRow, currentCol)
+		o.pipeline = currentCell.Text
+
 		switch key := event.Rune(); key {
 		case 'v':
 			o.listPipelineRuns(0, o.namespace, "", 0)
@@ -167,10 +171,10 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 	return
 }
 
-func (o *dashboardOption) listPipelineRuns(index int, mainText string, secondaryText string, shortcut rune) {
+func (o *dashboardOption) listPipelineRuns(index int, ns string, secondaryText string, shortcut rune) {
 	o.pipelineListView.Clear()
 	o.pipelineListView.SetTitle("PipelineRuns")
-	_ = o.getTable(mainText, "pipelineruns", o.pipelineListView)
+	_ = o.getTable(ns, "pipelineruns", o.pipelineListView)
 }
 
 func (o *dashboardOption) getTable(ns, kind string, table *ui.ResourceTable) (err error) {
@@ -250,13 +254,6 @@ func (o *dashboardOption) listPipelines(index int, mainText string, secondaryTex
 	o.namespace = mainText
 	o.pipelineListView.SetTitle("Pipelines")
 	_ = o.getTable(mainText, "pipelines", o.pipelineListView)
-	o.pipelineListView.SetSelectionChangedFunc(func(row, column int) {
-		if row == 0 {
-			o.pipelineListView.Select(1, 0)
-		}
-		cell := o.pipelineListView.GetCell(row, column)
-		o.pipeline = cell.Text
-	})
 }
 
 func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
