@@ -57,11 +57,20 @@ func (r *ResourceList) Load(ns string, resource schema.GroupVersionResource, lab
 			LabelSelector: labelSelector,
 		}); err == nil {
 			for event := range r.watch.ResultChan() {
+				unss := event.Object.(*unstructured.Unstructured)
 				switch event.Type {
 				case watch.Added:
-					unss := event.Object.(*unstructured.Unstructured)
+					if unss.GetDeletionTimestamp() != nil {
+						// hide it if it is deleting
+						continue
+					}
 					r.AddItem(unss.GetName(), "", 0, nil)
 					r.callItemAddingListener(unss.GetName())
+				case watch.Modified:
+					if unss.GetDeletionTimestamp() == nil {
+						continue
+					}
+					fallthrough
 				case watch.Deleted:
 					for i := 0; i < r.GetItemCount(); i++ {
 						name, _ := r.GetItemText(i)
@@ -86,7 +95,7 @@ func (r *ResourceList) eventHandler(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyCtrlD:
 		name, _ := r.GetItemText(r.GetCurrentItem())
-		r.stack.Push(dialog.ShowDelete(fmt.Sprintf("Delete %s [%s]?", r.resource.Resource, name), func() {
+		r.stack.Push(dialog.ShowConfirm(fmt.Sprintf("Delete %s [%s]?", r.resource.Resource, name), func() {
 			r.stack.Pop()
 			r.deleteItemAndResource(name)
 		}, func() {

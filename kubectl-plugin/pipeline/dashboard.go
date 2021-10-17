@@ -122,10 +122,15 @@ func updateTable(table *tview.Table, name string, values ...string) {
 }
 
 func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
-	table := ui.NewResourceTable(o.restClient, o.app)
+	table := ui.NewResourceTable(o.restClient, o.app, o.stack)
 	o.pipelineListView = table
 	listView = table
+	oldInputCapture := table.GetInputCapture()
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		currentRow, currentCol := table.GetSelection()
+		currentCell := table.GetCell(currentRow, currentCol)
+		o.pipeline = currentCell.Text
+
 		switch key := event.Rune(); key {
 		case 'v':
 			o.listPipelineRuns(0, o.namespace, "", 0)
@@ -161,15 +166,15 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 		if event.Key() == tcell.KeyESC {
 			o.listPipelines(0, o.namespace, "", 0)
 		}
-		return event
+		return oldInputCapture(event)
 	})
 	return
 }
 
-func (o *dashboardOption) listPipelineRuns(index int, mainText string, secondaryText string, shortcut rune) {
+func (o *dashboardOption) listPipelineRuns(index int, ns string, secondaryText string, shortcut rune) {
 	o.pipelineListView.Clear()
 	o.pipelineListView.SetTitle("PipelineRuns")
-	_ = o.getTable(mainText, "pipelineruns", o.pipelineListView)
+	_ = o.getTable(ns, "pipelineruns", o.pipelineListView)
 }
 
 func (o *dashboardOption) getTable(ns, kind string, table *ui.ResourceTable) (err error) {
@@ -249,17 +254,10 @@ func (o *dashboardOption) listPipelines(index int, mainText string, secondaryTex
 	o.namespace = mainText
 	o.pipelineListView.SetTitle("Pipelines")
 	_ = o.getTable(mainText, "pipelines", o.pipelineListView)
-	o.pipelineListView.SetSelectionChangedFunc(func(row, column int) {
-		if row == 0 {
-			o.pipelineListView.Select(1, 0)
-		}
-		cell := o.pipelineListView.GetCell(row, column)
-		o.pipeline = cell.Text
-	})
 }
 
 func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
-	list := ui.NewResourceList(o.client, o.app, o.stack)
+	list := project.NewProjectList(o.client, o.app, o.stack)
 	list.PutItemAddingListener(func(name string) {
 		if devopsProject, err := o.client.Resource(types.GetDevOpsProjectSchema()).
 			Get(context.TODO(), name, metav1.GetOptions{}); err == nil {
@@ -267,7 +265,6 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 			o.namespaceProjectMap[name] = devopsProject.GetGenerateName()
 		}
 	})
-	list.Load("", types.GetNamespaceSchema(), "kubesphere.io/devopsproject")
 	list.SetChangedFunc(o.listPipelines)
 	o.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Rune(); key {
@@ -282,25 +279,7 @@ func (o *dashboardOption) createNamespaceList() (listView tview.Primitive) {
 		}
 		return event
 	})
-	inputCapture := list.GetInputCapture()
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch key := event.Rune(); key {
-		case 'p':
-			o.createProject()
-		}
-		return inputCapture(event)
-	})
 	o.app.SetFocus(list)
 	listView = list
 	return
-}
-
-func (o *dashboardOption) createProject() {
-	form := project.NewProjectForm(o.client)
-	form.SetConfirmEvent(func() {
-		o.stack.Pop()
-	}).SetCancelEvent(func() {
-		o.stack.Pop()
-	})
-	o.stack.Push(form)
 }
