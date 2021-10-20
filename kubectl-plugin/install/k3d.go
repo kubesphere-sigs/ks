@@ -107,7 +107,7 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	b, err := checkK3dVersion(out)
+	isNewVersion, err := checkK3dVersion(out)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	// init agent port adaptation k3d v4
 	agentPort := "agent[0]"
 	// if k3d version is greater than v5, reset agent port
-	if b {
+	if isNewVersion {
 		agentPort = "agent:0"
 	}
 
