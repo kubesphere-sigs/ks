@@ -102,28 +102,16 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	out, err := common.ExecCommandGetOutput("k3d", "version")
-	if err != nil {
-		return err
-	}
-
-	isNewVersion, err := checkK3dVersion(out)
-	if err != nil {
-		return err
-	}
-
-	// init agent port adaptation k3d v4
-	agentPort := "agent[0]"
-	// if k3d version is greater than v5, reset agent port
-	if isNewVersion {
-		agentPort = "agent:0"
-	}
-
 	// always to create a registry to make sure it's exist
 	_ = common.ExecCommand("k3d", "registry", "create", o.registry)
 
 	if o.reInstall {
 		_ = common.ExecCommand("k3d", "cluster", "delete", o.name)
+	}
+
+	agentPort, err := getAgentPort()
+	if err != nil {
+		return err
 	}
 
 	k3dArgs := []string{"cluster", "create",
@@ -138,8 +126,29 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-//checkK3dVersion check if k3d version is greater than v5
-func checkK3dVersion(version string) (bool, error) {
+//getAgentPort get the agent port string via local command `k3d version`
+func getAgentPort() (string, error) {
+	out, err := common.ExecCommandGetOutput("k3d", "version")
+	if err != nil {
+		return "", err
+	}
+
+	isNewVersion, err := isGreaterThanV5(out)
+	if err != nil {
+		return "", err
+	}
+
+	// if k3d version is greater than v5, reset agent port
+	if isNewVersion {
+		return "agent:0", nil
+	} else {
+		// init agent port adaptation k3d v4
+		return "agent[0]", nil
+	}
+}
+
+//isGreaterThanV5 check if k3d version is greater than v5
+func isGreaterThanV5(version string) (bool, error) {
 	c, _ := semver.NewConstraint(">= 5.0.0")
 	reg := regexp.MustCompile(`(\w+\.){2}\w+`)
 	if reg != nil {
