@@ -2,10 +2,12 @@ package install
 
 import (
 	"fmt"
+	"github.com/Masterminds/semver"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/spf13/cobra"
+	"regexp"
 	"runtime"
 )
 
@@ -107,9 +109,14 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		_ = common.ExecCommand("k3d", "cluster", "delete", o.name)
 	}
 
+	agentPort, err := getAgentPort()
+	if err != nil {
+		return err
+	}
+
 	k3dArgs := []string{"cluster", "create",
-		"-p", fmt.Sprintf(`%d:30880@agent[0]`, ports[0]),
-		"-p", fmt.Sprintf(`%d:30180@agent[0]`, ports[1]),
+		"-p", fmt.Sprintf(`%d:30880@%s`, ports[0], agentPort),
+		"-p", fmt.Sprintf(`%d:30180@%s`, ports[1], agentPort),
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
 		"--image", o.image,
@@ -117,6 +124,41 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		o.name}
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
+}
+
+//getAgentPort get the agent port string via local command `k3d version`
+func getAgentPort() (string, error) {
+	out, err := common.ExecCommandGetOutput("k3d", "version")
+	if err != nil {
+		return "", err
+	}
+
+	isNewVersion, err := isGreaterThanV5(out)
+	if err != nil {
+		return "", err
+	}
+
+	// if k3d version is greater than v5+
+	if isNewVersion {
+		return "agent:0", nil
+	}
+	// adaptation before k3d v4
+	return "agent[0]", nil
+}
+
+//isGreaterThanV5 check if k3d version is greater than v5
+func isGreaterThanV5(version string) (bool, error) {
+	c, _ := semver.NewConstraint(">= 5.0.0")
+	reg := regexp.MustCompile(`(\w+\.){2}\w+`)
+	if reg != nil {
+		raw := reg.FindAllStringSubmatch(version, 1)
+		v, err := semver.NewVersion(raw[0][0])
+		if err != nil {
+			return false, fmt.Errorf("Error parsing version: %s", err.Error())
+		}
+		return c.Check(v), nil
+	}
+	return false, nil
 }
 
 func (o *k3dOption) postRunE(cmd *cobra.Command, args []string) (err error) {

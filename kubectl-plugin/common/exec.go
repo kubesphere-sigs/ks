@@ -38,6 +38,16 @@ func ExecCommand(name string, arg ...string) (err error) {
 	return
 }
 
+//ExecCommandGetOutput run command and get output
+func ExecCommandGetOutput(name string, arg ...string) (string, error) {
+	command := exec.Command(name, arg...)
+	output, err :=command.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	return string(output), err
+}
+
 func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 	var out []byte
 	buf := make([]byte, 1024, 1024)
