@@ -138,13 +138,12 @@ func getAgentPort() (string, error) {
 		return "", err
 	}
 
-	// if k3d version is greater than v5, reset agent port
+	// if k3d version is greater than v5+
 	if isNewVersion {
 		return "agent:0", nil
-	} else {
-		// init agent port adaptation k3d v4
-		return "agent[0]", nil
 	}
+	// adaptation before k3d v4
+	return "agent[0]", nil
 }
 
 //isGreaterThanV5 check if k3d version is greater than v5
