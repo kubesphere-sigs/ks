@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"os"
 	"path"
+	"strings"
 )
 
 func newInstallerCmd() (cmd *cobra.Command) {
@@ -68,6 +69,9 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 		o.ksInstaller.ImageNamespace = "kubespheredev"
 		o.ksInstaller.Version = o.nightly
 	}
+	if isNotReleaseVersion(o.version) {
+		o.ksInstaller.ImageNamespace = "kubespheredev"
+	}
 	for _, item := range o.components {
 		switch item {
 		case "servicemesh":
@@ -97,6 +101,11 @@ func (o *installerOption) preRunE(_ *cobra.Command, args []string) (err error) {
 		err = storage.CreateEBSAsDefault()
 	}
 	return
+}
+
+func isNotReleaseVersion(version string) bool {
+	return strings.Contains(version, "rc") || strings.Contains(version, "alpha") ||
+		strings.Contains(version, "beta")
 }
 
 func (o *installerOption) getCrdAndCC() (crd, cc string, err error) {
