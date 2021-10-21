@@ -72,7 +72,7 @@ func (o *kkOption) versionCheck() (err error) {
 		} else {
 			o.version = ver
 		}
-	} else if o.version != types.KsVersion {
+	} else if !isNotReleaseVersion(o.version) && o.version != types.KsVersion {
 		switch o.version {
 		case types.KsVersion, "v3.0.0":
 		default:
