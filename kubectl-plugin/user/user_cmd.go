@@ -14,7 +14,7 @@ import (
 func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "user",
-		Short: "Reset the password of Kubesphere to the default value which is same with its name",
+		Short: "Reset the password of KubeSphere to the default value which is same with its name",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			name := args[0]
@@ -22,7 +22,7 @@ func NewUserCmd(client dynamic.Interface) (cmd *cobra.Command) {
 			_, err = client.Resource(kstype.GetUserSchema()).Patch(context.TODO(),
 				name,
 				types.MergePatchType,
-				[]byte(fmt.Sprintf(`{"spec":{"password":"%s"},"metadata":{"annotations":null}}`, name)),
+				[]byte(fmt.Sprintf(`{"spec":{"password":"%s"},"metadata":{"annotations":{"iam.kubesphere.io/uninitialized": "false"}}}`, name)),
 				metav1.PatchOptions{})
 			return
 		},
