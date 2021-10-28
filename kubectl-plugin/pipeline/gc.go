@@ -118,7 +118,8 @@ func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
 			return false
 		}
 		if rightCompletionTime, err = getCompletionTimeFromObject(right.Object); err != nil {
-			return false
+			// make sure that item without completion time be at the end of items
+			return true
 		}
 
 		return leftCompletionTime.Before(rightCompletionTime)

@@ -12,10 +12,18 @@ import (
 func TestDescOrderWithCompletionTime(t *testing.T) {
 	items := []unstructured.Unstructured{{
 		Object: map[string]interface{}{
+			"flag": "3",
+		},
+	}, {
+		Object: map[string]interface{}{
 			"status": map[string]interface{}{
 				"completionTime": "2021-09-28T01:39:13Z",
 			},
 			"flag": "0",
+		},
+	}, {
+		Object: map[string]interface{}{
+			"flag": "4",
 		},
 	}, {
 		Object: map[string]interface{}{
@@ -36,6 +44,11 @@ func TestDescOrderWithCompletionTime(t *testing.T) {
 	ascOrderWithCompletionTime(items)
 	flag, _, _ := unstructured.NestedString(items[0].Object, "flag")
 	assert.Equal(t, "2", flag)
+	// make sure that object without status.completionTime be at the end of the result
+	flag, _, _ = unstructured.NestedString(items[3].Object, "flag")
+	assert.Equal(t, "3", flag)
+	flag, _, _ = unstructured.NestedString(items[4].Object, "flag")
+	assert.Equal(t, "4", flag)
 }
 
 func Test_getCompletionTimeFromObject(t *testing.T) {
