@@ -2,7 +2,11 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
@@ -10,8 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
-	"sort"
-	"time"
 )
 
 func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
@@ -116,7 +118,8 @@ func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
 			return false
 		}
 		if rightCompletionTime, err = getCompletionTimeFromObject(right.Object); err != nil {
-			return false
+			// make sure that item without completion time be at the end of items
+			return true
 		}
 
 		return leftCompletionTime.Before(rightCompletionTime)
@@ -130,6 +133,9 @@ func getCompletionTimeFromObject(obj map[string]interface{}) (completionTime tim
 	)
 	if completionTimeStr, ok, err = unstructured.NestedString(obj, "status", "completionTime"); ok && err == nil {
 		completionTime, err = time.Parse(time.RFC3339, completionTimeStr)
+	}
+	if !ok {
+		err = errors.New("no status.completionTime field found")
 	}
 	return
 }
