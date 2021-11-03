@@ -1,6 +1,8 @@
 package types
 
 const (
-	// KsVersion is the latest release version
-	KsVersion = "v3.1.1"
+	// KsVersion is the default release version of KuberSphere
+	KsVersion = "v3.2.0"
+	// K8sVersion is the default version of the Kubernetes
+	K8sVersion = "v1.22.1"
 )
