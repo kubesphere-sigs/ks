@@ -36,6 +36,8 @@ ks install kk --version nightly --components devops`,
 	flags := cmd.Flags()
 	flags.StringVarP(&opt.version, "version", "v", types.KsVersion,
 		fmt.Sprintf("The version of KubeSphere. Support value could be %s, nightly, nightly-20210309. nightly equals to nightly-latest", types.KsVersion))
+	flags.StringVarP(&opt.version, "kubernetesVersion", "", types.K8sVersion,
+		"The version of Kubernetes")
 	flags.StringArrayVarP(&opt.components, "components", "", []string{},
 		"The components which you want to enable after the installation")
 	flags.StringVarP(&opt.zone, "zone", "", "cn",
@@ -185,7 +187,7 @@ func (o *kkOption) runE(cmd *cobra.Command, args []string) (err error) {
 		Env: []string{fmt.Sprintf("KKZONE=%s", o.zone)},
 	}
 	if err = commander.execCommand("kk", "create", "cluster", "--filename", configFile,
-		"--with-kubesphere", o.version, "--yes"); err != nil {
+		"--with-kubesphere", o.version, "--with-kubernetes", o.kubernetesVersion, "--yes"); err != nil {
 		return
 	}
 
