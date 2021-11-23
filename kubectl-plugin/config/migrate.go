@@ -55,7 +55,9 @@ func (o *migrateOption) runE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var password string
-	if password, err = o.getDevOpsPassword(); err == nil {
+	if password, err = o.getDevOpsPassword(); password == "" {
+		err = fmt.Errorf("the password of Jenkins is empty")
+	} else if err == nil {
 		err = o.updateKubeSphereConfig("devops-config", o.namespace, map[string]interface{}{
 			"password": password,
 		})
