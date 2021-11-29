@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
-	"strings"
 )
 
 func newMigrateCmd(client dynamic.Interface) (cmd *cobra.Command) {
@@ -54,6 +55,18 @@ func (o *migrateOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
+	patchData := make(map[string]interface{})
+
+	kubesphereConfig, _, err := o.getKubeSphereConfig("kubesphere-config", "kubesphere-system")
+	if err != nil {
+		return err
+	}
+	if sonarQube, found, err := unstructured.NestedMap(kubesphereConfig, "sonarQube"); err != nil {
+		return err
+	} else if found {
+		patchData["sonarQube"] = sonarQube
+	}
+
 	var password string
 	if password, err = o.getDevOpsPassword(); password == "" {
 		if err == nil {
@@ -62,35 +75,35 @@ func (o *migrateOption) runE(cmd *cobra.Command, args []string) (err error) {
 			err = fmt.Errorf("the password of Jenkins is empty, it might caused by: %v", err)
 		}
 	} else if err == nil {
-		err = o.updateKubeSphereConfig("devops-config", o.namespace, map[string]interface{}{
+		patchData["devops"] = map[string]interface{}{
 			"password": password,
-		})
+		}
 	}
-	return
+
+	return o.updateKubeSphereConfig("devops-config", o.namespace, patchData)
 }
 
-func (o *migrateOption) updateKubeSphereConfig(name, namespace string, ksdataMap map[string]interface{}) (err error) {
-	var rawConfigMap *unstructured.Unstructured
-	if rawConfigMap, err = o.client.Resource(types.GetConfigMapSchema()).Namespace(namespace).
-		Get(context.TODO(), name, metav1.GetOptions{}); err == nil {
-		data := rawConfigMap.Object["data"]
-		dataMap := data.(map[string]interface{})
-
-		result := updateAuthWithObj(dataMap["kubesphere.yaml"].(string), ksdataMap)
-		if strings.TrimSpace(result) == "" {
-			err = fmt.Errorf("error happend when parse kubesphere-config")
-			return
-		}
-
-		rawConfigMap.Object["data"] = map[string]interface{}{
-			"kubesphere.yaml": result,
-		}
-		_, err = o.client.Resource(types.GetConfigMapSchema()).Namespace(namespace).Update(context.TODO(),
-			rawConfigMap, metav1.UpdateOptions{})
-	} else {
-		err = fmt.Errorf("cannot found configmap kubesphere-config, %v", err)
+func (o *migrateOption) updateKubeSphereConfig(name, namespace string, ksdataMap map[string]interface{}) error {
+	kubeSphereConfig, rawConfigMap, err := o.getKubeSphereConfig(name, namespace)
+	if err != nil {
+		return fmt.Errorf("cannot found ConfigMap %s/%s, %v", namespace, name, err)
 	}
-	return
+
+	mergeMap(kubeSphereConfig, ksdataMap)
+	kubeSphereConfigBytes, err := yaml.Marshal(kubeSphereConfig)
+	if err != nil {
+		return fmt.Errorf("cannot marshal KubeSphere configuration, %v", err)
+	}
+
+	rawConfigMap.Object["data"] = map[string]interface{}{
+		"kubesphere.yaml": string(kubeSphereConfigBytes),
+	}
+	if _, err = o.client.Resource(types.GetConfigMapSchema()).
+		Namespace(namespace).
+		Update(context.TODO(), rawConfigMap, metav1.UpdateOptions{}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (o *migrateOption) getDevOpsPassword() (password string, err error) {
@@ -117,23 +130,46 @@ func (o *migrateOption) getDevOpsPassword() (password string, err error) {
 	return
 }
 
-func updateAuthWithObj(yamlf string, dataMap map[string]interface{}) string {
-	mapData := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(yamlf), mapData); err == nil {
-		var obj interface{}
-		var ok bool
-		var mapObj map[string]interface{}
-		if obj, ok = mapData["devops"]; ok {
-			mapObj = obj.(map[string]interface{})
-		} else {
-			mapObj = make(map[string]interface{})
-			mapData["devops"] = mapObj
-		}
+func (o *migrateOption) getKubeSphereConfig(configMapName, namespace string) (map[string]interface{}, *unstructured.Unstructured, error) {
+	kubesphereConfigCM, err := o.client.Resource((types.GetConfigMapSchema())).
+		Namespace(namespace).
+		Get(context.Background(), configMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot found ConfigMap %s/%s, %v", namespace, configMapName, err)
+	}
+	kubesphereConfigYAMLString, found, err := unstructured.NestedString(kubesphereConfigCM.UnstructuredContent(), "data", "kubesphere.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+	if !found {
+		return nil, nil, fmt.Errorf("cannot found 'kubesphere.yaml' configuration in ConfigMap %s/%s", namespace, configMapName)
+	}
+	kubesphereConfig := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(kubesphereConfigYAMLString), kubesphereConfig); err != nil {
+		return nil, nil, err
+	}
+	return kubesphereConfig, kubesphereConfigCM, nil
+}
 
-		for key, val := range dataMap {
-			mapObj[key] = val
+// mergeMap merges patch map into main map.
+// This function has a constriant that map types must be `map[string]interface{}`, including types of map value or map value's value.
+func mergeMap(main map[string]interface{}, patch map[string]interface{}) {
+	for patchKey, patchValue := range patch {
+		if value, ok := main[patchKey]; ok {
+			patchValueMap, patchValueOk := patchValue.(map[string]interface{})
+			valueMap, valueOk := value.(map[string]interface{})
+			if patchValueOk && valueOk {
+				// recursive check
+				mergeMap(valueMap, patchValueMap)
+			} else {
+				if reflect.TypeOf(value) == reflect.TypeOf(patchValue) {
+					// set patch value directly if one of the value type are not map[string]interface{} and both types are equal
+					main[patchKey] = patchValue
+				}
+			}
+		} else {
+			// set patch value directly if key in main is not found
+			main[patchKey] = patchValue
 		}
 	}
-	resultData, _ := yaml.Marshal(mapData)
-	return string(resultData)
 }
