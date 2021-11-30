@@ -2,10 +2,11 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -49,8 +50,10 @@ func (o *migrateOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 
 func (o *migrateOption) runE(cmd *cobra.Command, args []string) (err error) {
 	if err = o.updateKubeSphereConfig("kubesphere-config", "kubesphere-system", map[string]interface{}{
-		"enable":               false,
-		"devopsServiceAddress": o.service,
+		"devops": map[string]interface{}{
+			"enable":               false,
+			"devopsServiceAddress": o.service,
+		},
 	}); err != nil {
 		return
 	}
@@ -89,8 +92,11 @@ func (o *migrateOption) updateKubeSphereConfig(name, namespace string, ksdataMap
 		return fmt.Errorf("cannot found ConfigMap %s/%s, %v", namespace, name, err)
 	}
 
-	mergeMap(kubeSphereConfig, ksdataMap)
-	kubeSphereConfigBytes, err := yaml.Marshal(kubeSphereConfig)
+	patchedKubeSphereConfig, err := patchKubeSphereConfig(kubeSphereConfig, ksdataMap)
+	if err != nil {
+		return err
+	}
+	kubeSphereConfigBytes, err := yaml.Marshal(patchedKubeSphereConfig)
 	if err != nil {
 		return fmt.Errorf("cannot marshal KubeSphere configuration, %v", err)
 	}
@@ -131,45 +137,44 @@ func (o *migrateOption) getDevOpsPassword() (password string, err error) {
 }
 
 func (o *migrateOption) getKubeSphereConfig(configMapName, namespace string) (map[string]interface{}, *unstructured.Unstructured, error) {
-	kubesphereConfigCM, err := o.client.Resource((types.GetConfigMapSchema())).
+	kubeSphereConfigCM, err := o.client.Resource((types.GetConfigMapSchema())).
 		Namespace(namespace).
 		Get(context.Background(), configMapName, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot found ConfigMap %s/%s, %v", namespace, configMapName, err)
 	}
-	kubesphereConfigYAMLString, found, err := unstructured.NestedString(kubesphereConfigCM.UnstructuredContent(), "data", "kubesphere.yaml")
+	kubeSphereConfigYAMLString, found, err := unstructured.NestedString(kubeSphereConfigCM.UnstructuredContent(), "data", "kubesphere.yaml")
 	if err != nil {
 		return nil, nil, err
 	}
 	if !found {
 		return nil, nil, fmt.Errorf("cannot found 'kubesphere.yaml' configuration in ConfigMap %s/%s", namespace, configMapName)
 	}
-	kubesphereConfig := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(kubesphereConfigYAMLString), kubesphereConfig); err != nil {
+	kubeSphereConfig := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(kubeSphereConfigYAMLString), kubeSphereConfig); err != nil {
 		return nil, nil, err
 	}
-	return kubesphereConfig, kubesphereConfigCM, nil
+	return kubeSphereConfig, kubeSphereConfigCM, nil
 }
 
-// mergeMap merges patch map into main map.
-// This function has a constriant that map types must be `map[string]interface{}`, including types of map value or map value's value.
-func mergeMap(main map[string]interface{}, patch map[string]interface{}) {
-	for patchKey, patchValue := range patch {
-		if value, ok := main[patchKey]; ok {
-			patchValueMap, patchValueOk := patchValue.(map[string]interface{})
-			valueMap, valueOk := value.(map[string]interface{})
-			if patchValueOk && valueOk {
-				// recursive check
-				mergeMap(valueMap, patchValueMap)
-			} else {
-				if reflect.TypeOf(value) == reflect.TypeOf(patchValue) {
-					// set patch value directly if one of the value type are not map[string]interface{} and both types are equal
-					main[patchKey] = patchValue
-				}
-			}
-		} else {
-			// set patch value directly if key in main is not found
-			main[patchKey] = patchValue
-		}
+// patchKubeSphereConfig patches patch map into KubeSphereConfig map.
+// Refer to https://github.com/evanphx/json-patch#create-and-apply-a-merge-patch.
+func patchKubeSphereConfig(kubeSphereConfig map[string]interface{}, patch map[string]interface{}) (map[string]interface{}, error) {
+	kubeSphereConfigBytes, err := json.Marshal(kubeSphereConfig)
+	if err != nil {
+		return nil, err
 	}
+	patchBytes, err := json.Marshal(patch)
+	if err != nil {
+		return nil, err
+	}
+	mergedBytes, err := jsonpatch.MergePatch(kubeSphereConfigBytes, patchBytes)
+	if err != nil {
+		return nil, err
+	}
+	mergedMap := make(map[string]interface{})
+	if err := json.Unmarshal(mergedBytes, &mergedMap); err != nil {
+		return nil, err
+	}
+	return mergedMap, nil
 }

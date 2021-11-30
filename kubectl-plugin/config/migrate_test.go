@@ -7,17 +7,18 @@ import (
 
 func Test_patchKubeSphereConfig(t *testing.T) {
 	type args struct {
-		main  map[string]interface{}
-		patch map[string]interface{}
+		kubeSphereConfig map[string]interface{}
+		patch            map[string]interface{}
 	}
 	tests := []struct {
-		name string
-		args args
-		want map[string]interface{}
+		name    string
+		args    args
+		want    map[string]interface{}
+		wantErr bool
 	}{{
-		name: "Merge non-exist fields recursively",
+		name: "Patch non-exist fields recursively",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled": true,
 				},
@@ -35,9 +36,9 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 			},
 		},
 	}, {
-		name: "Merge non-exist field",
+		name: "Patch non-exist field",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled": true,
 				},
@@ -57,9 +58,9 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 			},
 		},
 	}, {
-		name: "Merge existing field",
+		name: "Patch existing field",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled": true,
 				},
@@ -82,31 +83,27 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 			},
 		},
 	}, {
-		name: "Patch is nil",
+		name: "Report an error if patch is nil",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled": true,
 				},
 			},
 			patch: nil,
 		},
-		want: map[string]interface{}{
-			"devops": map[string]interface{}{
-				"enabled": true,
-			},
-		},
+		wantErr: true,
 	}, {
-		name: "Main is nil",
+		name: "Report an error if KubeSphereConfig is nil",
 		args: args{
-			main:  nil,
-			patch: map[string]interface{}{},
+			kubeSphereConfig: nil,
+			patch:            map[string]interface{}{},
 		},
-		want: nil,
+		wantErr: true,
 	}, {
-		name: "Merge with different type",
+		name: "Patch with different type",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled": true,
 				},
@@ -116,14 +113,12 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 			},
 		},
 		want: map[string]interface{}{
-			"devops": map[string]interface{}{
-				"enabled": true,
-			},
+			"devops": "awesome",
 		},
 	}, {
-		name: "Merge with different map type",
+		name: "Patch with map[string]string type",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]interface{}{
 					"enabled":  true,
 					"password": "fake password",
@@ -138,13 +133,13 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 		want: map[string]interface{}{
 			"devops": map[string]interface{}{
 				"enabled":  true,
-				"password": "fake password",
+				"password": "patch password",
 			},
 		},
 	}, {
-		name: "Merge without map[string]interface{}",
+		name: "Patch without map[string]interface{}",
 		args: args{
-			main: map[string]interface{}{
+			kubeSphereConfig: map[string]interface{}{
 				"devops": map[string]bool{
 					"enabled": true,
 				},
@@ -156,7 +151,8 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 			},
 		},
 		want: map[string]interface{}{
-			"devops": map[string]bool{
+			"devops": map[string]interface{}{
+				"enabled":  true,
 				"disabled": false,
 			},
 		},
@@ -164,10 +160,13 @@ func Test_patchKubeSphereConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mergeMap(tt.args.main, tt.args.patch)
-			if !reflect.DeepEqual(tt.args.main, tt.want) {
-				t.Errorf("mergeMap() = %v, want =  %v", tt.args.main, tt.want)
+			got, err := patchKubeSphereConfig(tt.args.kubeSphereConfig, tt.args.patch)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("patchKubeSphereConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("patchKubeSphereConfig() = %+v, want =  %+v", got, tt.want)
 			}
 		})
 	}
