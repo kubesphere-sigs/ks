@@ -1,0 +1,18 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: el-ks-trigger-listener-ingress
+  namespace: ks-devops-ext
+spec:
+  rules:
+    - host: el-ks-trigger-listener.ks-devops-ext.103.61.37.25.nip.io
+      http:
+        paths:
+          - path: /hook
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: el-ks-trigger-listener
+                port:
+                  number: 8080
+
