@@ -1,0 +1,147 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ks-pull-request-pipeline
+spec:
+  workspaces:
+    - name: repo
+  params:
+    - name: repo-full-name
+      description: "Repository full name. like: kubesphere-sigs/ks"
+    - name: clone-url
+      description: Git repository clone URL.
+    - name: revision
+      description: Git repository revision to checkout.
+    - name: dashboard-url
+      description: Tekton dashboard access URL, like http://demo:31962/#/namespaces/ks/pipelineruns.
+  tasks:
+    - name: set-running-status
+      taskRef:
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.repo-full-name)
+        - name: SHA
+          value: $(params.revision)
+        - name: DESCRIPTION
+          value: Build has started
+        - name: STATE
+          value: pending
+        - name: TARGET_URL
+          value: $(params.dashboard-url)
+    - name: checkout
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.clone-url)
+        - name: revision
+          value: $(params.revision)
+      workspaces:
+        - name: output
+          workspace: repo
+    - name: lint
+      runAfter:
+        - checkout
+      taskSpec:
+        steps:
+          - name: lint
+            image: golang:1.16-alpine3.14
+            workingDir: $(workspaces.source.path)
+            script: |
+              apk --no-cache --update add build-base
+              go get -u golang.org/x/lint/golint
+              make lint
+        workspaces:
+          - name: source
+      workspaces:
+        - name: source
+          workspace: repo
+    - name: security
+      runAfter:
+        - checkout
+      taskSpec:
+        steps:
+          - name: make-gosec
+            image: securego/gosec:latest
+            args:
+              - -exclude=G402,G204,G304,G110,G306
+              - ./...
+            workingDir: $(workspaces.source.path)
+        workspaces:
+          - name: source
+      workspaces:
+        - name: source
+          workspace: repo
+    - name: test
+      runAfter:
+        - lint
+      taskSpec:
+        steps:
+          - name: make-test
+            image: golang:1.16-alpine3.14
+            workingDir: $(workspaces.source.path)
+            script: |
+              apk --no-cache --update add build-base
+              make test-without-lint
+          - name: make-benchmark
+            image: golang:1.16-alpine3.14
+            workingDir: $(workspaces.source.path)
+            script: |
+              apk --no-cache --update add build-base
+              make benchmark
+        workspaces:
+          - name: source
+      workspaces:
+        - name: source
+          workspace: repo
+    - name: build
+      runAfter:
+        - test
+      taskRef:
+        name: goreleaser
+      params:
+        - name: package
+          value: github.com/kubesphere-sigs/ks
+        - name: flags
+          value: --skip-publish --rm-dist --debug --snapshot
+      workspaces:
+        - name: source
+          workspace: repo
+  finally:
+    - name: set-pull-request-failure
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
+      taskRef:
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.repo-full-name)
+        - name: SHA
+          value: $(params.revision)
+        - name: DESCRIPTION
+          value: Build has failed
+        - name: STATE
+          value: failure
+        - name: TARGET_URL
+          value: $(params.dashboard-url)
+    - name: set-pull-request-success
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Succeeded", "Completed"]
+      taskRef:
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.repo-full-name)
+        - name: SHA
+          value: $(params.revision)
+        - name: DESCRIPTION
+          value: Build has executed successfully
+        - name: STATE
+          value: success
+        - name: TARGET_URL
+          value: $(params.dashboard-url)
