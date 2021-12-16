@@ -44,7 +44,7 @@ spec:
               metadata:
                 generateName: ks-build-pr-$(tt.params.pull-request-number)-
               spec:
-                serviceAccountName: biuld-bot
+                serviceAccountName: build-bot
                 pipelineRef:
                   name: ks-pull-request-pipeline
                 params:
