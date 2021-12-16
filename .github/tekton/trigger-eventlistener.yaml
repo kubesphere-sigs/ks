@@ -54,8 +54,8 @@ spec:
                     value: $(tt.params.clone-url)
                   - name: revision
                     value: $(tt.params.revision)
-                  - name: dahsboard-url
-                    value: http://103.61.37.25:30954/#/namespaces/ks-devops-ext/pipelineruns
+                  - name: dashboard-url
+                    value: http://103.61.37.25:30177/#/namespaces/ks-devops-ext/pipelineruns
                 workspaces:
                   - name: repo
                     persistentVolumeClaim:
