@@ -1,2 +1,5 @@
 .idea/
 bin/
+
+build/ks
+coverage.out

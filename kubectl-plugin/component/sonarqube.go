@@ -3,7 +3,7 @@ package component
 import (
 	"context"
 	"fmt"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

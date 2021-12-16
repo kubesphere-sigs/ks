@@ -2,7 +2,7 @@ package auth
 
 import "fmt"
 
-func getGiteeAuth(opt authOption) string {
+func getGiteeAuth(opt authAddOption) string {
 	return fmt.Sprintf(`
 name: Gitee
 type: GitHubIdentityProvider
@@ -17,5 +17,5 @@ provider:
   redirectURL: %s/auth/redirect
   scopes:
   - user_info
-`, opt.ClientID, opt.ClientSecret, opt.Host)
+`, opt.ClientID, opt.ClientSecret, opt.Host, opt.Host)
 }

@@ -3,26 +3,6 @@ project_name: ks
 builds:
 - env:
     - CGO_ENABLED=0
-  id: kubectl-ks
-  dir: kubectl-plugin
-  binary: kubectl-ks
-  goarch:
-    - amd64
-    - arm64
-  goos:
-    - windows
-    - linux
-    - darwin
-  hooks:
-    post:
-      - upx "{{ .Path }}"
-  ldflags:
-    - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
-    - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
-    - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
-    - -w
-- env:
-    - CGO_ENABLED=0
   id: "ks"
   binary: ks
   goarch:
@@ -40,36 +20,53 @@ builds:
     - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
     - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
     - -w
+- env:
+    - CGO_ENABLED=0
+  id: "kubectl-ks"
+  binary: kubectl-ks
+  main: ./kubectl-plugin/kubectl-ks.go
+  goarch:
+    - amd64
+  goos:
+    - linux
+    - darwin
+  hooks:
+    post:
+      - upx "{{ .Path }}"
+  ldflags:
+    - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
+    - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
+    - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+    - -w
 dist: bin
 archives:
-- name_template: "ks-{{ .Os }}-{{ .Arch }}"
-  id: "ks"
-  replacements:
-    darwin: darwin
-    linux: linux
-    windows: windows
-    amd64: amd64
-    arm64: arm64
-  format_overrides:
-    - goos: windows
-      format: zip
-  files:
-    - README.md
-    - LICENSE
-- name_template: "kubectl-ks-{{ .Os }}-{{ .Arch }}"
-  id: "kubectl-ks"
-  replacements:
-    darwin: darwin
-    linux: linux
-    windows: windows
-    amd64: amd64
-    arm64: arm64
-  format_overrides:
-    - goos: windows
-      format: zip
-  files:
-    - README.md
-    - LICENSE
+  - name_template: "ks-{{ .Os }}-{{ .Arch }}"
+    id: "ks"
+    builds:
+      - ks
+    replacements:
+      darwin: darwin
+      linux: linux
+      windows: windows
+      amd64: amd64
+      arm64: arm64
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+  - name_template: "kubectl-ks-{{ .Os }}-{{ .Arch }}"
+    id: "kubectl-ks"
+    builds:
+      - "kubectl-ks"
+    replacements:
+      darwin: darwin
+      linux: linux
+      amd64: amd64
+    files:
+      - README.md
+      - LICENSE
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -81,46 +78,33 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-brews:
-  - name: ks
-    ids:
-      - "ks"
-    tap:
-      owner: linuxsuren
-      name: homebrew-linuxsuren
-    folder: Formula
-    homepage: "https://github.com/linuxsuren/ks"
-    description: ks is a kubectl wrapper for Kubesphere
-    dependencies:
-      - name: vim
-        type: optional
-      - name: bash-completion
-        type: optional
-    test: |
-      version_output = shell_output("#{bin}/ks version")
-      assert_match version.to_s, version_output
-    install: |
-      bin.install name
-
-      prefix.install_metafiles
 nfpms:
-  - file_name_template: "{{ .Binary }}-{{.Os}}-{{.Arch}}"
+  - file_name_template: "ks-{{.Os}}-{{.Arch}}"
     id: "ks"
-    homepage: https://github.com/linuxsuren/ks
-    description: ks is a tiny tool for Chinese developers.
+    homepage: https://github.com/kubesphere-sigs/ks
+    description: ks is a tool which makes it be easy to work with KubeSphere.
     maintainer: rick <rick@jenkins-zh.cn>
     license: MIT
-    vendor: Jenkins
+    vendor: KubeSphere
     formats:
       - deb
       - rpm
     recommends:
       - bash-completion
       - vim
-    bindir: /usr/bin
+      - kubectl
+    bindir: /usr/local/bin
     replacements:
       amd64: 64bit
       arm64: arm64
       darwin: macOS
       linux: linux
       windows: windows
+dockers:
+  - goos: linux
+    goarch: amd64
+    image_templates:
+      - "surenpi/ks:latest"
+      - "surenpi/ks:{{.Tag}}"
+      - "ghcr.io/linuxsuren/ks/ks:latest"
+      - "ghcr.io/linuxsuren/ks/ks:{{.Tag}}"

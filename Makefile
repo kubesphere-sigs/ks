@@ -4,9 +4,18 @@ BUILDFLAGS = -ldflags "-X github.com/linuxsuren/cobra-extension/version.version=
 	-X github.com/linuxsuren/cobra-extension/version.commit=$(COMMIT) \
 	-X github.com/linuxsuren/cobra-extension/version.date=$(shell date +'%Y-%m-%d') -w -s"
 
-build: pre-build
+all: test build
+.PHONY : all
+
+simple-build:
 	CGO_ENABLE=0 go build $(BUILDFLAGS) -o bin/ks
+
+build: pre-build simple-build
 	upx bin/ks
+
+build-linux: pre-build
+	CGO_ENABLE=0 GOOS=linux GOARCH=amd64 go build $(BUILDFLAGS) -o bin/linux/ks
+	upx bin/linux/ks
 
 build-plugin: pre-build
 	CGO_ENABLE=0 go build ${BUILDFLAGS} -o bin/kubectl-ks kubectl-plugin/*.go
@@ -23,16 +32,26 @@ tools:  export GOPROXY=https://goproxy.io
 tools:
 	go get -u golang.org/x/lint/golint
 
+test: test-without-lint lint
+
+test-without-lint: fmt mod-tidy
+	go test ./... -coverprofile coverage.out
+
+benchmark:
+	go test -bench=. -run=none ./...
+
 mod-tidy:
-	go mod tidy
+	go mod tidy -e
 
 fmt:
 	go fmt ./...
 
 lint:
-	~/go/bin/golint -set_exit_status ./...
+	golint -set_exit_status ./...
 
 copy: build
+	sudo cp bin/ks /usr/local/bin/ks
+simple-copy: simple-build
 	sudo cp bin/ks /usr/local/bin/ks
 
 copy-plugin: build-plugin
@@ -40,3 +59,14 @@ copy-plugin: build-plugin
 
 goreleaser-test:
 	goreleaser release --rm-dist --skip-publish --snapshot
+
+image: build-linux
+	cp bin/linux/ks build/ks
+	docker build ./build -t surenpi/ks
+
+image-push:
+	docker push surenpi/ks
+
+update:
+	git fetch
+	git reset --hard origin/$(shell git branch --show-current)

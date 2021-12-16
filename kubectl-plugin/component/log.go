@@ -5,15 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	kstypes "github.com/linuxsuren/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 )
 
 // LogOption is the option for component log command
@@ -24,19 +23,15 @@ type LogOption struct {
 	Tail   int64
 }
 
-// NewComponentLogCmd returns a command to enable (or disable) a component by name
-func NewComponentLogCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
-	opt := &LogOption{
-		Option: Option{
-			Clientset: clientset,
-			Client:    client,
-		},
-	}
+// newComponentLogCmd returns a command to enable (or disable) a component by name
+func newComponentLogCmd() (cmd *cobra.Command) {
+	opt := &LogOption{}
 	cmd = &cobra.Command{
-		Use:     "log",
-		Short:   "Output the log of KubeSphere component",
-		PreRunE: opt.componentNameCheck,
-		RunE:    opt.logRunE,
+		Use:               "log",
+		Short:             "Output the log of KubeSphere component",
+		ValidArgsFunction: common.KubeSphereDeploymentCompletion(),
+		PreRunE:           opt.componentNameCheck,
+		RunE:              opt.logRunE,
 	}
 
 	flags := cmd.Flags()
@@ -73,7 +68,6 @@ func (o *LogOption) logRunE(cmd *cobra.Command, args []string) (err error) {
 			return
 		}
 
-		cmd.Println(buf)
 		if err = json.Unmarshal(buf.Bytes(), deploy); err != nil {
 			return
 		}

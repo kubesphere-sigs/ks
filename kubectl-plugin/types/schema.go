@@ -20,11 +20,56 @@ func GetPipelineSchema() schema.GroupVersionResource {
 	}
 }
 
+// GetPipelineRunSchema returns the schema of pipelineruns
+func GetPipelineRunSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha3",
+		Resource: "pipelineruns",
+	}
+}
+
+// GetDevOpsProjectSchema returns the schema of DevOpsProject
+func GetDevOpsProjectSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha3",
+		Resource: "devopsprojects",
+	}
+}
+
+// GetWorkspaceSchema returns the schema of workspace
+func GetWorkspaceSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "tenant.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "workspaces",
+	}
+}
+
+// GetWorkspaceTemplate returns the schema of WorkspaceTemplate
+func GetWorkspaceTemplate() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "tenant.kubesphere.io",
+		Version:  "v1alpha2",
+		Resource: "workspacetemplates",
+	}
+}
+
 // GetNamespaceSchema returns the schema of namespaces
 func GetNamespaceSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Version:  "v1",
 		Resource: "namespaces",
+	}
+}
+
+// GetPodSchema returns the schema of deploy
+func GetPodSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
 	}
 }
 
@@ -59,5 +104,40 @@ func GetConfigMapSchema() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Version:  "v1",
 		Resource: "configmaps",
+	}
+}
+
+// GetSecretSchema returns the schema of Secret
+func GetSecretSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "secrets",
+	}
+}
+
+// GetStorageClassSchema returns the schema of StorageClass
+func GetStorageClassSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "storage.k8s.io",
+		Version:  "v1",
+		Resource: "storageclasses",
+	}
+}
+
+// GetS2iBuilderTemplateSchema returns the schema of S2iBuilderTemplate
+func GetS2iBuilderTemplateSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "s2ibuildertemplates",
+	}
+}
+
+// GetS2iBuilderSchema returns the schema of S2iBuilder
+func GetS2iBuilderSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "devops.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "s2ibuilders",
 	}
 }

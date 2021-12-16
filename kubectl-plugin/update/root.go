@@ -1,11 +1,11 @@
-package main
+package update
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	types2 "github.com/linuxsuren/ks/kubectl-plugin/types"
+	types2 "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,9 +186,9 @@ func (o *updateCmdOption) RunE(cmd *cobra.Command, args []string) (err error) {
 		imageOrg = "kubesphere"
 	}
 
-	o.updateDeploy("kubesphere-system", "ks-apiserver", fmt.Sprintf("%s/ks-apiserver", imageOrg), o.Tag)
-	o.updateDeploy("kubesphere-system", "ks-controller-manager", fmt.Sprintf("%s/ks-controller-manager", imageOrg), o.Tag)
-	o.updateDeploy("kubesphere-system", "ks-console", fmt.Sprintf("%s/ks-console", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-apiserver", fmt.Sprintf("%s/ks-apiserver", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-controller-manager", fmt.Sprintf("%s/ks-controller-manager", imageOrg), o.Tag)
+	_ = o.updateDeploy("kubesphere-system", "ks-console", fmt.Sprintf("%s/ks-console", imageOrg), o.Tag)
 	return
 }
 

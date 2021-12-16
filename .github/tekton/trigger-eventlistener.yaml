@@ -1,0 +1,62 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: ks-trigger-listener
+spec:
+  serviceAccountName: trigger-bot
+  triggers:
+    - name: github-pullrequest-listener
+      interceptors:
+        - ref:
+            name: github
+          params:
+            - name: secretRef
+              value:
+                secretName: webhook-secret
+                secretKey: secret
+            - name: eventTypes
+              value:
+                - pull_request
+        - ref:
+            name: cel
+          params:
+            - name: filter
+              value: "body.action in ['opened', 'synchronize', 'reopened']"
+      bindings:
+        - name: repo-full-name
+          value: $(body.repository.full_name)
+        - name: revision
+          value: $(body.pull_request.head.sha)
+        - name: clone-url
+          value: $(body.repository.clone_url)
+        - name: pull-request-number
+          value: $(body.pull_request.number)
+      template:
+        spec:
+          params:
+            - name: clone-url
+            - name: revision
+            - name: pull-request-number
+            - name: repo-full-name
+          resourcetemplates:
+            - apiVersion: tekton.dev/v1beta1
+              kind: PipelineRun
+              metadata:
+                generateName: ks-build-pr-$(tt.params.pull-request-number)-
+              spec:
+                serviceAccountName: build-bot
+                pipelineRef:
+                  name: ks-pull-request-pipeline
+                params:
+                  - name: repo-full-name
+                    value: $(tt.params.repo-full-name)
+                  - name: clone-url
+                    value: $(tt.params.clone-url)
+                  - name: revision
+                    value: $(tt.params.revision)
+                  - name: dashboard-url
+                    value: http://103.61.37.25:30177/#/namespaces/ks-devops-ext/pipelineruns
+                workspaces:
+                  - name: repo
+                    persistentVolumeClaim:
+                      claimName: shared-ks-storage
