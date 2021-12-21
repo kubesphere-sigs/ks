@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: ks-pull-request-pipeline
+  name: ks-pull-request
 spec:
   workspaces:
     - name: repo
