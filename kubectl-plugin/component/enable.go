@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
-	"github.com/kubesphere-sigs/ks/kubectl-plugin/component/disableOperation"
 	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,10 +20,6 @@ type EnableOption struct {
 	Toggle bool
 }
 
-type DisableOperation interface {
-	DeleteRelatedResource() error
-}
-
 // newComponentEnableCmd returns a command to enable (or disable) a component by name
 func newComponentEnableCmd() (cmd *cobra.Command) {
 	opt := &EnableOption{}
@@ -32,7 +27,7 @@ func newComponentEnableCmd() (cmd *cobra.Command) {
 		Use:   "enable",
 		Short: "Enable or disable the specific KubeSphere component",
 		Example: `You can enable a single component with name via: ks com enable devops
-Or it's possible to enable all components via: ks com enable all`,
+Or it's possible to enable all components via: ks com enable all'`,
 		PreRunE:           opt.enablePreRunE,
 		ValidArgsFunction: common.PluginAbleComponentsCompletion(),
 		RunE:              opt.enableRunE,
@@ -133,9 +128,6 @@ data:
 				name, types.JSONPatchType,
 				[]byte(patch),
 				metav1.PatchOptions{})
-
-			ops := disableOperation.DevOps{}
-			err = ops.DeleteRelatedResource()
 		}
 	}
 	return

@@ -12,6 +12,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/source2image"
 	token2 "github.com/kubesphere-sigs/ks/kubectl-plugin/token"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/tool"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/uninstall"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/update"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/user"
 	pkg "github.com/linuxsuren/cobra-extension/pkg"
@@ -66,6 +67,7 @@ See also https://github.com/kubesphere/kubesphere`,
 		auth.NewAuthCmd(client),
 		tool.NewToolCmd(),
 		install.NewInstallCmd(),
+		uninstall.NewUninstallCmd(),
 		config.NewConfigRootCmd(client),
 		source2image.NewS2ICmd(client),
 		hdcmd.NewInitCommand(map[string]string{

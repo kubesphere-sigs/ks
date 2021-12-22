@@ -1,4 +1,4 @@
-package disableOperation
+package component
 
 import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
@@ -6,7 +6,13 @@ import (
 
 type Logging struct{}
 
-func (l *Logging) DeleteRelatedResource() error {
+func (l *Logging) Uninstall() error {
+	// To disable only log collection
+	if err := common.ExecCommand("kubectl", "delete", "inputs.logging.kubesphere.io", "-n", "kubesphere-logging-system", "tail"); err != nil {
+		return err
+	}
+
+	// To uninstall Logging system including Elasticsearch
 	if err := common.ExecCommand("kubectl", "delete", "crd", "fluentbitconfigs.logging.kubesphere.io"); err != nil {
 		return err
 	}

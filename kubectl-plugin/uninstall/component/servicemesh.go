@@ -1,0 +1,27 @@
+package component
+
+import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+
+type ServiceMesh struct {
+}
+
+func (s *ServiceMesh) Uninstall() error {
+	_ = common.ExecCommand("curl", "-L", "https://istio.io/downloadIstio", "|", "sh", "-")
+	if err := common.ExecCommand("istioctl", "x", "uninstall", "--purge"); err != nil {
+		return err
+	}
+	if err := common.ExecCommand("kubectl", "-n", "istio-system", "delete", "kiali", "kiali"); err != nil {
+		return err
+	}
+	if err := common.ExecCommand("helm", "-n", "istio-system", "delete", "kiali-operator"); err != nil {
+		return err
+	}
+	if err := common.ExecCommand("kubectl", "-n", "istio-system", "delete", "jaeger", "jaeger"); err != nil {
+		return err
+	}
+	if err := common.ExecCommand("helm", "-n", "istio-system", "delete", "jaeger-operator"); err != nil {
+		return err
+	}
+
+	return nil
+}
