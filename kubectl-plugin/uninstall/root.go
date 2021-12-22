@@ -20,7 +20,7 @@ func NewUninstallCmd() (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:     "uninstall",
 		Short:   "Uninstall KubeSphere",
-		Example: `ks uninstall --components DevOps`,
+		Example: `ks uninstall --components devops`,
 		PreRunE: opt.preRunE,
 		RunE:    opt.runE,
 	}

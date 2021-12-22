@@ -1,6 +1,7 @@
 package component
 
 import (
+	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 )
 
@@ -14,11 +15,7 @@ func (o *DevOps) Uninstall() error {
 	}
 
 	// Remove DevOps installation status
-	patch := `-p='[{"op": "remove", "path": "/status/devops"}]'`
-	if err := common.ExecCommand("kubectl", "patch", "-n", "kubesphere-system", "cc", "ks-installer", "--type=json", patch); err != nil {
-		return err
-	}
-	patch = `-p='[{"op": "replace", "path": "/spec/devops/enabled", "value": false}]'`
+	patch := fmt.Sprintf(`-p='[{"op": "remove", "path": "/status/devops"}]'`)
 	if err := common.ExecCommand("kubectl", "patch", "-n", "kubesphere-system", "cc", "ks-installer", "--type=json", patch); err != nil {
 		return err
 	}
