@@ -3,6 +3,7 @@ package component
 import (
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"strings"
 )
 
 type DevOps struct {
@@ -15,31 +16,42 @@ func (o *DevOps) Uninstall() error {
 	}
 
 	// Remove DevOps installation status
-	patch := fmt.Sprintf(`-p='[{"op": "remove", "path": "/status/devops"}]'`)
-	if err := common.ExecCommand("kubectl", "patch", "-n", "kubesphere-system", "cc", "ks-installer", "--type=json", patch); err != nil {
+	patch := fmt.Sprintf(`'[{"op": "remove", "path": "/status/devops"}]'`)
+	if err := common.ExecCommand("kubectl", "patch", "-n", "kubesphere-system", "cc", "ks-installer", "--type=json", "-p", patch); err != nil {
 		return err
 	}
 
 	// ############# DevOps Resource Deletion ##############
 	// Remove all resources related with DevOps
-	arg := `for devops_crd in $(kubectl get crd -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "devops.kubesphere.io"); do
-    for ns in $(kubectl get ns -ojsonpath='{.items..metadata.name}'); do
-        for devops_res in $(kubectl get $devops_crd -n $ns -oname); do
-            kubectl patch $devops_res -n $ns -p '{"metadata":{"finalizers":[]}}' --type=merge
-        done
-    done
-done`
-	if err := common.ExecCommand("", arg); err != nil {
+	crdStr, err := common.ExecCommandGetOutput("kubectl", "get", "crd", fmt.Sprintf(`-o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'`))
+	if err != nil {
 		return err
 	}
-
-	// Remove all DevOps CRDs
-	if err := common.ExecCommand("kubectl", "get", "crd", `-o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "devops.kubesphere.io" | xargs -I crd_name kubectl delete crd crd_name`); err != nil {
+	nsStr, err := common.ExecCommandGetOutput("kubectl", "get", "ns", fmt.Sprintf(`-ojsonpath='{.items..metadata.name}'`))
+	if err != nil {
 		return err
+	}
+	for _, devopsCrd := range strings.Split(crdStr, "\n") {
+		if !strings.Contains(devopsCrd, "devops.kubesphere.io") {
+			continue
+		}
+		for _, ns := range strings.Split(nsStr, " ") {
+			devopsResStr, _ := common.ExecCommandGetOutput("kubectl", "get", devopsCrd, "-n", ns, "-oname")
+			for _, devopsRes := range strings.Split(devopsResStr, "\n") {
+				if err = common.ExecCommand("kubectl", "patch", devopsRes, "-n", ns, "-p", fmt.Sprintf(`'{"metadata":{"finalizers":[]}}'`), "--type=merge"); err != nil {
+					return err
+				}
+			}
+		}
+		// Remove all DevOps CRDs
+		if err = common.ExecCommand("kubectl", "delete", "crd", devopsCrd); err != nil {
+			return err
+		}
+
 	}
 
 	// Remove DevOps namespace
-	if err := common.ExecCommand("kubectl", "delete", "namespace", "kubesphere-devops-system"); err != nil {
+	if err = common.ExecCommand("kubectl", "delete", "namespace", "kubesphere-devops-system"); err != nil {
 		return err
 	}
 

@@ -6,7 +6,9 @@ type ServiceMesh struct {
 }
 
 func (s *ServiceMesh) Uninstall() error {
-	_ = common.ExecCommand("", "curl -L https://istio.io/downloadIstio | sh -")
+	_ = common.ExecCommand("curl", "-L", "https://istio.io/downloadIstio")
+	_ = common.ExecCommand("sh", "downloadIstioCandidate.sh")
+
 	if err := common.ExecCommand("istioctl", "x", "uninstall", "--purge"); err != nil {
 		return err
 	}
