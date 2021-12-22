@@ -7,6 +7,7 @@ import (
 // Logging return the struct of Logging
 type Logging struct{}
 
+// Uninstall uninstall Logging
 func (l *Logging) Uninstall() error {
 	// To disable only log collection
 	if err := common.ExecCommand("kubectl", "delete", "inputs.logging.kubesphere.io", "-n", "kubesphere-logging-system", "tail"); err != nil {

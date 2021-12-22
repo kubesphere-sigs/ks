@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type ServiceMesh struct {
 }
 
+// Uninstall uninstall ServiceMesh
 func (s *ServiceMesh) Uninstall() error {
 	_ = common.ExecCommand("curl", "-L", "https://istio.io/downloadIstio")
 	_ = common.ExecCommand("sh", "downloadIstioCandidate.sh")

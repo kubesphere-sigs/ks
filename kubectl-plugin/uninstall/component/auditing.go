@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type Auditing struct {
 }
 
+// Uninstall uninstall Auditing
 func (e *Auditing) Uninstall() error {
 	if err := common.ExecCommand("helm", "uninstall", "kube-auditing", "-n", "kubesphere-monitoring-system"); err != nil {
 		return err

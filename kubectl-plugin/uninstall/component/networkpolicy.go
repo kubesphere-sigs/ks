@@ -4,6 +4,7 @@ package component
 type NetworkPolicy struct {
 }
 
+// Uninstall uninstall NetworkPolicy
 func (n *NetworkPolicy) Uninstall() error {
 	return nil
 }

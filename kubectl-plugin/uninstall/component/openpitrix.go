@@ -4,6 +4,7 @@ package component
 type OpenPitrix struct {
 }
 
+// Uninstall uninstall OpenPitrix
 func (p *OpenPitrix) Uninstall() error {
 	return nil
 }

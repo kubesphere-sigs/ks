@@ -10,6 +10,7 @@ import (
 type DevOps struct {
 }
 
+// Uninstall uninstall DevOps
 func (o *DevOps) Uninstall() error {
 	// Uninstall DevOps application
 	if err := common.ExecCommand("helm", "uninstall", "-n", "kubesphere-devops-system", "devops"); err != nil {
