@@ -2,6 +2,7 @@ package component
 
 import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 
+// Alerting return the struct of Alerting
 type Alerting struct {
 }
 

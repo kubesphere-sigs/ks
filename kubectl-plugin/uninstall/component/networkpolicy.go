@@ -1,5 +1,6 @@
 package component
 
+// NetworkPolicy return the struct of NetworkPolicy
 type NetworkPolicy struct {
 }
 

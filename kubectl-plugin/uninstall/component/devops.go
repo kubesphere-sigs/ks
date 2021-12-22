@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// DevOps return the struct of DevOps
 type DevOps struct {
 }
 

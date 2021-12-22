@@ -40,6 +40,7 @@ type uninstallOption struct {
 	Clientset *kubernetes.Clientset
 }
 
+// Component return the interface of Component
 type Component interface {
 	Uninstall() error
 }

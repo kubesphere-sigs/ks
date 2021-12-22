@@ -2,6 +2,7 @@ package component
 
 import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 
+// Auditing return the struct of Auditing
 type Auditing struct {
 }
 

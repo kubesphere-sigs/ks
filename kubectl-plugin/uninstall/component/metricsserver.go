@@ -2,6 +2,7 @@ package component
 
 import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 
+// MetricsServer return the struct of MetricsServer
 type MetricsServer struct {
 }
 

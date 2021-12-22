@@ -4,6 +4,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 )
 
+// Logging return the struct of Logging
 type Logging struct{}
 
 func (l *Logging) Uninstall() error {

@@ -1,5 +1,6 @@
 package component
 
+// OpenPitrix return the struct of OpenPitrix
 type OpenPitrix struct {
 }
 

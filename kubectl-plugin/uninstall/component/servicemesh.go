@@ -2,6 +2,7 @@ package component
 
 import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 
+// ServiceMesh return the struct of ServiceMesh
 type ServiceMesh struct {
 }
 

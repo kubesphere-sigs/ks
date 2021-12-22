@@ -2,6 +2,7 @@ package component
 
 import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 
+// Events return the struct of Events
 type Events struct {
 }
 
