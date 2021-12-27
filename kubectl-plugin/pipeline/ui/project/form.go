@@ -4,8 +4,10 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/rivo/tview"
+	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"os"
 )
 
 // DevOpsProjectForm represents a form to create DevOps project
@@ -14,6 +16,15 @@ type DevOpsProjectForm struct {
 
 	eventConfirmCallback EventCallback
 	eventCancelCallback  EventCallback
+}
+
+func init() {
+	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOutput(file)
 }
 
 // NewProjectForm creates the form
@@ -36,20 +47,28 @@ func NewProjectForm(client dynamic.Interface) *DevOpsProjectForm {
 			wsField := wsItem.(*tview.InputField)
 			projectField := projectItem.(*tview.InputField)
 
+			wsName := wsField.GetText()
+
 			opt := &option.PipelineCreateOption{
 				Project:   projectField.GetText(),
-				Workspace: wsField.GetText(),
+				Workspace: wsName,
 				Batch:     true,
 				Type:      "pipeline",
 				Client:    client,
 			}
 
-			var ws *unstructured.Unstructured
-			var err error
-			if ws, err = opt.CheckWorkspace(); err != nil {
-				return
+			// the workspace CRD comes from KubeSphere instead of the DevOps
+			// so, it's optional
+			var wsID string
+			if wsName != "" {
+				var ws *unstructured.Unstructured
+				var err error
+				if ws, err = opt.CheckWorkspace(); err != nil {
+					return
+				}
+				wsID = string(ws.GetUID())
 			}
-			_, _ = opt.CheckDevOpsProject(string(ws.GetUID()))
+			_, _ = opt.CheckDevOpsProject(wsID)
 		}
 
 		projectForm.eventConfirmCallback()
