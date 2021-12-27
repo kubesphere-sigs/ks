@@ -1,0 +1,27 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: ks-release
+spec:
+  params:
+    - name: revision
+    - name: clone-url
+    - name: tag-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: ks-release-$(tt.params.tag-name)-
+      spec:
+        serviceAccountName: ks-release-bot
+        pipelineRef:
+          name: ks-release
+        params:
+          - name: clone-url
+            value: $(tt.params.clone-url)
+          - name: revision
+            value: $(tt.params.revision)
+        workspaces:
+          - name: repo
+            persistentVolumeClaim:
+              claimName: shared-ks-storage

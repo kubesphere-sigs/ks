@@ -1,0 +1,42 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: ks-release-trigger
+spec:
+  interceptors:
+    - ref:
+        name: github
+      params:
+        - name: secretRef
+          value:
+            secretName: webhook-secret
+            secretKey: secret
+        - name: eventTypes
+          value:
+            - push
+    - ref:
+        name: cel
+      params:
+        - name: filter
+          value: "body.ref.startsWith('refs/tags/')"
+    - ref:
+        name: cel
+      params:
+        - name: filter
+          value: "body.repository.full_name == 'kubesphere-sigs/ks'"
+    - ref:
+        name: cel
+      params:
+        - name: overlays
+          value:
+            - key: tag-name
+              expression: "body.ref.replace('refs/tags/', '')"
+  bindings:
+    - name: clone-url
+      value: $(body.repository.clone_url)
+    - name: revision
+      value: $(extensions.tag-name)
+    - name: tag-name
+      value: $(extensions.tag-name)
+  template:
+    ref: ks-release

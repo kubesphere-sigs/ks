@@ -108,3 +108,9 @@ dockers:
       - "surenpi/ks:{{.Tag}}"
       - "ghcr.io/linuxsuren/ks/ks:latest"
       - "ghcr.io/linuxsuren/ks/ks:{{.Tag}}"
+  - goos: linux
+    goarch: amd64
+    dockerfile: build/Dockerfile
+    image_templates:
+      - "surenpi/ks-tool:v1.17.0-{{.Tag}}"
+      - "surenpi/ks-tool:latest"

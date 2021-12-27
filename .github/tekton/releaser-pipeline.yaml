@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ks-release
+spec:
+  workspaces:
+    - name: repo
+  params:
+    # - name: repo-full-name
+    #   description: "Repository full name. like: kubesphere-sigs/ks"
+    - name: clone-url
+      description: Git repository clone URL.
+    - name: revision
+      description: Git repository revision to checkout.
+    # - name: dashboard-url
+    #   description: Tekton dashboard access URL, like http://demo:31962/#/namespaces/ks/pipelineruns.
+  tasks:
+    - name: checkout
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.clone-url)
+        - name: revision
+          value: $(params.revision)
+      workspaces:
+        - name: output
+          workspace: repo
+    - name: release
+      runAfter:
+        - checkout
+      taskRef:
+        name: goreleaser-release
+      params:
+        - name: package
+          value: github.com/kubesphere-sigs/ks
+        - name: flags
+          value: --rm-dist --debug
+      workspaces:
+        - name: source
+          workspace: repo

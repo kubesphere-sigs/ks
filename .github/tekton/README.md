@@ -6,13 +6,18 @@ We dogfood our project by using Tekton Pipelines to build and test `ks`. This di
 
 ## Tekton manifests
 
-| Manifest                           | Description                                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------- |
-| build-bot.yaml                     | Needed by `PipelineRun`. For more granularity in specifying execution credentials. |
-| pull-request-pipeline.yaml         | `Pipeline` configuration for ks when pull request event is comming.                |
-| shared-storage.yaml                | Share volume among tasks. Such as source code output from `git-clone` task.        |
-| pull-request-trigger.yaml          | Indicate what happens when the EventListener detects an event.                     |
-| pull-request-trigger-template.yaml | Specifies a blueprint for PipelineRun.                                             |
+| Manifest                           | Description                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| shared-storage.yaml                | Share volume among tasks. Such as source code output from `git-clone` task.                        |
+| build-bot.yaml                     | Needed by `PipelineRun`. For more granularity in specifying execution credentials.                 |
+| pull-request-pipeline.yaml         | `Pipeline` configuration for ks when pull request event is comming.                                |
+| pull-request-trigger.yaml          | Indicate what happens when the EventListener detects an event.                                     |
+| pull-request-trigger-template.yaml | Specifies a blueprint for PipelineRun.                                                             |
+| release-bot.yaml                   | Needed by `ks-release-trigger-template`. For more granularity in specifying execution credentials. |
+| release-pipeline.yaml              | Tasks defined in it when releasing.                                                                |
+| release-trigger-template.yaml      | Specifies a blueprint for releasing.                                                               |
+| release-trigger.yaml               | Indicate what happens when the EventListener detects an event.                                     |
+| goreleaser-release.yaml            | For releasing using goreleaser.                                                                    |
 
 ## FAQ
 
