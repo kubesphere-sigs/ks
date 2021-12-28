@@ -79,10 +79,9 @@ func (o *uninstallOption) runE(cmd *cobra.Command, args []string) (err error) {
 		case "networkpolicy":
 			comp = &component2.NetworkPolicy{}
 		case "openpitrix":
-			patch = fmt.Sprintf(`[{"op": "replace", "path": "openpitrix.store.enabled", "value": %s}]`, strconv.FormatBool(false))
+			patch = fmt.Sprintf(`[{"op": "replace", "path": "/spec/openpitrix.store.enabled", "value": %s}]`, strconv.FormatBool(false))
 			comp = &component2.OpenPitrix{}
 		case "servicemesh":
-			patch = fmt.Sprintf(`[{"op": "replace", "path": "servicemesh.enabled", "value": %s}]`, strconv.FormatBool(false))
 			comp = &component2.ServiceMesh{}
 		default:
 			err = fmt.Errorf("not support [%s] yet", component)
