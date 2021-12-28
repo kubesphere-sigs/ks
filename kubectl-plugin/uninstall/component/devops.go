@@ -1,25 +1,36 @@
 package component
 
 import (
+	"context"
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"strings"
 )
 
 // DevOps return the struct of DevOps
 type DevOps struct {
+	Client    dynamic.Interface
+	Clientset *kubernetes.Clientset
 }
 
 // Uninstall uninstall DevOps
 func (o *DevOps) Uninstall() error {
 	// Uninstall DevOps application
-	if err := common.ExecCommand("helm", "uninstall", "-n", "kubesphere-devops-system", "devops"); err != nil {
-		return err
-	}
+	_ = common.ExecCommand("helm", "uninstall", "-n", "kubesphere-devops-system", "devops")
 
 	// Remove DevOps installation status
-	patch := fmt.Sprintf(`'[{"op": "remove", "path": "/status/devops"}]'`)
-	if err := common.ExecCommand("kubectl", "patch", "-n", "kubesphere-system", "cc", "ks-installer", "--type=json", "-p", patch); err != nil {
+	ctx := context.TODO()
+	patch := fmt.Sprintf(`[{"op": "remove", "path": "/status/devops"}]`)
+	_, err := o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace("kubesphere-system").Patch(ctx,
+		"ks-installer", types.JSONPatchType,
+		[]byte(patch),
+		metav1.PatchOptions{})
+	if err != nil {
 		return err
 	}
 
@@ -38,9 +49,21 @@ func (o *DevOps) Uninstall() error {
 			continue
 		}
 		for _, ns := range strings.Split(nsStr, " ") {
+			ns = strings.Replace(ns, "'", "", -1)
+			if len(ns) == 0 {
+				continue
+			}
 			devopsResStr, _ := common.ExecCommandGetOutput("kubectl", "get", devopsCrd, "-n", ns, "-oname")
 			for _, devopsRes := range strings.Split(devopsResStr, "\n") {
-				if err = common.ExecCommand("kubectl", "patch", devopsRes, "-n", ns, "-p", fmt.Sprintf(`'{"metadata":{"finalizers":[]}}'`), "--type=merge"); err != nil {
+				if len(devopsRes) == 0 {
+					continue
+				}
+				patch = fmt.Sprintf(`{"metadata":{"finalizers":[]}}`)
+				_, err = o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace(ns).Patch(ctx,
+					devopsRes, types.JSONPatchType,
+					[]byte(patch),
+					metav1.PatchOptions{})
+				if err != nil && !strings.Contains(err.Error(), "not found") {
 					return err
 				}
 			}

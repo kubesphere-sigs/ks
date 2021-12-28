@@ -47,6 +47,9 @@ type Component interface {
 
 func (o *uninstallOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	ctx := cmd.Root().Context()
+	//if o.Client, _, err = common.GetClient(); err != nil {
+	//	err = fmt.Errorf("unable to init the k8s client, error: %v", err)
+	//}
 	o.Client = common.GetDynamicClient(ctx)
 	o.Clientset = common.GetClientset(ctx)
 	return
@@ -63,33 +66,24 @@ func (o *uninstallOption) runE(cmd *cobra.Command, args []string) (err error) {
 		switch component {
 		case "alerting":
 			comp = &component2.Alerting{}
-			break
 		case "auditing":
 			comp = &component2.Auditing{}
-			break
 		case "devops":
-			comp = &component2.DevOps{}
-			break
+			comp = &component2.DevOps{Client: o.Client, Clientset: o.Clientset}
 		case "events":
 			comp = &component2.Events{}
-			break
 		case "logging":
 			comp = &component2.Logging{}
-			break
 		case "metrics_server":
 			comp = &component2.MetricsServer{}
-			break
 		case "networkpolicy":
 			comp = &component2.NetworkPolicy{}
-			break
 		case "openpitrix":
 			patch = fmt.Sprintf(`[{"op": "replace", "path": "openpitrix.store.enabled", "value": %s}]`, strconv.FormatBool(false))
 			comp = &component2.OpenPitrix{}
-			break
 		case "servicemesh":
 			patch = fmt.Sprintf(`[{"op": "replace", "path": "servicemesh.enabled", "value": %s}]`, strconv.FormatBool(false))
 			comp = &component2.ServiceMesh{}
-			break
 		default:
 			err = fmt.Errorf("not support [%s] yet", component)
 			return
