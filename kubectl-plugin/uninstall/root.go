@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	component2 "github.com/kubesphere-sigs/ks/kubectl-plugin/common/component"
 	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
-	component2 "github.com/kubesphere-sigs/ks/kubectl-plugin/uninstall/component"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,7 +19,7 @@ func NewUninstallCmd() (cmd *cobra.Command) {
 	opt := &uninstallOption{}
 	cmd = &cobra.Command{
 		Use:     "uninstall",
-		Short:   "Uninstall KubeSphere",
+		Short:   "Uninstall Component Of KubeSphere",
 		Example: `ks uninstall --components devops`,
 		PreRunE: opt.preRunE,
 		RunE:    opt.runE,
@@ -43,13 +43,11 @@ type uninstallOption struct {
 // Component return the interface of Component
 type Component interface {
 	Uninstall() error
+	GetName() string
 }
 
 func (o *uninstallOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	ctx := cmd.Root().Context()
-	//if o.Client, _, err = common.GetClient(); err != nil {
-	//	err = fmt.Errorf("unable to init the k8s client, error: %v", err)
-	//}
 	o.Client = common.GetDynamicClient(ctx)
 	o.Clientset = common.GetClientset(ctx)
 	return
@@ -57,36 +55,20 @@ func (o *uninstallOption) preRunE(cmd *cobra.Command, args []string) (err error)
 
 func (o *uninstallOption) runE(cmd *cobra.Command, args []string) (err error) {
 	ctx := context.TODO()
-
 	ns, name := "kubesphere-system", "ks-installer"
 	for _, component := range o.components {
 		patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s/enabled", "value": %s}]`, component, strconv.FormatBool(false))
 
-		var comp Component
 		switch component {
-		case "alerting":
-			comp = &component2.Alerting{}
-		case "auditing":
-			comp = &component2.Auditing{}
-		case "devops":
-			comp = &component2.DevOps{Client: o.Client, Clientset: o.Clientset}
-		case "events":
-			comp = &component2.Events{}
-		case "logging":
-			comp = &component2.Logging{}
-		case "metrics_server":
-			comp = &component2.MetricsServer{}
-		case "networkpolicy":
-			comp = &component2.NetworkPolicy{}
-		case "openpitrix":
-			patch = fmt.Sprintf(`[{"op": "replace", "path": "/spec/openpitrix.store.enabled", "value": %s}]`, strconv.FormatBool(false))
-			comp = &component2.OpenPitrix{}
-		case "servicemesh":
-			comp = &component2.ServiceMesh{}
+		case "alerting", "auditing", "devops", "events", "logging", "metrics_server", "networkpolicy", "openpitrix", "servicemesh":
+			if component == "openpitrix" {
+				patch = fmt.Sprintf(`[{"op": "replace", "path": "/spec/openpitrix.store.enabled", "value": %s}]`, strconv.FormatBool(false))
+			}
 		default:
 			err = fmt.Errorf("not support [%s] yet", component)
 			return
 		}
+		comp := o.getComponent(component)
 
 		_, err = o.Client.Resource(kstypes.GetClusterConfiguration()).Namespace(ns).Patch(ctx,
 			name, types.JSONPatchType,
@@ -98,4 +80,37 @@ func (o *uninstallOption) runE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	return
+}
+
+func (o *uninstallOption) getComponent(name string) Component {
+	allComponents := make(map[string]Component)
+
+	alerting := &component2.Alerting{}
+	allComponents[alerting.GetName()] = alerting
+
+	auditing := &component2.Auditing{}
+	allComponents[auditing.GetName()] = auditing
+
+	devops := &component2.DevOps{Client: o.Client, Clientset: o.Clientset}
+	allComponents[devops.GetName()] = devops
+
+	events := &component2.Events{}
+	allComponents[events.GetName()] = events
+
+	logging := &component2.Logging{}
+	allComponents[logging.GetName()] = logging
+
+	metricServer := &component2.MetricsServer{}
+	allComponents[metricServer.GetName()] = metricServer
+
+	networkPolicy := &component2.NetworkPolicy{}
+	allComponents[networkPolicy.GetName()] = networkPolicy
+
+	openPitrix := &component2.OpenPitrix{}
+	allComponents[openPitrix.GetName()] = openPitrix
+
+	serviceMesh := &component2.ServiceMesh{}
+	allComponents[serviceMesh.GetName()] = serviceMesh
+
+	return allComponents[name]
 }

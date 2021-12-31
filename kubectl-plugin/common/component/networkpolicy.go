@@ -4,6 +4,10 @@ package component
 type NetworkPolicy struct {
 }
 
+func (n *NetworkPolicy) GetName() string {
+	return "networkpolicy"
+}
+
 // Uninstall uninstall NetworkPolicy
 func (n *NetworkPolicy) Uninstall() error {
 	return nil

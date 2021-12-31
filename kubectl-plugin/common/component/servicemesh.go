@@ -2,21 +2,25 @@ package component
 
 import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 )
 
 // ServiceMesh return the struct of ServiceMesh
 type ServiceMesh struct {
 }
 
+func (s *ServiceMesh) GetName() string {
+	return "servicemesh"
+}
+
 // Uninstall uninstall ServiceMesh
 func (s *ServiceMesh) Uninstall() error {
-	if err := common.ExecCommand("wget", "https://github.com/istio/istio/releases/download/1.12.1/istioctl-1.12.1-linux-amd64.tar.gz"); err != nil {
-		return err
+	is := installer.Installer{
+		Provider: "github",
 	}
-	if err := common.ExecCommand("tar", "-xvf", "istioctl-1.12.1-linux-amd64.tar.gz"); err != nil {
-		return err
-	}
-	if err := common.ExecCommand("cp", "istioctl", "/usr/local/bin"); err != nil {
+	if err := is.CheckDepAndInstall(map[string]string{
+		"istioctl": "istio/istio",
+	}); err != nil {
 		return err
 	}
 

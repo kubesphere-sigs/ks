@@ -18,6 +18,10 @@ type DevOps struct {
 	Clientset *kubernetes.Clientset
 }
 
+func (o *DevOps) GetName() string {
+	return "devops"
+}
+
 // Uninstall uninstall DevOps
 func (o *DevOps) Uninstall() error {
 	// Uninstall DevOps application

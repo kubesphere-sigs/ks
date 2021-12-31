@@ -7,6 +7,10 @@ import (
 // Logging return the struct of Logging
 type Logging struct{}
 
+func (l *Logging) GetName() string {
+	return "logging"
+}
+
 // Uninstall uninstall Logging
 func (l *Logging) Uninstall() error {
 	// To disable only log collection
