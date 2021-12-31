@@ -13,6 +13,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/ui/project"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/rivo/tview"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -141,7 +142,10 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 			row, col := table.GetSelection()
 			cell := table.GetCell(row, col)
 			pipeline := cell.Text
-			_ = run.triggerPipeline(o.namespace, pipeline, nil)
+			err := run.triggerPipeline(o.namespace, pipeline, nil)
+			if err != nil {
+				log.Errorf("failed to triggre pipeline, error %v", err)
+			}
 			o.listPipelineRuns(0, o.namespace, "", 0)
 		case 'R':
 			run := &pipelineRunOpt{
@@ -150,7 +154,10 @@ func (o *dashboardOption) createPipelineList() (listView tview.Primitive) {
 			row, col := table.GetSelection()
 			cell := table.GetCell(row, col)
 			pipeline := cell.Text
-			_ = run.triggerPipeline(o.namespace, pipeline, nil)
+			err := run.triggerPipeline(o.namespace, pipeline, nil)
+			if err != nil {
+				log.Errorf("failed to triggre pipeline, error %v", err)
+			}
 		case 'c':
 			o.pipelineCreationForm()
 		case 'y':
@@ -228,9 +235,13 @@ func (o *dashboardOption) pipelineCreationForm() {
 				Batch:     true,
 				Type:      "pipeline",
 				Client:    o.client,
+				SkipCheck: true,
 			}
 			_ = opt.ParseTemplate()
-			_ = opt.CreatePipeline() // need to find a way to show the errors
+			err := opt.CreatePipeline() // need to find a way to show the errors
+			if err != nil {
+				log.Errorf("failed to create pipeline, error: %v", err)
+			}
 		}
 
 		o.stack.Pop()

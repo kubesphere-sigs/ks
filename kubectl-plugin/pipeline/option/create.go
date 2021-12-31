@@ -152,14 +152,15 @@ func (o *PipelineCreateOption) CreatePipeline() (err error) {
 
 	var project *unstructured.Unstructured
 	if project, err = o.CheckDevOpsProject(wdID); err != nil {
+		err = fmt.Errorf("cannot find devopsProject %s, error %v", o.Project, err)
 		return
 	}
-	o.Project = project.GetName() // the previous name is the generate name
+	o.Project = project.GetName() // the previous name is a generated name
 
 	var rawPip *unstructured.Unstructured
 	if rawPip, err = o.createPipelineObj(); err == nil {
 		if rawPip, err = o.Client.Resource(types.GetPipelineSchema()).Namespace(o.Project).Create(ctx, rawPip, metav1.CreateOptions{}); err != nil {
-			err = fmt.Errorf("failed to create Pipeline, %v", err)
+			err = fmt.Errorf("failed to create Pipeline, namespace is %s, error is %v", o.Project, err)
 		}
 	}
 	return

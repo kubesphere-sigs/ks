@@ -1,0 +1,33 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: ks-pull-request
+spec:
+  params:
+    - name: repo-full-name
+    - name: revision
+    - name: clone-url
+    - name: pull-request-number
+    - name: dashboard-url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        name: ks-pull-request-$(tt.params.pull-request-number)-$(uid)
+      spec:
+        serviceAccountName: ks-pipeline-bot
+        pipelineRef:
+          name: ks-pull-request
+        params:
+          - name: repo-full-name
+            value: $(tt.params.repo-full-name)
+          - name: clone-url
+            value: $(tt.params.clone-url)
+          - name: revision
+            value: $(tt.params.revision)
+          - name: dashboard-url
+            value: $(tt.params.dashboard-url)/ks-pull-request-$(tt.params.pull-request-number)-$(uid)
+        workspaces:
+          - name: repo
+            persistentVolumeClaim:
+              claimName: ks-releaser-source-shared-storage
