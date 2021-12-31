@@ -4,6 +4,7 @@ package component
 type NetworkPolicy struct {
 }
 
+// GetName return the name of NetworkPolicy
 func (n *NetworkPolicy) GetName() string {
 	return "networkpolicy"
 }

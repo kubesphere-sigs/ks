@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type MetricsServer struct {
 }
 
+// GetName return the name of MetricsServer
 func (m *MetricsServer) GetName() string {
 	return "metrics_server"
 }

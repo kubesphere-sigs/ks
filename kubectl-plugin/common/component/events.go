@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type Events struct {
 }
 
+// GetName return the name of Events
 func (e *Events) GetName() string {
 	return "events"
 }

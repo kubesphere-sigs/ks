@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type Alerting struct {
 }
 
+// GetName return the name of Alerting
 func (e *Alerting) GetName() string {
 	return "alerting"
 }

@@ -6,6 +6,7 @@ import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 type Auditing struct {
 }
 
+// GetName return the name of Auditing
 func (e *Auditing) GetName() string {
 	return "auditing"
 }

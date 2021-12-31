@@ -18,6 +18,7 @@ type DevOps struct {
 	Clientset *kubernetes.Clientset
 }
 
+// GetName return the name of DevOps
 func (o *DevOps) GetName() string {
 	return "devops"
 }

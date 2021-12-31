@@ -7,6 +7,7 @@ import (
 // Logging return the struct of Logging
 type Logging struct{}
 
+// GetName return the name of Logging
 func (l *Logging) GetName() string {
 	return "logging"
 }

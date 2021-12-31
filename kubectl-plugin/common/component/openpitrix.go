@@ -4,6 +4,7 @@ package component
 type OpenPitrix struct {
 }
 
+// GetName return the name of OpenPitrix
 func (p *OpenPitrix) GetName() string {
 	return "openpitrix"
 }

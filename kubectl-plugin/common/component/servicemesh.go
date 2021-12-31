@@ -9,6 +9,7 @@ import (
 type ServiceMesh struct {
 }
 
+// GetName return the name of ServiceMesh
 func (s *ServiceMesh) GetName() string {
 	return "servicemesh"
 }
