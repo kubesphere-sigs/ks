@@ -8,11 +8,14 @@ import (
 )
 
 // ExecCommand runs a command
-func ExecCommand(name string, arg ...string) (err error) {
-	command := exec.Command(name, arg...)
+func ExecCommand(name string, arg ...string) error {
+	return ExecCommandInDirectory(name, "", arg...)
+}
 
-	//var stdout []byte
-	//var errStdout error
+func ExecCommandInDirectory(name, dir string, arg ...string) (err error) {
+	command := exec.Command(name, arg...)
+	command.Dir = dir
+
 	stdoutIn, _ := command.StdoutPipe()
 	stderrIn, _ := command.StderrPipe()
 	err = command.Start()
