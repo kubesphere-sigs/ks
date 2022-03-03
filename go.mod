@@ -16,10 +16,13 @@ require (
 	github.com/linuxsuren/http-downloader v0.0.35
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/rivo/tview v0.0.0-20210923051754-2cb20002bc4c
-	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.19.4
 	k8s.io/apimachinery v0.19.4
