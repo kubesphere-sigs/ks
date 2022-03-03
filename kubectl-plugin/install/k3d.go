@@ -40,6 +40,8 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"Indicate if install KubeSphere as well")
 	flags.BoolVarP(&opt.reInstall, "reinstall", "", false,
 		"Indicate if re-install the k3d cluster with given name")
+	flags.IntVarP(&opt.extraFreePorts, "extra-free-ports", "", 0,
+		"Open more extra free ports for the k3d, this flag is the count of the extra free ports instead of the value")
 
 	// TODO find a better way to reuse the flags from another command
 	flags.StringVarP(&opt.version, "version", "", types.KsVersion,
@@ -63,12 +65,13 @@ You can get more details from https://github.com/rancher/k3d/`,
 type k3dOption struct {
 	installerOption
 
-	image     string
-	name      string
-	agents    int
-	servers   int
-	registry  string
-	reInstall bool
+	image          string
+	name           string
+	agents         int
+	servers        int
+	registry       string
+	reInstall      bool
+	extraFreePorts int
 }
 
 func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
@@ -96,7 +99,7 @@ func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 }
 
 func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
-	freePort := &common.FreePort{}
+	freePort := common.NewFreePort(o.extraFreePorts)
 	var ports []int
 	if ports, err = freePort.FindFreePortsOfKubeSphere(); err != nil {
 		return
@@ -114,14 +117,19 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
+	var freePortList []string
+	for i := range ports {
+		port := ports[i]
+		freePortList = append(freePortList, "-p", fmt.Sprintf(`%d:%d@%s`, port, port, agentPort))
+	}
+
 	k3dArgs := []string{"cluster", "create",
-		"-p", fmt.Sprintf(`%d:30880@%s`, ports[0], agentPort),
-		"-p", fmt.Sprintf(`%d:30180@%s`, ports[1], agentPort),
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
 		"--image", o.image,
 		"--registry-use", o.registry,
 		o.name}
+	k3dArgs = append(k3dArgs, freePortList...)
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
 }
