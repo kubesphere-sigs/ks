@@ -141,3 +141,12 @@ func GetS2iBuilderSchema() schema.GroupVersionResource {
 		Resource: "s2ibuilders",
 	}
 }
+
+// GetApplicationSchema returns the schema of Application
+func GetApplicationSchema() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "gitops.kubesphere.io",
+		Version:  "v1alpha1",
+		Resource: "applications",
+	}
+}
