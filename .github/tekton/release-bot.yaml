@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ks-release-bot
+secrets:
+  # For uploading assets to a release
+  - name: bot-token-github
+  # For pushing docker image to docker.io
+  - name: docker-id
+  # For pushing docker image to ghcr.io
+  - name: ghcr-id
