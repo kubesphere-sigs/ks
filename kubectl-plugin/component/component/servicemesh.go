@@ -2,6 +2,7 @@ package component
 
 import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/utils/helm"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 )
 
@@ -31,15 +32,24 @@ func (s *ServiceMesh) Uninstall() error {
 	if err := common.ExecCommand("kubectl", "-n", "istio-system", "delete", "kiali", "kiali"); err != nil {
 		return err
 	}
-	if err := common.ExecCommand("helm", "-n", "istio-system", "delete", "kiali-operator"); err != nil {
+	uninstallRequest := helm.UninstallRequest{
+		ComponentName: "kiali-operator",
+		Namespace:     "istio-system",
+		KubeConfig:    "/root/.kube/config",
+	}
+	if err := uninstallRequest.Do(); err != nil {
 		return err
 	}
 	if err := common.ExecCommand("kubectl", "-n", "istio-system", "delete", "jaeger", "jaeger"); err != nil {
 		return err
 	}
-	if err := common.ExecCommand("helm", "-n", "istio-system", "delete", "jaeger-operator"); err != nil {
+	uninstallRequest = helm.UninstallRequest{
+		ComponentName: "jaeger-operator",
+		Namespace:     "istio-system",
+		KubeConfig:    "/root/.kube/config",
+	}
+	if err := uninstallRequest.Do(); err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	kstypes "github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	"github.com/kubesphere-sigs/ks/utils/helm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -26,8 +27,14 @@ func (o *DevOps) GetName() string {
 // Uninstall uninstall DevOps
 func (o *DevOps) Uninstall() error {
 	// Uninstall DevOps application
-	_ = common.ExecCommand("helm", "uninstall", "-n", "kubesphere-devops-system", "devops")
-
+	uninstallRequest := helm.UninstallRequest{
+		ComponentName: "devops",
+		Namespace:     "kubesphere-devops-system",
+		KubeConfig:    "/root/.kube/config",
+	}
+	if err := uninstallRequest.Do(); err != nil {
+		return err
+	}
 	// Remove DevOps installation status
 	ctx := context.TODO()
 	patch := fmt.Sprintf(`[{"op": "remove", "path": "/status/devops"}]`)

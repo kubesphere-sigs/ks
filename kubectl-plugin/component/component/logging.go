@@ -2,6 +2,7 @@ package component
 
 import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/utils/helm"
 )
 
 // Logging return the struct of Logging
@@ -38,7 +39,13 @@ func (l *Logging) Uninstall() error {
 	if err := common.ExecCommand("kubectl", "delete", "deployments.apps", "-n", "kubesphere-logging-system", "fluentbit-operator"); err != nil {
 		return err
 	}
-	if err := common.ExecCommand("helm", "uninstall", "elasticsearch-logging", "--namespace", "kubesphere-logging-system"); err != nil {
+
+	uninstallRequest := helm.UninstallRequest{
+		ComponentName: "elasticsearch-logging",
+		Namespace:     "kubesphere-logging-system",
+		KubeConfig:    "/root/.kube/config",
+	}
+	if err := uninstallRequest.Do(); err != nil {
 		return err
 	}
 

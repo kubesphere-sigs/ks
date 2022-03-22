@@ -1,6 +1,9 @@
 package component
 
-import "github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+import (
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
+	"github.com/kubesphere-sigs/ks/utils/helm"
+)
 
 // Auditing return the struct of Auditing
 type Auditing struct {
@@ -13,7 +16,12 @@ func (e *Auditing) GetName() string {
 
 // Uninstall uninstall Auditing
 func (e *Auditing) Uninstall() error {
-	if err := common.ExecCommand("helm", "uninstall", "kube-auditing", "-n", "kubesphere-monitoring-system"); err != nil {
+	uninstallRequest := helm.UninstallRequest{
+		ComponentName: "kube-auditing",
+		Namespace:     "kubesphere-monitoring-system",
+		KubeConfig:    "/root/.kube/config",
+	}
+	if err := uninstallRequest.Do(); err != nil {
 		return err
 	}
 	if err := common.ExecCommand("kubectl", "delete", "crd", "awh"); err != nil {

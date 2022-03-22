@@ -4,7 +4,7 @@ package common
 func GetPluginAbleComponents() []string {
 	return []string{
 		"devops", "alerting", "auditing", "events", "logging", "metrics_server", "networkpolicy",
-		"notification", "openpitrix", "servicemesh",
+		"openpitrix", "servicemesh",
 	}
 }
 

@@ -16,13 +16,13 @@ import (
 func NewComponentUninstallCmd() (cmd *cobra.Command) {
 	opt := &Option{}
 	cmd = &cobra.Command{
-		Use:     "uninstall",
-		Short:   "Uninstall Component Of KubeSphere",
+		Use:   "uninstall",
+		Short: "Uninstall Component Of KubeSphere",
 		Example: `You can uninstall a single component with name via: ks com uninstall devops
 Or it's possible to uninstall all components via: ks com uninstall all`,
-		PreRunE: opt.uninstallPreRunE,
+		PreRunE:           opt.uninstallPreRunE,
 		ValidArgsFunction: common.PluginAbleComponentsCompletion(),
-		RunE:    opt.uninstallRunE,
+		RunE:              opt.uninstallRunE,
 	}
 
 	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
