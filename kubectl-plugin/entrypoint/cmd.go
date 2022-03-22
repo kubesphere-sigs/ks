@@ -2,6 +2,7 @@ package entrypoint
 
 import (
 	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/app"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/auth"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/component"
@@ -68,6 +69,7 @@ See also https://github.com/kubesphere/kubesphere`,
 		install.NewInstallCmd(),
 		config.NewConfigRootCmd(client),
 		source2image.NewS2ICmd(client),
+		app.NewAppCmd(client, clientSet),
 		hdcmd.NewInitCommand(map[string]string{
 			"kubectl": "kubectl",
 		}, map[string]string{

@@ -21,6 +21,17 @@ type FreePort struct {
 	defaultPorts []int
 }
 
+// NewFreePort creates a FreePort with a specific extra count of ports
+func NewFreePort(extraCount int) *FreePort {
+	initPorts := []int{30880, 30180}
+	if extraCount > 0 {
+		for i := 0; i < extraCount; i++ {
+			initPorts = append(initPorts, initPorts[len(initPorts)-1]+1)
+		}
+	}
+	return &FreePort{defaultPorts: initPorts}
+}
+
 // FindFreePortsOfKubeSphere returns the free ports of KubeSphere
 // The order of the ports is: console, jenkins
 func (f *FreePort) FindFreePortsOfKubeSphere() ([]int, error) {
