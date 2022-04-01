@@ -15,12 +15,12 @@ func Test_getApplication(t *testing.T) {
 	defaultApp.SetAPIVersion("gitops.kubesphere.io/v1alpha1")
 	defaultApp.SetNamespace("ns")
 	defaultApp.SetName("fake")
-	_ = unstructured.SetNestedField(defaultApp.Object, "http://git.com", "spec", "argoApp", "source", "repoURL")
-	_ = unstructured.SetNestedField(defaultApp.Object, "master", "spec", "argoApp", "source", "targetRevision")
-	_ = unstructured.SetNestedField(defaultApp.Object, "current", "spec", "argoApp", "source", "path")
+	_ = unstructured.SetNestedField(defaultApp.Object, "http://git.com", "spec", "argoApp", "spec", "source", "repoURL")
+	_ = unstructured.SetNestedField(defaultApp.Object, "master", "spec", "argoApp", "spec", "source", "targetRevision")
+	_ = unstructured.SetNestedField(defaultApp.Object, "current", "spec", "argoApp", "spec", "source", "path")
 
 	invalidApp := defaultApp.DeepCopy()
-	_ = unstructured.SetNestedField(invalidApp.Object, "", "spec", "argoApp", "source", "repoURL")
+	_ = unstructured.SetNestedField(invalidApp.Object, "", "spec", "argoApp", "spec", "source", "repoURL")
 
 	scheme := runtime.NewScheme()
 

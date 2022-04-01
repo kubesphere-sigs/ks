@@ -178,9 +178,9 @@ func getApplication(name, namespace string, client dynamic.Interface) (app *appl
 		return
 	}
 
-	gitRepo, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "source", "repoURL")
-	branch, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "source", "targetRevision")
-	directory, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "source", "path")
+	gitRepo, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "spec", "source", "repoURL")
+	branch, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "spec", "source", "targetRevision")
+	directory, _, _ := unstructured.NestedString(unstructedObject.Object, "spec", "argoApp", "spec", "source", "path")
 
 	app = &application{
 		namespace: namespace,
