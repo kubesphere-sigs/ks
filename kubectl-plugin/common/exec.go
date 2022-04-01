@@ -12,6 +12,7 @@ func ExecCommand(name string, arg ...string) error {
 	return ExecCommandInDirectory(name, "", arg...)
 }
 
+// ExecCommandInDirectory runs a command in a particular directory
 func ExecCommandInDirectory(name, dir string, arg ...string) (err error) {
 	command := exec.Command(name, arg...)
 	command.Dir = dir
