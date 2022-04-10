@@ -76,7 +76,7 @@ func (o *kkOption) versionCheck() (err error) {
 		}
 	} else if !isNotReleaseVersion(o.version) && o.version != types.KsVersion {
 		switch o.version {
-		case types.KsVersion, "v3.0.0":
+		case types.KsVersion, "v3.0.0", "v3.2.0":
 		default:
 			err = fmt.Errorf("not support version: %s", o.version)
 		}
