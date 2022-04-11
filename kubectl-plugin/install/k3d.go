@@ -7,6 +7,8 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"runtime"
 )
@@ -17,7 +19,15 @@ func newInstallK3DCmd() (cmd *cobra.Command) {
 		Use:   "k3d",
 		Short: "Install KubeSphere with k3d",
 		Long: `Install KubeSphere with k3d
-You can get more details from https://github.com/rancher/k3d/`,
+You can get more details from https://github.com/rancher/k3d/
+
+
+[plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+    endpoint = ["http://k3d-registry:5000"]
+
+cat /var/lib/rancher/k3s/agent/etc/containerd/config.toml.tmpl
+`,
 		PreRunE:  opt.preRunE,
 		RunE:     opt.runE,
 		PostRunE: opt.postRunE,
@@ -123,15 +133,43 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		freePortList = append(freePortList, "-p", fmt.Sprintf(`%d:%d@%s`, port, port, agentPort))
 	}
 
+	cfgFile := getRegistryConfigFile(o.registry)
+
 	k3dArgs := []string{"cluster", "create",
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
 		"--image", o.image,
 		"--registry-use", o.registry,
+		"--registry-config", cfgFile,
 		o.name}
 	k3dArgs = append(k3dArgs, freePortList...)
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
+}
+
+func getRegistryConfigFile(registry string) (targetFile string) {
+	data := []byte(getRegistryConfig(registry))
+	targetFile = os.ExpandEnv("$HOME/.registry.yaml")
+	_ = ioutil.WriteFile(targetFile, data, 0644)
+	return
+}
+
+func getRegistryConfig(registry string) string {
+	return `mirrors:
+  docker.io:
+    endpoint:
+    - http://k3d-registry:5000
+  ghcr.io:
+    endpoint:
+    - http://k3d-registry:5000
+  k3d-registry:5000:
+    endpoint:
+    - http://k3d-registry:5000
+  k3d-registry:36722:
+    endpoint:
+    - http://k3d-registry:5000
+configs: {}
+auths: {}`
 }
 
 //getAgentPort get the agent port string via local command `k3d version`
