@@ -144,9 +144,12 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		"--agents", fmt.Sprintf("%d", o.agents),
 		"--servers", fmt.Sprintf("%d", o.servers),
 		"--image", o.image,
-		"--registry-use", o.registry,
 		"--registry-config", cfgFile,
 		o.name}
+	for reg := range registryMap {
+		k3dArgs = append(k3dArgs, "--registry-use", reg)
+	}
+
 	k3dArgs = append(k3dArgs, freePortList...)
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
