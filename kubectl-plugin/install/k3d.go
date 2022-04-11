@@ -1,6 +1,7 @@
 package install
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"text/template"
 )
 
 func newInstallK3DCmd() (cmd *cobra.Command) {
@@ -27,6 +29,9 @@ You can get more details from https://github.com/rancher/k3d/
     endpoint = ["http://k3d-registry:5000"]
 
 cat /var/lib/rancher/k3s/agent/etc/containerd/config.toml.tmpl
+
+
+quay.io
 `,
 		PreRunE:  opt.preRunE,
 		RunE:     opt.runE,
@@ -115,8 +120,8 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	// always to create a registry to make sure it's exist
-	_ = common.ExecCommand("k3d", "registry", "create", o.registry)
+	// always to create registries to make sure they are exist
+	registryMap := createRegistries(o.registry)
 
 	if o.reInstall {
 		_ = common.ExecCommand("k3d", "cluster", "delete", o.name)
@@ -133,7 +138,7 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		freePortList = append(freePortList, "-p", fmt.Sprintf(`%d:%d@%s`, port, port, agentPort))
 	}
 
-	cfgFile := getRegistryConfigFile(o.registry)
+	cfgFile := getRegistryConfigFile(registryMap)
 
 	k3dArgs := []string{"cluster", "create",
 		"--agents", fmt.Sprintf("%d", o.agents),
@@ -147,29 +152,53 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-func getRegistryConfigFile(registry string) (targetFile string) {
-	data := []byte(getRegistryConfig(registry))
+func getRegistryConfigFile(regMap map[string]string) (targetFile string) {
+	data := []byte(getRegistryConfig(regMap))
 	targetFile = os.ExpandEnv("$HOME/.registry.yaml")
 	_ = ioutil.WriteFile(targetFile, data, 0644)
 	return
 }
 
-func getRegistryConfig(registry string) string {
-	return `mirrors:
-  docker.io:
+func getRegistryConfig(regMap map[string]string) string {
+	tpl, err := template.New("mirror").Parse(`mirrors:
+{{- range $key, $value := .}}
+  {{$value}}:
     endpoint:
-    - http://k3d-registry:5000
-  ghcr.io:
+    - http://k3d-{{$key}}:5000
+  k3d-{{$key}}:5000:
     endpoint:
-    - http://k3d-registry:5000
-  k3d-registry:5000:
-    endpoint:
-    - http://k3d-registry:5000
-  k3d-registry:36722:
-    endpoint:
-    - http://k3d-registry:5000
+    - http://k3d-{{$key}}:5000
+{{- end}}
 configs: {}
-auths: {}`
+auths: {}`)
+	if err != nil {
+		return ""
+	}
+	buf := bytes.NewBuffer([]byte{})
+	if err = tpl.Execute(buf, regMap); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
+func createRegistries(prefix string) (regMap map[string]string) {
+	regMap = make(map[string]string, 3)
+	regMap[createRegistry(prefix, "")] = "docker.io"
+	regMap[createRegistry(prefix, "ghcr")] = "ghcr.io"
+	regMap[createRegistry(prefix, "quay")] = "quay.io"
+	return
+}
+
+func createRegistry(prefix, name string) (alias string) {
+	alias = prefix
+	tagPrefix := ""
+	if name != "" {
+		alias = alias + "-" + name
+		tagPrefix = name + "-"
+	}
+	_ = common.ExecCommand("k3d", "registry", "create", alias, "--image",
+		fmt.Sprintf("ghcr.io/kubesphere-sigs/registry:%s2", tagPrefix))
+	return
 }
 
 //getAgentPort get the agent port string via local command `k3d version`
