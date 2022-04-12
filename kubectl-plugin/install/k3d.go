@@ -21,18 +21,7 @@ func newInstallK3DCmd() (cmd *cobra.Command) {
 		Use:   "k3d",
 		Short: "Install KubeSphere with k3d",
 		Long: `Install KubeSphere with k3d
-You can get more details from https://github.com/rancher/k3d/
-
-
-[plugins."io.containerd.grpc.v1.cri".registry.mirrors]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-    endpoint = ["http://k3d-registry:5000"]
-
-cat /var/lib/rancher/k3s/agent/etc/containerd/config.toml.tmpl
-
-
-quay.io
-`,
+You can get more details from https://github.com/rancher/k3d/`,
 		PreRunE:  opt.preRunE,
 		RunE:     opt.runE,
 		PostRunE: opt.postRunE,
@@ -67,6 +56,7 @@ quay.io
 		"The components that you want to Enabled with KubeSphere")
 	flags.BoolVarP(&opt.fetch, "fetch", "", true,
 		"Indicate if fetch the latest config of tools")
+	flags.BoolVarP(&opt.printCommand, "print-cmd", "", false, "Print the command which is going to execute")
 
 	// completion for flags
 	_ = cmd.RegisterFlagCompletionFunc("image", common.ArrayCompletion("rancher/k3s:v1.19.14-k3s1",
@@ -87,6 +77,7 @@ type k3dOption struct {
 	registry       string
 	reInstall      bool
 	extraFreePorts int
+	printCommand   bool
 }
 
 func (o *k3dOption) preRunE(cmd *cobra.Command, args []string) (err error) {
@@ -151,6 +142,9 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	k3dArgs = append(k3dArgs, freePortList...)
+	if o.printCommand {
+		fmt.Println("k3d", k3dArgs)
+	}
 	err = common.ExecCommand("k3d", k3dArgs...)
 	return
 }

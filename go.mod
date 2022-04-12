@@ -13,7 +13,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jenkins-x/go-scm v1.11.1
-	github.com/linuxsuren/cobra-extension v0.0.11
+	github.com/linuxsuren/cobra-extension v0.0.13
 	github.com/linuxsuren/go-cli-alias v0.0.10
 	github.com/linuxsuren/http-downloader v0.0.35
 	github.com/mitchellh/copystructure v1.1.1 // indirect

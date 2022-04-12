@@ -82,3 +82,10 @@ auths: {}`,
 		})
 	}
 }
+
+func Test_newInstallK3DCmd(t *testing.T) {
+	cmd := newInstallK3DCmd()
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "k3d", cmd.Use)
+
+}

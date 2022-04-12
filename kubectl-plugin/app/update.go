@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -63,9 +62,9 @@ func newUpdateCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cm
 	flags.StringVarP(&opt.secretNamespace, "secret-namespace", "", "",
 		"The username of the git provider")
 
-	cmd.MarkFlagRequired("app-name")
-	cmd.MarkFlagRequired("app-namespace")
-	cmd.Flags().MarkHidden("mode")
+	_ = cmd.MarkFlagRequired("app-name")
+	_ = cmd.MarkFlagRequired("app-namespace")
+	_ = cmd.Flags().MarkHidden("mode")
 	return
 }
 
