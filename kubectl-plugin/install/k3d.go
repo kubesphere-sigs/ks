@@ -137,6 +137,7 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 		"--image", o.image,
 		"--registry-config", cfgFile,
 		o.name}
+
 	for reg := range registryMap {
 		k3dArgs = append(k3dArgs, "--registry-use", reg)
 	}
@@ -162,9 +163,6 @@ func getRegistryConfig(regMap map[string]string) string {
   {{$value}}:
     endpoint:
     - http://k3d-{{$key}}:5000
-  k3d-{{$key}}:5000:
-    endpoint:
-    - http://k3d-{{$key}}:5000
 {{- end}}
 configs: {}
 auths: {}`)
@@ -180,7 +178,8 @@ auths: {}`)
 
 func createRegistries(prefix string) (regMap map[string]string) {
 	regMap = make(map[string]string, 3)
-	regMap[createRegistry(prefix, "")] = "docker.io"
+	regMap[createRegistry(prefix, "local")] = "localhost:5000"
+	regMap[createRegistry(prefix, "docker")] = "docker.io"
 	regMap[createRegistry(prefix, "ghcr")] = "ghcr.io"
 	regMap[createRegistry(prefix, "quay")] = "quay.io"
 	return

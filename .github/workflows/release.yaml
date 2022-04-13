@@ -49,13 +49,16 @@ jobs:
         docker push surenpi/ks-tool:latest
     - name: Build Registry Images
       run: |
-        docker build build/registry -t ghcr.io/kubesphere-sigs/registry:2 \
+        docker build build/registry -t ghcr.io/kubesphere-sigs/registry:local-2 \
+          --label org.opencontainers.image.source=https://github.com/kubesphere-sigs/ks
+        docker build build/registry --build-arg REMOTE_URL=https://registry-1.docker.io -t ghcr.io/kubesphere-sigs/registry:docker-2 \
           --label org.opencontainers.image.source=https://github.com/kubesphere-sigs/ks
         docker build build/registry --build-arg REMOTE_URL=https://quay.io -t ghcr.io/kubesphere-sigs/registry:quay-2 \
           --label org.opencontainers.image.source=https://github.com/kubesphere-sigs/ks
         docker build build/registry --build-arg REMOTE_URL=https://ghcr.io -t ghcr.io/kubesphere-sigs/registry:ghcr-2 \
           --label org.opencontainers.image.source=https://github.com/kubesphere-sigs/ks
 
-        docker push ghcr.io/kubesphere-sigs/registry:2
+        docker push ghcr.io/kubesphere-sigs/registry:local-2
+        docker push ghcr.io/kubesphere-sigs/registry:docker-2
         docker push ghcr.io/kubesphere-sigs/registry:quay-2
         docker push ghcr.io/kubesphere-sigs/registry:ghcr-2
