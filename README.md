@@ -11,8 +11,6 @@
 
 # Get started
 
-Install it via: `brew install linuxsuren/linuxsuren/ks`
-
 Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
 ```
