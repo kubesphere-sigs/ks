@@ -377,8 +377,9 @@ github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhn
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/linuxsuren/cobra-extension v0.0.6/go.mod h1:qcEJv7BbL0UpK6MbrTESP/nKf1+z1wQdMAnE1NBl3QQ=
 github.com/linuxsuren/cobra-extension v0.0.10/go.mod h1:nDsXgvm0lSWVV+byAEfwhIGFDoIp0Sq9wkfNUDBp5do=
-github.com/linuxsuren/cobra-extension v0.0.11 h1:Z2Sx8dBPvJK3s3loguFXJtrtiwh1Od3O2xoB6vCOl5M=
 github.com/linuxsuren/cobra-extension v0.0.11/go.mod h1:gn69Dtq72JCGZbjW46c14MoE0z/BtDAQWV9Jvr9KczY=
+github.com/linuxsuren/cobra-extension v0.0.13 h1:nqqvZMeyfhxSHXeCjejg4yR9kRFP+0R79R8lZwmpevs=
+github.com/linuxsuren/cobra-extension v0.0.13/go.mod h1:gn69Dtq72JCGZbjW46c14MoE0z/BtDAQWV9Jvr9KczY=
 github.com/linuxsuren/go-cli-alias v0.0.10 h1:qzaz9RiTVKIWryxw3Hx0q//wjt+VIP+BElgRlSWrDhU=
 github.com/linuxsuren/go-cli-alias v0.0.10/go.mod h1:g+k4hlbE/lilrEq/5emhMznb9my/lOXSH++/mPli6gw=
 github.com/linuxsuren/http-downloader v0.0.2-0.20201207132639-19888a6beaec/go.mod h1:zRZY9FCDBuYNDxbI2Ny5suasZsMk7J6q9ecQ3V3PIqI=
