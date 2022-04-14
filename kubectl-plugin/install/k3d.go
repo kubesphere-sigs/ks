@@ -146,7 +146,9 @@ func (o *k3dOption) runE(cmd *cobra.Command, args []string) (err error) {
 	if o.printCommand {
 		fmt.Println("k3d", k3dArgs)
 	}
-	err = common.ExecCommand("k3d", k3dArgs...)
+	if err = common.ExecCommand("k3d", k3dArgs...); err == nil {
+		cmd.Println("Now, you can visit your cluster with these ports:", ports)
+	}
 	return
 }
 
