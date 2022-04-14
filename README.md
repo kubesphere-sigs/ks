@@ -16,7 +16,8 @@ Install it via: `brew install linuxsuren/linuxsuren/ks`
 Install it via [hd](https://github.com/linuxsuren/http-downloader):
 
 ```
-brew install linuxsuren/linuxsuren/hd
+curl -L https://github.com/linuxsuren/http-downloader/releases/latest/download/hd-linux-amd64.tar.gz | tar xzv
+sudo mv hd /usr/bin/hd
 hd install kubesphere-sigs/ks
 ```
 
