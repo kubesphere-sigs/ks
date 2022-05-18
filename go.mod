@@ -11,9 +11,10 @@ require (
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1
 	github.com/go-git/go-git/v5 v5.4.2
+	github.com/google/go-github/v29 v29.0.3
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jenkins-x/go-scm v1.11.1
-	github.com/linuxsuren/cobra-extension v0.0.13
+	github.com/linuxsuren/cobra-extension v0.0.15
 	github.com/linuxsuren/go-cli-alias v0.0.10
 	github.com/linuxsuren/http-downloader v0.0.35
 	github.com/mitchellh/copystructure v1.1.1 // indirect

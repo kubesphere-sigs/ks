@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Masterminds/semver"
+	"github.com/google/go-github/v29/github"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	gh "github.com/linuxsuren/cobra-extension/github"
 	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -64,6 +66,22 @@ You can get more details from https://github.com/rancher/k3d/`,
 		"rancher/k3s:v1.21.4-k3s1"))
 	_ = cmd.RegisterFlagCompletionFunc("components", common.PluginAbleComponentsCompletion())
 	_ = cmd.RegisterFlagCompletionFunc("nightly", common.ArrayCompletion("latest"))
+	_ = cmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return getKubeSphereVersionList(), cobra.ShellCompDirectiveNoFileComp
+	})
+	return
+}
+
+func getKubeSphereVersionList() (tags []string) {
+	ghClient := &gh.ReleaseClient{
+		Client: github.NewClient(nil),
+	}
+
+	if tagList, err := ghClient.GetTagList("kubesphere", "kubesphere", 6); err == nil && tagList != nil {
+		for i := range tagList {
+			tags = append(tags, tagList[i].Name)
+		}
+	}
 	return
 }
 
