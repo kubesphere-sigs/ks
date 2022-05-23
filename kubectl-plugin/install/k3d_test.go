@@ -1,6 +1,7 @@
 package install
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -88,4 +89,46 @@ func Test_newInstallK3DCmd(t *testing.T) {
 	assert.NotNil(t, cmd)
 	assert.Equal(t, "k3d", cmd.Use)
 
+}
+
+func Test_isBiggerThan(t *testing.T) {
+	type args struct {
+		current string
+		target  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr assert.ErrorAssertionFunc
+	}{{
+		name: "v1.24.0 > v1.23.0",
+		args: args{
+			current: "v1.24.0",
+			target:  "v1.23.0",
+		},
+		want: true,
+		wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			return false
+		},
+	}, {
+		name: "v1.24.0 < v1.23.0",
+		args: args{
+			current: "v1.23.0",
+			target:  "v1.24.0",
+		},
+		want: false,
+		wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			return false
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isBiggerThan(tt.args.current, tt.args.target)
+			if !tt.wantErr(t, err, fmt.Sprintf("isBiggerThan(%v, %v)", tt.args.current, tt.args.target)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "isBiggerThan(%v, %v)", tt.args.current, tt.args.target)
+		})
+	}
 }
