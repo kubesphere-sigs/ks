@@ -100,6 +100,14 @@ func (o *kkOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 		"socat":     "socat",
 		"conntrack": "conntrack",
 	}
+
+	// v1.24.0 does not support docker anymore
+	if ok, _ := isBiggerThan(o.kubernetesVersion, "v1.24.0"); ok {
+		if o.container == "docker" {
+			o.container = "containerd"
+		}
+	}
+
 	switch o.container {
 	case "docker":
 		dep["docker"] = "docker"
@@ -187,7 +195,8 @@ func (o *kkOption) runE(cmd *cobra.Command, args []string) (err error) {
 		Env: []string{fmt.Sprintf("KKZONE=%s", o.zone)},
 	}
 	if err = commander.execCommand("kk", "create", "cluster", "--filename", configFile,
-		"--with-kubesphere", o.version, "--with-kubernetes", o.kubernetesVersion, "--yes"); err != nil {
+		"--with-kubesphere", o.version, "--with-kubernetes", o.kubernetesVersion,
+		"--container-manager", o.container, "--yes"); err != nil {
 		return
 	}
 

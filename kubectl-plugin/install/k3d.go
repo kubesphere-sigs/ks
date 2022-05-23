@@ -237,12 +237,11 @@ func getAgentPort() (string, error) {
 	return "agent[0]", nil
 }
 
-//isGreaterThanV5 check if k3d version is greater than v5
-func isGreaterThanV5(version string) (bool, error) {
-	c, _ := semver.NewConstraint(">= 5.0.0")
+func isBiggerThan(current, target string) (bool, error) {
+	c, _ := semver.NewConstraint(fmt.Sprintf(">= %s", current))
 	reg := regexp.MustCompile(`(\w+\.){2}\w+`)
 	if reg != nil {
-		raw := reg.FindAllStringSubmatch(version, 1)
+		raw := reg.FindAllStringSubmatch(target, 1)
 		v, err := semver.NewVersion(raw[0][0])
 		if err != nil {
 			return false, fmt.Errorf("Error parsing version: %s", err.Error())
@@ -250,6 +249,11 @@ func isGreaterThanV5(version string) (bool, error) {
 		return c.Check(v), nil
 	}
 	return false, nil
+}
+
+//isGreaterThanV5 check if k3d version is greater than v5
+func isGreaterThanV5(version string) (bool, error) {
+	return isBiggerThan(version, "5.0.0")
 }
 
 func (o *k3dOption) postRunE(cmd *cobra.Command, args []string) (err error) {
