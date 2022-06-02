@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"runtime"
+	"strings"
 	"text/template"
 )
 
@@ -217,14 +217,14 @@ func createRegistry(prefix, name string) (alias string) {
 	return
 }
 
-//getAgentPort get the agent port string via local command `k3d version`
+// getAgentPort get the agent port string via local command `k3d version`
 func getAgentPort() (string, error) {
 	out, err := common.ExecCommandGetOutput("k3d", "version")
 	if err != nil {
 		return "", err
 	}
 
-	isNewVersion, err := isGreaterThanV5(out)
+	isNewVersion, err := isGreaterThanV5(parseK3dVersion(out))
 	if err != nil {
 		return "", err
 	}
@@ -237,18 +237,25 @@ func getAgentPort() (string, error) {
 	return "agent[0]", nil
 }
 
+func parseK3dVersion(versionOutput string) string {
+	lines := strings.Split(versionOutput, "\n")
+	for i := range lines {
+		line := lines[i]
+
+		if strings.HasPrefix(line, "k3d version ") {
+			return strings.TrimPrefix(line, "k3d version ")
+		}
+	}
+	return ""
+}
+
 func isBiggerThan(current, target string) (bool, error) {
 	c, _ := semver.NewConstraint(fmt.Sprintf(">= %s", current))
-	reg := regexp.MustCompile(`(\w+\.){2}\w+`)
-	if reg != nil {
-		raw := reg.FindAllStringSubmatch(target, 1)
-		v, err := semver.NewVersion(raw[0][0])
-		if err != nil {
-			return false, fmt.Errorf("Error parsing version: %s", err.Error())
-		}
-		return c.Check(v), nil
+	v, err := semver.NewVersion(target)
+	if err != nil {
+		return false, fmt.Errorf("error parsing version: %s", err.Error())
 	}
-	return false, nil
+	return c.Check(v), nil
 }
 
 //isGreaterThanV5 check if k3d version is greater than v5

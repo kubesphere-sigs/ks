@@ -132,3 +132,24 @@ func Test_isBiggerThan(t *testing.T) {
 		})
 	}
 }
+
+func Test_parseK3dVersion(t *testing.T) {
+	type args struct {
+		versionOutput string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{{
+		name: "normal",
+		args: args{versionOutput: `k3d version v5.4.1
+k3s version v1.22.7-k3s1 (default)`},
+		want: "v5.4.1",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, parseK3dVersion(tt.args.versionOutput), "parseK3dVersion(%v)", tt.args.versionOutput)
+		})
+	}
+}
