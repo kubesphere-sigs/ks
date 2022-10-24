@@ -9,6 +9,8 @@
 
 `ks` is a tool which makes it be easy to work with [KubeSphere](https://github.com/kubesphere/kubesphere).
 
+[![asciicast](https://asciinema.org/a/531764.svg)](https://asciinema.org/a/531764)
+
 # Get started
 
 Install it via [hd](https://github.com/linuxsuren/http-downloader):
