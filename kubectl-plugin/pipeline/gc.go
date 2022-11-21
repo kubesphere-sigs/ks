@@ -77,7 +77,7 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 
 	items := pipelineList.Items
 	toDelete := len(items) - o.maxCount
-	if toDelete < o.maxCount {
+	if toDelete < 1 {
 		return
 	}
 
