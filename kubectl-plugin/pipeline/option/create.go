@@ -19,6 +19,15 @@ import (
 	"strings"
 )
 
+const (
+	PipelinerunOwnerLabelKey = "devops.kubesphere.io/pipeline"
+
+	PipelinerunPhaseRunning   = "Running"
+	PipelinerunPhaseSucceeded = "Succeeded"
+	PipelinerunPhaseCancelled = "Cancelled"
+	PipelinerunPhaseFailed    = "Failed"
+)
+
 // PipelineCreateOption is the option for creating a pipeline
 type PipelineCreateOption struct {
 	Workspace   string
@@ -232,6 +241,10 @@ func (o *PipelineCreateOption) GetUnstructuredListInNamespace(namespace string, 
 	ctx := context.TODO()
 	wsList, err = o.Client.Resource(schemaType).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	return
+}
+
+func (o *PipelineCreateOption) GetUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
+	return o.getUnstructuredList(schemaType)
 }
 
 func (o *PipelineCreateOption) getUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
