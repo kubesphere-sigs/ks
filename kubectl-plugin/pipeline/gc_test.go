@@ -1,6 +1,8 @@
 package pipeline
 
 import (
+	"fmt"
+	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"reflect"
 	"testing"
 	"time"
@@ -123,4 +125,79 @@ func Test_getCompletionTimeFromObject(t *testing.T) {
 			}
 		})
 	}
+}
+
+// get pipelinerunList need to delete
+func TestNeedToDelete(t *testing.T) {
+	pipeline := &gcPipeline{
+		option:          nil,
+		name:            "test-pipeline",
+		namespace:       "test-ns",
+		daysToKeep:      7,
+		numToKeep:       5,
+		pipelinerunList: nil,
+	}
+	now := time.Now()
+
+	// case1: days_to_keep
+	pipeline.pipelinerunList = make([]*gcPipelinerun, 4)
+	pipeline.daysToKeep = 2
+	pipeline.pipelinerunList[0] = &gcPipelinerun{
+		name:           "run-0",
+		phase:          option.PipelinerunPhaseSucceeded,
+		completionTime: now.AddDate(0, 0, -2),
+	}
+	pipeline.pipelinerunList[1] = &gcPipelinerun{
+		name:           "run-1",
+		phase:          option.PipelinerunPhaseSucceeded,
+		completionTime: now.AddDate(0, 0, -2),
+	}
+	pipeline.pipelinerunList[2] = &gcPipelinerun{
+		name:           "run-2",
+		phase:          option.PipelinerunPhaseSucceeded,
+		completionTime: now.AddDate(0, 0, -1),
+	}
+	pipeline.pipelinerunList[3] = &gcPipelinerun{
+		name:           "run-3",
+		phase:          option.PipelinerunPhaseSucceeded,
+		completionTime: now.AddDate(0, 0, -1),
+	}
+	pipeline.pipelinerunList[1].completionTime.Add(10 * time.Minute)
+	deletingList := pipeline.needToDelete()
+	assert.EqualValues(t, []string{"run-0", "run-1"}, deletingList)
+
+	// case2: num_to_keep
+	pipeline.numToKeep = 1
+	deletingList = pipeline.needToDelete()
+	assert.EqualValues(t, []string{"run-0", "run-1", "run-2"}, deletingList)
+
+	// case3: complex with un-completion and lastStable and lastSuccessful
+	// pipelinerunList: {
+	//   run0:-7/success, run1:-6/success, run2:-5/running, run3:-4/success
+	//   run4:-3/failed, run5:-2/failed, run6:-1/failed, run7:0/running
+	// }
+	pipeline.pipelinerunList = make([]*gcPipelinerun, 8)
+	pipeline.daysToKeep = 7
+	pipeline.numToKeep = 5
+	for i := 0; i < 8; i++ {
+		pipeline.pipelinerunList[i] = &gcPipelinerun{
+			name:           fmt.Sprintf("run-%d", i),
+			phase:          option.PipelinerunPhaseSucceeded,
+			completionTime: now.AddDate(0, 0, -7+i),
+		}
+	}
+	ZeroTime, _ := time.ParseInLocation(time.RFC3339, "0000-00-00T00:00:00Z00:00", time.Local)
+	pipeline.pipelinerunList[2].completionTime = ZeroTime // setup un-completion
+	pipeline.pipelinerunList[2].phase = option.PipelinerunPhaseRunning
+	pipeline.pipelinerunList[7].completionTime = ZeroTime // setup un-completion
+	pipeline.pipelinerunList[7].phase = option.PipelinerunPhaseRunning
+	pipeline.pipelinerunList[4].phase = option.PipelinerunPhaseFailed // setup Phase to failed
+	pipeline.pipelinerunList[5].phase = option.PipelinerunPhaseFailed // setup Phase to failed
+	pipeline.pipelinerunList[6].phase = option.PipelinerunPhaseFailed // setup Phase to failed
+	deletingList = pipeline.needToDelete()
+	assert.EqualValues(t, []string{"run-0", "run-1", "run-4"}, deletingList)
+
+	pipeline.daysToKeep = 2
+	deletingList = pipeline.needToDelete()
+	assert.EqualValues(t, []string{"run-0", "run-1", "run-4", "run-5"}, deletingList)
 }

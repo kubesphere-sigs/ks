@@ -187,7 +187,7 @@ func (o *dashboardOption) listPipelineRuns(index int, ns string, secondaryText s
 func (o *dashboardOption) getTable(ns, kind string, table *ui.ResourceTable) (err error) {
 	var labelSelector string
 	if kind == "pipelineruns" {
-		labelSelector = fmt.Sprintf("devops.kubesphere.io/pipeline=%s", o.pipeline)
+		labelSelector = fmt.Sprintf("%s=%s", option.PipelinerunOwnerLabelKey, o.pipeline)
 	}
 	table.Load(ns, kind, labelSelector)
 	return
