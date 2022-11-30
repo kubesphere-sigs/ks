@@ -145,7 +145,7 @@ func TestNeedToDelete(t *testing.T) {
 	pipeline.pipelinerunList[0] = &gcPipelinerun{
 		name:           "run-0",
 		phase:          option.PipelinerunPhaseSucceeded,
-		completionTime: now.AddDate(0, 0, -2),
+		completionTime: now.AddDate(0, 0, -3),
 	}
 	pipeline.pipelinerunList[1] = &gcPipelinerun{
 		name:           "run-1",
@@ -155,14 +155,14 @@ func TestNeedToDelete(t *testing.T) {
 	pipeline.pipelinerunList[2] = &gcPipelinerun{
 		name:           "run-2",
 		phase:          option.PipelinerunPhaseSucceeded,
-		completionTime: now.AddDate(0, 0, -1),
+		completionTime: now.AddDate(0, 0, -2),
 	}
 	pipeline.pipelinerunList[3] = &gcPipelinerun{
 		name:           "run-3",
 		phase:          option.PipelinerunPhaseSucceeded,
 		completionTime: now.AddDate(0, 0, -1),
 	}
-	pipeline.pipelinerunList[1].completionTime.Add(10 * time.Minute)
+	pipeline.pipelinerunList[2].completionTime = pipeline.pipelinerunList[2].completionTime.Add(10 * time.Minute)
 	deletingList := pipeline.needToDelete()
 	assert.EqualValues(t, []string{"run-0", "run-1"}, deletingList)
 
