@@ -26,6 +26,9 @@ const (
 	PipelinerunPhaseSucceeded = "Succeeded"
 	PipelinerunPhaseCancelled = "Cancelled"
 	PipelinerunPhaseFailed    = "Failed"
+
+	NoScmPipelineType       = "pipeline"
+	MultiBranchPipelineType = "multi-branch-pipeline"
 )
 
 // PipelineCreateOption is the option for creating a pipeline

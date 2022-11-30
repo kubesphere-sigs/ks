@@ -216,6 +216,7 @@ type gcPipeline struct {
 
 	name      string
 	namespace string
+	pType string
 
 	daysToKeep int
 	numToKeep  int
@@ -264,6 +265,11 @@ func (p *gcPipeline) ascPipelinerun() {
 
 func (p *gcPipeline) clean() (err error) {
 	fmt.Printf("clean pipelinerun of pipeline: %s ..\n", p.name)
+	if p.pType != option.NoScmPipelineType {
+		fmt.Printf("the type of pipeline is %s, ignore.", p.pType)
+		return
+	}
+
 	if p.pipelinerunList == nil {
 		if err = p.getPipelinerun(); err != nil {
 			err = fmt.Errorf("failed to get pipelinerun, error: %+v", err)
@@ -322,30 +328,39 @@ func (p *gcPipeline) needToDelete() (deleting []string) {
 	return
 }
 
-func toPipeline(option *gcOption, u unstructured.Unstructured) (*gcPipeline, error) {
+func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, error) {
 	pipeline := &gcPipeline{
-		option:    option,
+		option:    gcOpt,
 		name:      u.GetName(),
 		namespace: u.GetNamespace(),
 	}
 
-	days, ok, err := unstructured.NestedString(u.Object, "spec", "pipeline", "discarder", "days_to_keep")
+	t, ok, err := unstructured.NestedString(u.Object, "spec", "type")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("filed days_to_keep not found of pipeline: %s", u.GetName())
+		return nil, fmt.Errorf("field type not found of pipeline: %s", u.GetName())
+	}
+	pipeline.pType = t
+
+	days, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "days_to_keep")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
 	}
 	if pipeline.daysToKeep, err = strconv.Atoi(days); err != nil {
 		return nil, err
 	}
 
-	num, ok, err := unstructured.NestedString(u.Object, "spec", "pipeline", "discarder", "num_to_keep")
+	num, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "num_to_keep")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("filed days_to_keep not found of pipeline: %s", u.GetName())
+		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
 	}
 	if pipeline.numToKeep, err = strconv.Atoi(num); err != nil {
 		return nil, err
