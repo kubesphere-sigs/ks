@@ -169,9 +169,8 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 
 func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 	// clean pipelinerun of pipeline with days_to_keep and num_to_keep
-	log.Infof("namespaces: %+v", o.namespaces)
 	for _, ns := range o.namespaces {
-		unList, err := o.GetUnstructuredList(types.GetPipelineSchema())
+		unList, err := o.GetUnstructuredListInNamespace(ns, types.GetPipelineSchema())
 		if err != nil {
 			cmd.PrintErrf("failed to get Pipeline in '%s', error: %+v\n", ns, err)
 			return err
