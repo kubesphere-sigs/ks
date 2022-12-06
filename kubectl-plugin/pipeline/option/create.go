@@ -248,10 +248,6 @@ func (o *PipelineCreateOption) GetUnstructuredListInNamespace(namespace string, 
 	return
 }
 
-func (o *PipelineCreateOption) GetUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
-	return o.getUnstructuredList(schemaType)
-}
-
 func (o *PipelineCreateOption) getUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
 	ctx := context.TODO()
 	wsList, err = o.Client.Resource(schemaType).List(ctx, metav1.ListOptions{})
