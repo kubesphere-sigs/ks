@@ -5,6 +5,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/rivo/tview"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"os"
@@ -19,12 +20,12 @@ type DevOpsProjectForm struct {
 }
 
 func init() {
-	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	file, err := os.OpenFile("pipeline.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.SetOutput(file)
+	log.SetOutput(io.MultiWriter(os.Stdout, file))
 }
 
 // NewProjectForm creates the form
