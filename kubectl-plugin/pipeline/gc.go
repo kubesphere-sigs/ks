@@ -343,8 +343,12 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		return nil, fmt.Errorf("field type not found of pipeline: %s", u.GetName())
 	}
 	pipeline.pType = t
+	contentKey := t
+	if t == option.MultiBranchPipelineType {
+		contentKey = "multi_branch_pipeline"
+	}
 
-	days, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "days_to_keep")
+	days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +359,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		return nil, err
 	}
 
-	num, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "num_to_keep")
+	num, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
 	if err != nil {
 		return nil, err
 	}
