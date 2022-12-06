@@ -220,7 +220,7 @@ type gcPipeline struct {
 
 	name      string
 	namespace string
-	pType string
+	pType     string
 
 	daysToKeep int
 	numToKeep  int
@@ -286,19 +286,19 @@ func (p *gcPipeline) clean() (err error) {
 	}
 
 	deletingPipelinerunList := p.needToDelete()
-	for _, runName := range deletingPipelinerunList {
-		log.Infof("delete pipelinerun: %s ..", runName)
+	for _, run := range deletingPipelinerunList {
+		log.Infof("delete pipelinerun: %s/%s ...", run.id, run.name)
 		if err = p.option.client.Resource(types.GetPipelineRunSchema()).Namespace(p.namespace).Delete(
-			context.TODO(), runName, metav1.DeleteOptions{}); err != nil {
-			log.Errorf("failed to delete PipelineRun: %s, error: %+v", runName, err)
+			context.TODO(), run.name, metav1.DeleteOptions{}); err != nil {
+			log.Errorf("failed to delete PipelineRun: %s, error: %+v", run.name, err)
 			return err
 		}
-		log.Infof("pipelinerun: %s deleted.", runName)
+		log.Infof("pipelinerun: %s deleted.", run.name)
 	}
 	return
 }
 
-func (p *gcPipeline) needToDelete() (deleting []string) {
+func (p *gcPipeline) needToDelete() (deleting []*gcPipelinerun) {
 	p.ascPipelinerun()
 
 	// get index of last_successful and last_stable pipelinerun
@@ -323,10 +323,10 @@ func (p *gcPipeline) needToDelete() (deleting []string) {
 				if i == lastSuccessfulIndex || i == lastStableIndex { // ignore to delete last-stable and last-successful pipelinerun
 					numLimitIndex = numLimitIndex + 1
 				} else {
-					deleting = append(deleting, pipelinerun.name)
+					deleting = append(deleting, pipelinerun)
 				}
 			} else if pipelinerun.isOverdue(durationToKeep) {
-				deleting = append(deleting, pipelinerun.name)
+				deleting = append(deleting, pipelinerun)
 			}
 		}
 	}
@@ -379,6 +379,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 }
 
 type gcPipelinerun struct {
+	id             string
 	name           string
 	phase          string
 	completionTime time.Time
@@ -400,8 +401,10 @@ func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
 	if !ok {
 		return nil, fmt.Errorf("the phase of pipelinerun: %s not found", u.GetName())
 	}
+	id := u.GetAnnotations()[option.PipelinerunIdAnnotationKey]
 
 	pipelinerun := &gcPipelinerun{
+		id:    id,
 		name:  u.GetName(),
 		phase: phase,
 	}
