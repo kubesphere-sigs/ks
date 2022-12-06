@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	PipelinerunOwnerLabelKey = "devops.kubesphere.io/pipeline"
+	PipelinerunOwnerLabelKey   = "devops.kubesphere.io/pipeline"
+	PipelinerunIdAnnotationKey = "devops.kubesphere.io/jenkins-pipelinerun-id"
 
 	PipelinerunPhaseRunning   = "Running"
 	PipelinerunPhaseSucceeded = "Succeeded"
