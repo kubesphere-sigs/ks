@@ -16,6 +16,7 @@ require (
 	github.com/linuxsuren/http-downloader v0.0.35
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/rivo/tview v0.0.0-20210923051754-2cb20002bc4c
+	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0

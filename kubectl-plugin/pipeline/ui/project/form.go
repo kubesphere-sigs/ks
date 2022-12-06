@@ -4,8 +4,11 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/rivo/tview"
+	log "github.com/sirupsen/logrus"
+	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"os"
 )
 
 // DevOpsProjectForm represents a form to create DevOps project
@@ -14,6 +17,15 @@ type DevOpsProjectForm struct {
 
 	eventConfirmCallback EventCallback
 	eventCancelCallback  EventCallback
+}
+
+func init() {
+	file, err := os.OpenFile("pipeline.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOutput(io.MultiWriter(os.Stdout, file))
 }
 
 // NewProjectForm creates the form
