@@ -11,6 +11,7 @@ import (
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -68,7 +69,7 @@ type gcOption struct {
 func (o *gcOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if len(o.namespaces) == 0 {
 		if err = o.getAllDevOpsNamespace(); err != nil {
-			fmt.Printf("failed to get all DevOps project namespace, error: %+v", err)
+			log.Errorf("failed to get all DevOps project namespace, error: %+v", err)
 		}
 	}
 	return
@@ -114,10 +115,10 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 			delErr := o.client.Resource(types.GetPipelineRunSchema()).Namespace(namespace).Delete(
 				context.TODO(), item.GetName(), metav1.DeleteOptions{})
 			if delErr != nil {
-				fmt.Printf("failed to delete PipelineRun %s/%s, error: %v\n", item.GetName(), namespace, delErr)
+				log.Errorf("failed to delete PipelineRun %s/%s, error: %v", item.GetName(), namespace, delErr)
 			} else {
 				toDelete--
-				fmt.Printf("ok to delete PipelineRun %s/%s\n", item.GetName(), namespace)
+				log.Errorf("ok to delete PipelineRun %s/%s", item.GetName(), namespace)
 			}
 		}
 	}
@@ -167,21 +168,23 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 }
 
 func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
-	// clean pipelinerun of pipeline by days_to_keep and num_to_keep
+	// clean pipelinerun of pipeline with days_to_keep and num_to_keep
 	for _, ns := range o.namespaces {
-		unList, err := o.GetUnstructuredList(types.GetPipelineSchema())
+		unList, err := o.GetUnstructuredListInNamespace(ns, types.GetPipelineSchema())
 		if err != nil {
 			cmd.PrintErrf("failed to get Pipeline in '%s', error: %+v\n", ns, err)
 			return err
 		}
 
 		for _, un := range unList.Items {
+			log.Infof("### found pipeline: %s in namespace: %s", un.GetName(), ns)
 			pipeline, err := toPipeline(o, un)
 			if err != nil {
 				cmd.PrintErrf("parse Unstructured: %s to gcPipeline failed, err: %+v\n", un.GetName(), err)
 				return err
 			}
 			if err := pipeline.clean(); err != nil {
+				cmd.PrintErrf("clean pipelinerun error: %+v\n", err)
 				return err
 			}
 		}
@@ -190,7 +193,7 @@ func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 	if !o.cleanPipelinerun {
 		return nil
 	}
-	cmd.PrintErrf("clean pipelinerun of dev-project by max-count and max-age..\n")
+	log.Info("clean pipelinerun of dev-project by max-count and max-age ..")
 
 	// keep below log output until replace it with a logger
 	//cmd.Printf("starting to gc PipelineRuns in %d namespaces\n", len(o.namespaces))
@@ -205,7 +208,7 @@ func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(errorsNs) > 0 {
-		fmt.Printf("gc failed in %d namespaces: %v\n", len(errorsNs), errorsNs)
+		log.Errorf("gc failed in %d namespaces: %v", len(errorsNs), errorsNs)
 		return fmt.Errorf("gc failed")
 	}
 	return nil
@@ -216,7 +219,7 @@ type gcPipeline struct {
 
 	name      string
 	namespace string
-	pType string
+	pType     string
 
 	daysToKeep int
 	numToKeep  int
@@ -264,9 +267,9 @@ func (p *gcPipeline) ascPipelinerun() {
 }
 
 func (p *gcPipeline) clean() (err error) {
-	fmt.Printf("clean pipelinerun of pipeline: %s ..\n", p.name)
+	log.Infof("clean pipelinerun of pipeline: %s ..", p.name)
 	if p.pType != option.NoScmPipelineType {
-		fmt.Printf("the type of pipeline is %s, ignore.", p.pType)
+		log.Warnf("the type of pipeline is %s, ignore.", p.pType)
 		return
 	}
 
@@ -277,23 +280,24 @@ func (p *gcPipeline) clean() (err error) {
 		}
 	}
 	if len(p.pipelinerunList) == 0 {
-		fmt.Printf("there is no pipelinerun of pipeline: %s \n", p.name)
-		return err
+		log.Infof("there is no pipelinerun of pipeline: %s.", p.name)
+		return nil
 	}
 
 	deletingPipelinerunList := p.needToDelete()
-	for _, runName := range deletingPipelinerunList {
+	for _, run := range deletingPipelinerunList {
+		log.Infof("delete pipelinerun: %s/%s ...", run.id, run.name)
 		if err = p.option.client.Resource(types.GetPipelineRunSchema()).Namespace(p.namespace).Delete(
-			context.TODO(), runName, metav1.DeleteOptions{}); err != nil {
-			fmt.Printf("failed to delete PipelineRun: %s, error: %+v\n", runName, err)
+			context.TODO(), run.name, metav1.DeleteOptions{}); err != nil {
+			log.Errorf("failed to delete PipelineRun: %s, error: %+v", run.name, err)
 			return err
 		}
-		fmt.Printf("ok to delete PipelineRun %s\n", runName)
+		log.Infof("pipelinerun: %s deleted.", run.name)
 	}
 	return
 }
 
-func (p *gcPipeline) needToDelete() (deleting []string) {
+func (p *gcPipeline) needToDelete() (deleting []*gcPipelinerun) {
 	p.ascPipelinerun()
 
 	// get index of last_successful and last_stable pipelinerun
@@ -318,10 +322,10 @@ func (p *gcPipeline) needToDelete() (deleting []string) {
 				if i == lastSuccessfulIndex || i == lastStableIndex { // ignore to delete last-stable and last-successful pipelinerun
 					numLimitIndex = numLimitIndex + 1
 				} else {
-					deleting = append(deleting, pipelinerun.name)
+					deleting = append(deleting, pipelinerun)
 				}
 			} else if pipelinerun.isOverdue(durationToKeep) {
-				deleting = append(deleting, pipelinerun.name)
+				deleting = append(deleting, pipelinerun)
 			}
 		}
 	}
@@ -343,8 +347,12 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		return nil, fmt.Errorf("field type not found of pipeline: %s", u.GetName())
 	}
 	pipeline.pType = t
+	contentKey := t
+	if t == option.MultiBranchPipelineType {
+		contentKey = "multi_branch_pipeline"
+	}
 
-	days, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "days_to_keep")
+	days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +363,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		return nil, err
 	}
 
-	num, ok, err := unstructured.NestedString(u.Object, "spec", t, "discarder", "num_to_keep")
+	num, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
 	if err != nil {
 		return nil, err
 	}
@@ -370,6 +378,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 }
 
 type gcPipelinerun struct {
+	id             string
 	name           string
 	phase          string
 	completionTime time.Time
@@ -391,8 +400,10 @@ func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
 	if !ok {
 		return nil, fmt.Errorf("the phase of pipelinerun: %s not found", u.GetName())
 	}
+	id := u.GetAnnotations()[option.PipelinerunIdAnnotationKey]
 
 	pipelinerun := &gcPipelinerun{
+		id:    id,
 		name:  u.GetName(),
 		phase: phase,
 	}

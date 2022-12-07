@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	PipelinerunOwnerLabelKey = "devops.kubesphere.io/pipeline"
+	PipelinerunOwnerLabelKey   = "devops.kubesphere.io/pipeline"
+	PipelinerunIdAnnotationKey = "devops.kubesphere.io/jenkins-pipelinerun-id"
 
 	PipelinerunPhaseRunning   = "Running"
 	PipelinerunPhaseSucceeded = "Succeeded"
@@ -245,10 +246,6 @@ func (o *PipelineCreateOption) GetUnstructuredListInNamespace(namespace string, 
 	ctx := context.TODO()
 	wsList, err = o.Client.Resource(schemaType).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	return
-}
-
-func (o *PipelineCreateOption) GetUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
-	return o.getUnstructuredList(schemaType)
 }
 
 func (o *PipelineCreateOption) getUnstructuredList(schemaType schema.GroupVersionResource) (wsList *unstructured.UnstructuredList, err error) {
