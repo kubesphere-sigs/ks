@@ -41,7 +41,7 @@ jobs:
     - name: Build image
       run: |
         ver=$(git describe --tags)
-        cp bin/ks_linux_amd64/ks build/ks
+        cp bin/ks_linux_amd64_v1/ks build/ks
         docker build ./build -t kubespheredev/ks-tool:v1.17.0-${ver}
         docker push kubespheredev/ks-tool:v1.17.0-${ver}
 
