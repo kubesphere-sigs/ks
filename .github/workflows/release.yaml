@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
-        go-version: 1.16.x
+        go-version: 1.18.x
     - name: Upgrade upx
       run: |
         # try to fix https://github.com/jenkins-zh/jenkins-cli/issues/493
@@ -30,7 +30,7 @@ jobs:
     - name: Image Registry Login
       run: |
         docker login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{secrets.DOCKER_HUB_TOKEN}}
-        docker login ghcr.io --username linuxsuren --password ${{secrets.GH_PUBLISH_SECRETS}}
+        docker login ghcr.io --username yudong2015 --password ${{secrets.GH_PUBLISH_SECRETS}}
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2.6.1
       with:
@@ -42,11 +42,11 @@ jobs:
       run: |
         ver=$(git describe --tags)
         cp bin/ks_linux_amd64/ks build/ks
-        docker build ./build -t surenpi/ks-tool:v1.17.0-${ver}
-        docker push surenpi/ks-tool:v1.17.0-${ver}
+        docker build ./build -t kubespheredev/ks-tool:v1.17.0-${ver}
+        docker push kubespheredev/ks-tool:v1.17.0-${ver}
 
-        docker tag surenpi/ks-tool:v1.17.0-${ver} surenpi/ks-tool:latest
-        docker push surenpi/ks-tool:latest
+        docker tag kubespheredev/ks-tool:v1.17.0-${ver} surenpi/ks-tool:latest
+        docker push kubespheredev/ks-tool:latest
     - name: Build Registry Images
       run: |
         docker build build/registry -t ghcr.io/kubesphere-sigs/registry:local-2 \
