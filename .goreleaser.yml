@@ -100,11 +100,3 @@ nfpms:
       darwin: macOS
       linux: linux
       windows: windows
-dockers:
-  - goos: linux
-    goarch: amd64
-    image_templates:
-      - "surenpi/ks:latest"
-      - "surenpi/ks:{{.Tag}}"
-      - "ghcr.io/linuxsuren/ks/ks:latest"
-      - "ghcr.io/linuxsuren/ks/ks:{{.Tag}}"

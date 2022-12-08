@@ -45,7 +45,7 @@ jobs:
         docker build ./build -t kubespheredev/ks-tool:v1.17.0-${ver}
         docker push kubespheredev/ks-tool:v1.17.0-${ver}
 
-        docker tag kubespheredev/ks-tool:v1.17.0-${ver} surenpi/ks-tool:latest
+        docker tag kubespheredev/ks-tool:v1.17.0-${ver} kubespheredev/ks-tool:latest
         docker push kubespheredev/ks-tool:latest
     - name: Build Registry Images
       run: |
