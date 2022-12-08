@@ -62,10 +62,10 @@ goreleaser-test:
 
 image: build-linux
 	cp bin/linux/ks build/ks
-	docker build ./build -t surenpi/ks
+	docker build ./build -t kubespheredev/ks-tool
 
 image-push:
-	docker push surenpi/ks
+	docker push kubespheredev/ks-tool
 
 update:
 	git fetch
