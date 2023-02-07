@@ -29,9 +29,9 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/api v0.19.4
-	k8s.io/apimachinery v0.19.4
+	k8s.io/api v0.20.0
+	k8s.io/apimachinery v0.20.0
 	k8s.io/cli-runtime v0.19.4
-	k8s.io/client-go v0.19.4
+	k8s.io/client-go v0.20.0
 	sigs.k8s.io/yaml v1.2.0
 )
