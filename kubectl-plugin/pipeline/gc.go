@@ -181,6 +181,7 @@ type gcPipeline struct {
 	namespace string
 	pType     string
 
+	discarder  bool
 	daysToKeep int
 	numToKeep  int
 
@@ -228,6 +229,10 @@ func (p *gcPipeline) ascPipelinerun() {
 
 func (p *gcPipeline) clean() (err error) {
 	log.Infof("clean pipelinerun of pipeline: %s ..", p.name)
+	if !p.discarder {
+		log.Warn("the discarder of pipeline not found, ignore.")
+		return
+	}
 	if p.pType != option.NoScmPipelineType {
 		log.Warnf("the type of pipeline is %s, ignore.", p.pType)
 		return
@@ -312,6 +317,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		option:    gcOpt,
 		name:      u.GetName(),
 		namespace: u.GetNamespace(),
+		discarder: false,
 	}
 
 	t, ok, err := unstructured.NestedString(u.Object, "spec", "type")
@@ -327,29 +333,34 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		contentKey = "multi_branch_pipeline"
 	}
 
-	days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
-	}
-	if pipeline.daysToKeep, err = strconv.Atoi(days); err != nil {
-		return nil, err
+	if _, ok, err = unstructured.NestedString(u.Object, "spec", contentKey, "discarder"); err != nil {
+		if ok {
+			pipeline.discarder = true
+			days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
+			}
+			if pipeline.daysToKeep, err = strconv.Atoi(days); err != nil {
+				return nil, err
+			}
+
+			num, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
+			}
+			if pipeline.numToKeep, err = strconv.Atoi(num); err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	num, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
-	}
-	if pipeline.numToKeep, err = strconv.Atoi(num); err != nil {
-		return nil, err
-	}
-
-	return pipeline, nil
+	return pipeline, err
 }
 
 func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
