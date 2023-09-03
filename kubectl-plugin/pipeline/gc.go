@@ -112,7 +112,7 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 		}
 
 		var duration time.Duration
-		duration = time.Duration(o.maxAge * 24) * time.Hour
+		duration = time.Duration(o.maxAge*24) * time.Hour
 		if (o.condition == conditionAnd && okToDelete(item.Object, duration)) || o.condition == conditionIgnore {
 			delErr := o.client.Resource(types.GetPipelineRunSchema()).Namespace(namespace).Delete(
 				context.TODO(), item.GetName(), metav1.DeleteOptions{})
@@ -140,12 +140,12 @@ func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 			log.Infof("### found pipeline: %s in namespace: %s", un.GetName(), ns)
 			pipeline, err := toPipeline(o, un)
 			if err != nil {
-				cmd.PrintErrf("parse Unstructured: %s to gcPipeline failed, err: %+v\n", un.GetName(), err)
-				return err
+				cmd.PrintErrf("parse unstructured pipeline to gcPipeline(%s) failed, err: %+v\n", un.GetName(), err)
+				continue
 			}
 			if err := pipeline.clean(); err != nil {
 				cmd.PrintErrf("clean pipelinerun error: %+v\n", err)
-				return err
+				continue
 			}
 		}
 	}
@@ -181,7 +181,7 @@ type gcPipeline struct {
 	namespace string
 	pType     string
 
-	discarder  bool
+	discard    bool
 	daysToKeep int
 	numToKeep  int
 
@@ -229,8 +229,8 @@ func (p *gcPipeline) ascPipelinerun() {
 
 func (p *gcPipeline) clean() (err error) {
 	log.Infof("clean pipelinerun of pipeline: %s ..", p.name)
-	if !p.discarder {
-		log.Warn("the discarder of pipeline not found, ignore.")
+	if !p.discard {
+		log.Warn("the discard of pipeline not found, ignore.")
 		return
 	}
 	if p.pType != option.NoScmPipelineType {
@@ -317,7 +317,7 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		option:    gcOpt,
 		name:      u.GetName(),
 		namespace: u.GetNamespace(),
-		discarder: false,
+		discard:   false,
 	}
 
 	t, ok, err := unstructured.NestedString(u.Object, "spec", "type")
@@ -333,9 +333,9 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		contentKey = "multi_branch_pipeline"
 	}
 
-	if _, ok, err = unstructured.NestedString(u.Object, "spec", contentKey, "discarder"); err != nil {
+	if _, ok, err = unstructured.NestedMap(u.Object, "spec", contentKey, "discarder"); err != nil {
 		if ok {
-			pipeline.discarder = true
+			pipeline.discard = true
 			days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
 			if err != nil {
 				return nil, err
