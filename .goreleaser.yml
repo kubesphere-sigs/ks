@@ -44,12 +44,6 @@ archives:
     id: "ks"
     builds:
       - ks
-    replacements:
-      darwin: darwin
-      linux: linux
-      windows: windows
-      amd64: amd64
-      arm64: arm64
     format_overrides:
       - goos: windows
         format: zip
@@ -60,17 +54,13 @@ archives:
     id: "kubectl-ks"
     builds:
       - "kubectl-ks"
-    replacements:
-      darwin: darwin
-      linux: linux
-      amd64: amd64
     files:
       - README.md
       - LICENSE
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next-{{.ShortCommit}}"
+  name_template: "{{ .Tag }}-next-{{ .ShortCommit }}"
 changelog:
   skip: true
   sort: asc
@@ -79,7 +69,12 @@ changelog:
     - '^docs:'
     - '^test:'
 nfpms:
-  - file_name_template: "ks-{{.Os}}-{{.Arch}}"
+  - file_name_template: >-
+      ks-
+      {{- .Os }}-
+      {{- if eq .Arch "amd64" }}64bit
+      {{- else if eq .Arch "darwin" }}macOS
+      {{- else }}{{ .Arch }}{{ end -}}
     id: "ks"
     homepage: https://github.com/kubesphere-sigs/ks
     description: ks is a tool which makes it be easy to work with KubeSphere.
@@ -94,9 +89,3 @@ nfpms:
       - vim
       - kubectl
     bindir: /usr/local/bin
-    replacements:
-      amd64: 64bit
-      arm64: arm64
-      darwin: macOS
-      linux: linux
-      windows: windows
