@@ -34,12 +34,12 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 	}
 
 	flags := cmd.Flags()
-	flags.BoolVarP(&opt.cleanPipelinerun, "clean-pipelinerun", "", true,
-		"if delete outdated pipelineruns of DevOps project(namespace), that means limit total-num PipelineRuns of DevOps project; default: true")
+	flags.BoolVarP(&opt.cleanPipelinerun, "clean-pipelinerun", "", false,
+		"if delete outdated pipelineruns of DevOps project, default: false means only gc pipelineruns by pipeline.discarder")
 	flags.UintVarP(&opt.maxCount, "max-count", "", 30,
 		"Maximum number to keep PipelineRuns of DevOps project(works when clean-pipelinerun is true)")
 	flags.DurationVarP(&opt.maxAge, "max-age", "", 7*24*time.Hour,
-		"Maximum age to keep PipelineRuns of DevOps project")
+		"Maximum age to keep PipelineRuns of DevOps project(works when clean-pipelinerun is true)")
 	flags.StringVarP(&opt.condition, "condition", "", conditionAnd,
 		fmt.Sprintf("The condition between --max-count and --max-age, supported conditions: '%s', '%s'", conditionAnd, conditionIgnore))
 	flags.StringArrayVarP(&opt.namespaces, "namespaces", "", nil,
@@ -125,48 +125,6 @@ func (o *gcOption) cleanPipelineRunInNamespace(namespace string) (err error) {
 	return
 }
 
-func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
-	sort.Slice(items, func(i, j int) bool {
-		left := items[i]
-		right := items[j]
-
-		var leftCompletionTime time.Time
-		var rightCompletionTime time.Time
-		var err error
-
-		if leftCompletionTime, err = getCompletionTimeFromObject(left.Object); err != nil {
-			return false
-		}
-		if rightCompletionTime, err = getCompletionTimeFromObject(right.Object); err != nil {
-			// make sure that item without completion time be at the end of items
-			return true
-		}
-
-		return leftCompletionTime.Before(rightCompletionTime)
-	})
-}
-
-func getCompletionTimeFromObject(obj map[string]interface{}) (completionTime time.Time, err error) {
-	var (
-		completionTimeStr string
-		ok                bool
-	)
-	if completionTimeStr, ok, err = unstructured.NestedString(obj, "status", "completionTime"); ok && err == nil {
-		completionTime, err = time.Parse(time.RFC3339, completionTimeStr)
-	}
-	if !ok {
-		err = errors.New("no status.completionTime field found")
-	}
-	return
-}
-
-func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
-	if completionTime, err := getCompletionTimeFromObject(object); err == nil {
-		return completionTime.Add(maxAge).Before(time.Now())
-	}
-	return false
-}
-
 func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 	// clean pipelinerun of pipeline with days_to_keep and num_to_keep
 	for _, ns := range o.namespaces {
@@ -180,12 +138,12 @@ func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 			log.Infof("### found pipeline: %s in namespace: %s", un.GetName(), ns)
 			pipeline, err := toPipeline(o, un)
 			if err != nil {
-				cmd.PrintErrf("parse Unstructured: %s to gcPipeline failed, err: %+v\n", un.GetName(), err)
-				return err
+				cmd.PrintErrf("parse unstructured pipeline to gcPipeline(%s) failed, err: %+v\n", un.GetName(), err)
+				continue
 			}
 			if err := pipeline.clean(); err != nil {
 				cmd.PrintErrf("clean pipelinerun error: %+v\n", err)
-				return err
+				continue
 			}
 		}
 	}
@@ -221,6 +179,7 @@ type gcPipeline struct {
 	namespace string
 	pType     string
 
+	discard    bool
 	daysToKeep int
 	numToKeep  int
 
@@ -268,6 +227,10 @@ func (p *gcPipeline) ascPipelinerun() {
 
 func (p *gcPipeline) clean() (err error) {
 	log.Infof("clean pipelinerun of pipeline: %s ..", p.name)
+	if !p.discard {
+		log.Warn("the discarder of pipeline not found, ignore.")
+		return
+	}
 	if p.pType != option.NoScmPipelineType {
 		log.Warnf("the type of pipeline is %s, ignore.", p.pType)
 		return
@@ -332,11 +295,27 @@ func (p *gcPipeline) needToDelete() (deleting []*gcPipelinerun) {
 	return
 }
 
+type gcPipelinerun struct {
+	id             string
+	name           string
+	phase          string
+	completionTime time.Time
+}
+
+func (r *gcPipelinerun) isOverdue(maxAge time.Duration) bool {
+	return r.completionTime.Add(maxAge).Before(time.Now())
+}
+
+func (r *gcPipelinerun) isCompletion() bool {
+	return !r.completionTime.IsZero()
+}
+
 func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, error) {
 	pipeline := &gcPipeline{
 		option:    gcOpt,
 		name:      u.GetName(),
 		namespace: u.GetNamespace(),
+		discard:   false,
 	}
 
 	t, ok, err := unstructured.NestedString(u.Object, "spec", "type")
@@ -352,44 +331,34 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 		contentKey = "multi_branch_pipeline"
 	}
 
-	days, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
-	}
-	if pipeline.daysToKeep, err = strconv.Atoi(days); err != nil {
-		return nil, err
-	}
+	if _, ok, err = unstructured.NestedMap(u.Object, "spec", contentKey, "discarder"); err == nil {
+		if ok {
+			pipeline.discard = true
+			var days, num string
+			days, ok, err = unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "days_to_keep")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
+			}
+			if pipeline.daysToKeep, err = strconv.Atoi(days); err != nil {
+				return nil, err
+			}
 
-	num, ok, err := unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
-	if err != nil {
-		return nil, err
+			num, ok, err = unstructured.NestedString(u.Object, "spec", contentKey, "discarder", "num_to_keep")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
+			}
+			if pipeline.numToKeep, err = strconv.Atoi(num); err != nil {
+				return nil, err
+			}
+		}
 	}
-	if !ok {
-		return nil, fmt.Errorf("field days_to_keep not found of pipeline: %s", u.GetName())
-	}
-	if pipeline.numToKeep, err = strconv.Atoi(num); err != nil {
-		return nil, err
-	}
-
-	return pipeline, nil
-}
-
-type gcPipelinerun struct {
-	id             string
-	name           string
-	phase          string
-	completionTime time.Time
-}
-
-func (r *gcPipelinerun) isOverdue(maxAge time.Duration) bool {
-	return r.completionTime.Add(maxAge).Before(time.Now())
-}
-
-func (r *gcPipelinerun) isCompletion() bool {
-	return !r.completionTime.IsZero()
+	return pipeline, err
 }
 
 func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
@@ -411,4 +380,46 @@ func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
 		pipelinerun.completionTime, err = getCompletionTimeFromObject(u.Object)
 	}
 	return pipelinerun, err
+}
+
+func ascOrderWithCompletionTime(items []unstructured.Unstructured) {
+	sort.Slice(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+
+		var leftCompletionTime time.Time
+		var rightCompletionTime time.Time
+		var err error
+
+		if leftCompletionTime, err = getCompletionTimeFromObject(left.Object); err != nil {
+			return false
+		}
+		if rightCompletionTime, err = getCompletionTimeFromObject(right.Object); err != nil {
+			// make sure that item without completion time be at the end of items
+			return true
+		}
+
+		return leftCompletionTime.Before(rightCompletionTime)
+	})
+}
+
+func getCompletionTimeFromObject(obj map[string]interface{}) (completionTime time.Time, err error) {
+	var (
+		completionTimeStr string
+		ok                bool
+	)
+	if completionTimeStr, ok, err = unstructured.NestedString(obj, "status", "completionTime"); ok && err == nil {
+		completionTime, err = time.Parse(time.RFC3339, completionTimeStr)
+	}
+	if !ok {
+		err = errors.New("no status.completionTime field found")
+	}
+	return
+}
+
+func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
+	if completionTime, err := getCompletionTimeFromObject(object); err == nil {
+		return completionTime.Add(maxAge).Before(time.Now())
+	}
+	return false
 }
