@@ -104,7 +104,6 @@ func (o *updateOption) runE(cmd *cobra.Command, args []string) (err error) {
 		err = fmt.Errorf("failed to clone git repository '%s', error is: %v", app.gitRepo, err)
 		return
 	}
-	fmt.Println("git-repo-dir: ", tempDir)
 
 	// run kustomize command
 	if err = updateKustomization(o, path.Join(tempDir, app.directory)); err != nil {
@@ -209,7 +208,6 @@ func cloneGitRepo(app *application, auth transport.AuthMethod) (tempDir string, 
 		err = fmt.Errorf("failed to create a temp directory, error is %v", err)
 		return
 	}
-
 	if _, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:           app.gitRepo,
 		ReferenceName: plumbing.ReferenceName(app.branch),
