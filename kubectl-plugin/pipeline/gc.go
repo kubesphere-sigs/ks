@@ -8,9 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/go-openapi/strfmt"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/pipeline/option"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	devopsclient "github.com/kubesphere/ks-devops-client-go/client"
+	"github.com/kubesphere/ks-devops-client-go/client/dev_ops_pipeline"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +28,7 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		PipelineCreateOption: option.PipelineCreateOption{
 			Client: client,
 		},
+		devopsClient: newDefaultDevopsClient(),
 	}
 	cmd = &cobra.Command{
 		Use:     "gc",
@@ -44,7 +49,10 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		fmt.Sprintf("The condition between --max-count and --max-age, supported conditions: '%s', '%s'", conditionAnd, conditionIgnore))
 	flags.StringArrayVarP(&opt.namespaces, "namespaces", "", nil,
 		"Indicate namespaces do you want to clean. Clean all namespaces if it's empty")
-
+	flags.BoolVarP(&opt.abortPipelinerun, "abort-pipelinerun", "", false,
+		"Whether abort pipelineruns that does not finished")
+	flags.DurationVarP(&opt.ageToAbort, "age-to-abort", "", 24*time.Hour,
+		"If a pipelinerun has been created than this age and has not finished yet, it will be aborted")
 	_ = cmd.RegisterFlagCompletionFunc("condition", common.ArrayCompletion(conditionAnd, conditionIgnore))
 	return
 }
@@ -60,10 +68,13 @@ type gcOption struct {
 	maxAge           time.Duration
 	condition        string
 	namespaces       []string
+	abortPipelinerun bool
+	ageToAbort       time.Duration
 
 	// inner fields
 	client dynamic.Interface
 	option.PipelineCreateOption
+	devopsClient *devopsclient.KubeSphereDevOps
 }
 
 func (o *gcOption) preRunE(cmd *cobra.Command, args []string) (err error) {
@@ -141,8 +152,16 @@ func (o *gcOption) runE(cmd *cobra.Command, args []string) error {
 				cmd.PrintErrf("parse unstructured pipeline to gcPipeline(%s) failed, err: %+v\n", un.GetName(), err)
 				continue
 			}
+			if err := pipeline.getPipelinerun(); err != nil {
+				cmd.PrintErrf("failed to get pipelinerun, error: %+v\n", err)
+				continue
+			}
 			if err := pipeline.clean(); err != nil {
 				cmd.PrintErrf("clean pipelinerun error: %+v\n", err)
+				continue
+			}
+			if err := pipeline.abort(); err != nil {
+				cmd.PrintErrf("abort pipelinerun error: %+v\n", err)
 				continue
 			}
 		}
@@ -236,12 +255,6 @@ func (p *gcPipeline) clean() (err error) {
 		return
 	}
 
-	if p.pipelinerunList == nil {
-		if err = p.getPipelinerun(); err != nil {
-			err = fmt.Errorf("failed to get pipelinerun, error: %+v", err)
-			return
-		}
-	}
 	if len(p.pipelinerunList) == 0 {
 		log.Infof("there is no pipelinerun of pipeline: %s.", p.name)
 		return nil
@@ -258,6 +271,61 @@ func (p *gcPipeline) clean() (err error) {
 		log.Infof("pipelinerun: %s deleted.", run.name)
 	}
 	return
+}
+
+func (p *gcPipeline) abort() (err error) {
+	ctx := context.Background()
+	if !p.option.abortPipelinerun {
+		log.Infof("the abortPipelinerun flag is not enabled")
+		return nil
+	}
+	for _, run := range p.pipelinerunList {
+		if !run.isCompletion() && run.creationTime.Add(p.option.ageToAbort).Before(time.Now()) {
+			abortErr := p.abortPipelinerun(ctx, run)
+			if abortErr != nil {
+				log.Errorf("failed to abort PipelineRun: %s, error: %+v", run.name, abortErr)
+				// we want to try all pipelineruns, so continue here
+				continue
+			}
+		}
+	}
+	return nil
+}
+
+func (p *gcPipeline) abortPipelinerun(ctx context.Context, run *gcPipelinerun) error {
+	if run.pType == option.MultiBranchPipelineType {
+		return p.abortMultiBranchPipelinerun(ctx, run)
+	}
+	return p.abortNoScmPipelinerun(ctx, run)
+}
+
+func (p *gcPipeline) abortNoScmPipelinerun(ctx context.Context, run *gcPipelinerun) error {
+	stopPipelineParams := &dev_ops_pipeline.StopPipelineParams{
+		Blocking:      aws.String("true"),
+		Body:          []int64{},
+		Devops:        p.namespace,
+		Pipeline:      p.name,
+		Run:           run.id,
+		TimeOutInSecs: aws.String("10"),
+		Context:       ctx,
+	}
+	_, err := p.option.devopsClient.DevOpsPipeline.StopPipeline(stopPipelineParams)
+	return err
+}
+
+func (p *gcPipeline) abortMultiBranchPipelinerun(ctx context.Context, run *gcPipelinerun) error {
+	stopPipelineParams := &dev_ops_pipeline.StopBranchPipelineParams{
+		Blocking:      aws.String("true"),
+		Body:          []int64{},
+		Branch:        run.branch,
+		Devops:        p.namespace,
+		Pipeline:      p.name,
+		Run:           run.id,
+		TimeOutInSecs: aws.String("10"),
+		Context:       ctx,
+	}
+	_, err := p.option.devopsClient.DevOpsPipeline.StopBranchPipeline(stopPipelineParams)
+	return err
 }
 
 func (p *gcPipeline) needToDelete() (deleting []*gcPipelinerun) {
@@ -299,7 +367,10 @@ type gcPipelinerun struct {
 	id             string
 	name           string
 	phase          string
+	pType          string
+	branch         string
 	completionTime time.Time
+	creationTime   time.Time
 }
 
 func (r *gcPipelinerun) isOverdue(maxAge time.Duration) bool {
@@ -362,6 +433,27 @@ func toPipeline(gcOpt *gcOption, u unstructured.Unstructured) (*gcPipeline, erro
 }
 
 func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
+	creationTime := u.GetCreationTimestamp().Time
+
+	pType, ok, err := unstructured.NestedString(u.Object, "spec", "pipelineSpec", "type")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		pType = option.NoScmPipelineType
+	}
+
+	var branch string
+	if pType == option.MultiBranchPipelineType {
+		branch, ok, err = unstructured.NestedString(u.Object, "spec", "scm", "refName")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, fmt.Errorf("the spec.scm.refName of pipelinerun: %s not found", u.GetName())
+		}
+	}
+
 	phase, ok, err := unstructured.NestedString(u.Object, "status", "phase")
 	if err != nil {
 		return nil, err
@@ -372,9 +464,12 @@ func toPipelinerun(u unstructured.Unstructured) (*gcPipelinerun, error) {
 	id := u.GetAnnotations()[option.PipelinerunIdAnnotationKey]
 
 	pipelinerun := &gcPipelinerun{
-		id:    id,
-		name:  u.GetName(),
-		phase: phase,
+		id:           id,
+		name:         u.GetName(),
+		phase:        phase,
+		pType:        pType,
+		branch:       branch,
+		creationTime: creationTime,
 	}
 	if phase == option.PipelinerunPhaseSucceeded || phase == option.PipelinerunPhaseFailed || phase == option.PipelinerunPhaseCancelled {
 		pipelinerun.completionTime, err = getCompletionTimeFromObject(u.Object)
@@ -422,4 +517,12 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 		return completionTime.Add(maxAge).Before(time.Now())
 	}
 	return false
+}
+
+func newDefaultDevopsClient() *devopsclient.KubeSphereDevOps {
+	cfg := &devopsclient.TransportConfig{
+		Host:    "devops-apiserver.kubesphere-devops-system.svc:9090",
+		Schemes: []string{"http"},
+	}
+	return devopsclient.NewHTTPClientWithConfig(strfmt.Default, cfg)
 }
