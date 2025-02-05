@@ -279,8 +279,10 @@ func (p *gcPipeline) abort() (err error) {
 		log.Infof("the abortPipelinerun flag is not enabled")
 		return nil
 	}
+	log.Infof("abort pipelinerun of pipeline: %s ..", p.name)
 	for _, run := range p.pipelinerunList {
 		if !run.isCompletion() && run.creationTime.Add(p.option.ageToAbort).Before(time.Now()) {
+			log.Infof("abort pipelinerun: %s ..", run.name)
 			abortErr := p.abortPipelinerun(ctx, run)
 			if abortErr != nil {
 				log.Errorf("failed to abort PipelineRun: %s, error: %+v", run.name, abortErr)
