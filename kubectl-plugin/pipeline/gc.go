@@ -50,7 +50,7 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"Indicate namespaces do you want to clean. Clean all namespaces if it's empty")
 	flags.BoolVarP(&opt.abortPipelinerun, "abort-pipelinerun", "", false,
 		"Whether abort pipelineruns that does not finished")
-	flags.DurationVarP(&opt.ageToAbort, "age-to-abort", "", 24*time.Hour,
+	flags.DurationVarP(&opt.ageToAbort, "age-to-abort", "", 7*24*time.Hour,
 		"If a pipelinerun has been created than this age and has not finished yet, it will be aborted")
 	flags.StringVarP(&opt.devopsAPIHost, "devops-api-host", "", "devops-apiserver.kubesphere-devops-system.svc:9090",
 		"The devops apiserver address")
