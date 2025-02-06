@@ -3,9 +3,16 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
+	"path"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
@@ -19,10 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"os"
-	"path"
-	"strings"
-	"time"
 )
 
 func newUpdateCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cmd *cobra.Command) {
@@ -56,6 +59,8 @@ func newUpdateCmd(client dynamic.Interface, clientset *kubernetes.Clientset) (cm
 		"The password of the git provider")
 	flags.StringVarP(&opt.gitUsername, "git-username", "", "",
 		"The username of the git provider")
+	flags.StringVarP(&opt.gitEmail, "git-email", "", "",
+		"The email of the git provider")
 	flags.StringVarP(&opt.gitTargetBranch, "git-target-branch", "", "",
 		"The target branch name that you want to push")
 	flags.StringVarP(&opt.secretName, "secret-name", "", "",
@@ -107,16 +112,17 @@ func (o *updateOption) runE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// git commit the changes
-	forkAppRepo := getForkAppRepo(app)
-	forkAppRepo.localGitRepoDir = tempDir
-	forkAppRepo.token = o.gitPassword
-	forkAppRepo.username = o.gitUsername
-	forkAppRepo.gitAuth = gitAuth
-	forkAppRepo.gitTargetBranch = o.gitTargetBranch
+	repo := getForkAppRepo(app)
+	repo.localGitRepoDir = tempDir
+	repo.token = o.gitPassword
+	repo.username = o.gitUsername
+	repo.email = o.gitEmail
+	repo.gitAuth = gitAuth
+	repo.gitTargetBranch = o.gitTargetBranch
 	if o.gitUsername != "" {
-		forkAppRepo.botOrg = o.gitUsername
+		repo.botOrg = o.gitUsername
 	}
-	if err = pushChanges(o.mode, forkAppRepo); err != nil {
+	if err = pushChanges(o.mode, repo); err != nil {
 		err = fmt.Errorf("failed to push changes, error is: %v", err)
 	}
 	return
@@ -249,9 +255,19 @@ func pushToBranch(forkApp *forkAppRepo, mode string) (err error) {
 					return
 				}
 			} else if forkApp.gitTargetBranch != "" {
+				var remoteBranches []string
+				remoteBranches, err = listRemoteBranches(repo, forkApp.gitAuth)
+				if err != nil {
+					err = fmt.Errorf("failed to list remote branches, error is: %+v", err)
+					return
+				}
+				create := true
+				if slices.Contains(remoteBranches, forkApp.gitTargetBranch) {
+					create = false
+				}
 				if err = wd.Checkout(&git.CheckoutOptions{
 					Branch: plumbing.NewBranchReferenceName(forkApp.gitTargetBranch),
-					Create: true,
+					Create: create,
 					Keep:   true,
 				}); err != nil {
 					err = fmt.Errorf("unable to checkout git branch: %s, error: %v", forkApp.forkBranch, err)
@@ -264,8 +280,12 @@ func pushToBranch(forkApp *forkAppRepo, mode string) (err error) {
 				err = fmt.Errorf("failed to run git add command, error is %v", err)
 				return
 			}
-			if _, err = wd.Commit("msg", &git.CommitOptions{
-				Committer: nil,
+			if _, err = wd.Commit("files changed by ks cli", &git.CommitOptions{
+				Author: &object.Signature{
+					Name:  forkApp.username,
+					Email: forkApp.email,
+					When:  time.Now(),
+				},
 			}); err != nil {
 				err = fmt.Errorf("failed to commit changes, error is %v", err)
 				return
@@ -276,6 +296,25 @@ func pushToBranch(forkApp *forkAppRepo, mode string) (err error) {
 		}
 	}
 	return
+}
+
+func listRemoteBranches(repo *git.Repository, auth transport.AuthMethod) ([]string, error) {
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return nil, err
+	}
+	refs, err := remote.List(&git.ListOptions{
+		Auth:            auth,
+		InsecureSkipTLS: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var branches []string
+	for _, ref := range refs {
+		branches = append(branches, ref.Name().Short())
+	}
+	return branches, nil
 }
 
 func makeSureRemote(name, repoAddr string, repo *git.Repository) (err error) {
@@ -389,6 +428,7 @@ type forkAppRepo struct {
 	forkBranch      string
 	token           string
 	username        string
+	email           string
 	gitAuth         transport.AuthMethod
 }
 
@@ -412,6 +452,7 @@ type updateOption struct {
 	gitProvider     string
 	gitPassword     string
 	gitUsername     string
+	gitEmail        string
 	gitTargetBranch string
 
 	// secretName and secretNamespace are used to the git auth
