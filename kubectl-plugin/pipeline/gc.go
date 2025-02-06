@@ -28,7 +28,6 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		PipelineCreateOption: option.PipelineCreateOption{
 			Client: client,
 		},
-		devopsClient: newDefaultDevopsClient(),
 	}
 	cmd = &cobra.Command{
 		Use:     "gc",
@@ -53,6 +52,10 @@ func newGCCmd(client dynamic.Interface) (cmd *cobra.Command) {
 		"Whether abort pipelineruns that does not finished")
 	flags.DurationVarP(&opt.ageToAbort, "age-to-abort", "", 24*time.Hour,
 		"If a pipelinerun has been created than this age and has not finished yet, it will be aborted")
+	flags.StringVarP(&opt.devopsAPIHost, "devops-api-host", "", "devops-apiserver.kubesphere-devops-system.svc:9090",
+		"The devops apiserver address")
+	flags.StringArrayVarP(&opt.devopsAPISchemes, "devops-api-schemes", "", []string{"http"},
+		"The schemes to connect to devops apiserver")
 	_ = cmd.RegisterFlagCompletionFunc("condition", common.ArrayCompletion(conditionAnd, conditionIgnore))
 	return
 }
@@ -70,6 +73,8 @@ type gcOption struct {
 	namespaces       []string
 	abortPipelinerun bool
 	ageToAbort       time.Duration
+	devopsAPIHost    string
+	devopsAPISchemes []string
 
 	// inner fields
 	client dynamic.Interface
@@ -81,9 +86,20 @@ func (o *gcOption) preRunE(cmd *cobra.Command, args []string) (err error) {
 	if len(o.namespaces) == 0 {
 		if err = o.getAllDevOpsNamespace(); err != nil {
 			log.Errorf("failed to get all DevOps project namespace, error: %+v", err)
+			return
 		}
 	}
+	err = o.initDevopsClient()
 	return
+}
+
+func (o *gcOption) initDevopsClient() error {
+	cfg := &devopsclient.TransportConfig{
+		Host:    o.devopsAPIHost,
+		Schemes: o.devopsAPISchemes,
+	}
+	o.devopsClient = devopsclient.NewHTTPClientWithConfig(strfmt.Default, cfg)
+	return nil
 }
 
 func (o *gcOption) getAllDevOpsNamespace() (err error) {
@@ -519,12 +535,4 @@ func okToDelete(object map[string]interface{}, maxAge time.Duration) bool {
 		return completionTime.Add(maxAge).Before(time.Now())
 	}
 	return false
-}
-
-func newDefaultDevopsClient() *devopsclient.KubeSphereDevOps {
-	cfg := &devopsclient.TransportConfig{
-		Host:    "devops-apiserver.kubesphere-devops-system.svc:9090",
-		Schemes: []string{"http"},
-	}
-	return devopsclient.NewHTTPClientWithConfig(strfmt.Default, cfg)
 }
