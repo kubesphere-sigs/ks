@@ -1,4 +1,8 @@
 # Official documentation at http://goreleaser.com
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
 project_name: ks
 builds:
 - env:
@@ -60,9 +64,8 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next-{{ .ShortCommit }}"
+  version_template: "{{ .Tag }}-next-{{ .ShortCommit }}"
 changelog:
-  skip: true
   sort: asc
   filters:
     exclude:

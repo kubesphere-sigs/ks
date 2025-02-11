@@ -7,3 +7,5 @@ pipeline.log
 
 *.iml
 logs.txt
+
+dist/
