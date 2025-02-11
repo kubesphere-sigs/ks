@@ -1,9 +1,10 @@
 name: Release Drafter
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - master
+    tags:
+      - '*'
 
 jobs:
   update_release_draft:
