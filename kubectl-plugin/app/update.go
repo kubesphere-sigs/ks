@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -17,6 +18,7 @@ import (
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -265,13 +267,25 @@ func pushToBranch(forkApp *forkAppRepo, mode string) (err error) {
 				if slices.Contains(remoteBranches, forkApp.gitTargetBranch) {
 					create = false
 				}
-				if err = wd.Checkout(&git.CheckoutOptions{
+				checkOutOptions := &git.CheckoutOptions{
 					Branch: plumbing.NewBranchReferenceName(forkApp.gitTargetBranch),
 					Create: create,
 					Keep:   true,
-				}); err != nil {
-					err = fmt.Errorf("unable to checkout git branch: %s, error: %v", forkApp.forkBranch, err)
-					return
+				}
+				if err = wd.Checkout(checkOutOptions); err != nil {
+					log.Warnf("first checkout failed, error: %v", err)
+					if !create {
+						mirrorRemoteBranchRefSpec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", forkApp.gitTargetBranch, forkApp.gitTargetBranch)
+						err = fetchOriginRef(repo, forkApp.gitAuth, mirrorRemoteBranchRefSpec)
+						if err != nil {
+							return
+						}
+						err = wd.Checkout(checkOutOptions)
+					}
+					if err != nil {
+						err = fmt.Errorf("unable to checkout git branch: %s, error: %v", forkApp.gitTargetBranch, err)
+						return
+					}
 				}
 			}
 
@@ -296,6 +310,35 @@ func pushToBranch(forkApp *forkAppRepo, mode string) (err error) {
 		}
 	}
 	return
+}
+
+func fetchOriginRef(repo *git.Repository, auth transport.AuthMethod, refSpecStr string) error {
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return err
+	}
+
+	var refSpecs []config.RefSpec
+	if refSpecStr != "" {
+		refSpecs = []config.RefSpec{config.RefSpec(refSpecStr)}
+	}
+
+	err = remote.Fetch(&git.FetchOptions{
+		RefSpecs:        refSpecs,
+		Auth:            auth,
+		Progress:        os.Stdout,
+		Force:           true,
+		InsecureSkipTLS: true,
+	})
+	if err != nil {
+		if errors.Is(err, git.NoErrAlreadyUpToDate) {
+			log.Infof("refs already up to date")
+		} else {
+			return fmt.Errorf("fetch origin failed: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func listRemoteBranches(repo *git.Repository, auth transport.AuthMethod) ([]string, error) {
