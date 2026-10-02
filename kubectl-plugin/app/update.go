@@ -15,6 +15,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/common"
 	"github.com/kubesphere-sigs/ks/kubectl-plugin/types"
@@ -210,15 +211,106 @@ func cloneGitRepo(app *application, auth transport.AuthMethod) (tempDir string, 
 		err = fmt.Errorf("failed to create a temp directory, error is %v", err)
 		return
 	}
-	if _, err = git.PlainClone(tempDir, false, &git.CloneOptions{
+
+	var refs []*plumbing.Reference
+	if refs, err = listRemoteRefs(app.gitRepo, auth); err != nil {
+		err = fmt.Errorf("failed to list references of git repository '%s', error: %v", app.gitRepo, err)
+		return
+	}
+
+	var refName plumbing.ReferenceName
+	var isCommit bool
+	if refName, isCommit, err = resolveTargetRevision(app.branch, refs); err != nil {
+		return
+	}
+
+	var repo *git.Repository
+	if repo, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:           app.gitRepo,
-		ReferenceName: plumbing.ReferenceName(app.branch),
+		ReferenceName: refName,
 		Auth:          auth,
 	}); err != nil {
 		err = fmt.Errorf("failed to clone git repository '%s' into '%s', error: %v",
 			app.gitRepo, tempDir, err)
+		return
+	}
+
+	if isCommit {
+		err = checkoutCommit(repo, app.branch)
 	}
 	return
+}
+
+// listRemoteRefs lists the references of a remote git repository without cloning it
+func listRemoteRefs(url string, auth transport.AuthMethod) ([]*plumbing.Reference, error) {
+	remote := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
+		Name: git.DefaultRemoteName,
+		URLs: []string{url},
+	})
+	return remote.List(&git.ListOptions{Auth: auth})
+}
+
+// resolveTargetRevision converts an Argo CD targetRevision into a reference name which go-git can clone.
+// The targetRevision could be HEAD, a full reference, a short branch or tag name, or a commit SHA.
+// An empty reference name means cloning the default branch of the remote.
+// isCommit is true when the targetRevision needs to be checked out as a commit after cloning.
+func resolveTargetRevision(revision string, refs []*plumbing.Reference) (
+	refName plumbing.ReferenceName, isCommit bool, err error) {
+	if revision == "" || revision == string(plumbing.HEAD) {
+		return
+	}
+
+	if strings.HasPrefix(revision, "refs/") {
+		refName = plumbing.ReferenceName(revision)
+		return
+	}
+
+	for _, candidate := range []plumbing.ReferenceName{
+		plumbing.NewBranchReferenceName(revision),
+		plumbing.NewTagReferenceName(revision),
+	} {
+		for _, ref := range refs {
+			if ref.Name() == candidate {
+				refName = candidate
+				return
+			}
+		}
+	}
+
+	if isHexString(revision) {
+		isCommit = true
+		return
+	}
+
+	err = fmt.Errorf("cannot find branch or tag '%s' in the git repository", revision)
+	return
+}
+
+// checkoutCommit checks out a commit which could be a full or abbreviated SHA
+func checkoutCommit(repo *git.Repository, revision string) (err error) {
+	var hash *plumbing.Hash
+	if hash, err = repo.ResolveRevision(plumbing.Revision(revision)); err != nil {
+		err = fmt.Errorf("cannot find commit '%s' in the git repository, error: %v", revision, err)
+		return
+	}
+
+	var wd *git.Worktree
+	if wd, err = repo.Worktree(); err == nil {
+		err = wd.Checkout(&git.CheckoutOptions{Hash: *hash})
+	}
+	return
+}
+
+func isHexString(s string) bool {
+	if len(s) < 4 || len(s) > 40 {
+		return false
+	}
+	for _, c := range s {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", c) {
+			return false
+		}
+	}
+	return true
 }
 
 func updateKustomization(patch *updateOption, dir string) (err error) {
